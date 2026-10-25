@@ -1,0 +1,2210 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>喵喵跳跳大冒險 8-BIT 🐾</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            box-sizing: border-box;
+            image-rendering: pixelated;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'DotGothic16', 'Press Start 2P', 'Noto Sans TC', monospace;
+            background-color: #1e1b4b;
+        }
+        .pixel-font-en {
+            font-family: 'Press Start 2P', 'DotGothic16', monospace;
+        }
+        /* 8-Bit 街機像素邊框卡片 */
+        .pixel-card {
+            background: #fffbeb;
+            border: 4px solid #1e1b4b;
+            box-shadow: 
+                inset -4px -4px 0px #fcd34d,
+                inset 4px 4px 0px #ffffff,
+                8px 8px 0px #1e1b4b;
+        }
+        /* 8-Bit 像素按鈕 - 主色 */
+        .pixel-btn-primary {
+            background: #f97316;
+            color: #ffffff;
+            border: 4px solid #1e1b4b;
+            box-shadow: 
+                inset -4px -4px 0px #c2410c,
+                inset 4px 4px 0px #fdba74,
+                4px 4px 0px #1e1b4b;
+            transition: transform 0.05s;
+        }
+        .pixel-btn-primary:hover {
+            background: #fb923c;
+            transform: translate(-1px, -1px);
+            box-shadow: 
+                inset -4px -4px 0px #c2410c,
+                inset 4px 4px 0px #fed7aa,
+                5px 5px 0px #1e1b4b;
+        }
+        .pixel-btn-primary:active {
+            transform: translate(3px, 3px);
+            box-shadow: 
+                inset -2px -2px 0px #c2410c,
+                inset 2px 2px 0px #fdba74,
+                1px 1px 0px #1e1b4b;
+        }
+        /* 8-Bit 像素按鈕 - 副色 */
+        .pixel-btn-secondary {
+            background: #06b6d4;
+            color: #ffffff;
+            border: 4px solid #1e1b4b;
+            box-shadow: 
+                inset -4px -4px 0px #0e7490,
+                inset 4px 4px 0px #67e8f9,
+                4px 4px 0px #1e1b4b;
+            transition: transform 0.05s;
+        }
+        .pixel-btn-secondary:hover {
+            background: #22d3ee;
+            transform: translate(-1px, -1px);
+            box-shadow: 
+                inset -4px -4px 0px #0e7490,
+                inset 4px 4px 0px #a5f3fc,
+                5px 5px 0px #1e1b4b;
+        }
+        .pixel-btn-secondary:active {
+            transform: translate(3px, 3px);
+            box-shadow: 
+                inset -2px -2px 0px #0e7490,
+                inset 2px 2px 0px #67e8f9,
+                1px 1px 0px #1e1b4b;
+        }
+        /* 8-Bit HUD 狀態盒 */
+        .pixel-hud {
+            background: #fffbeb;
+            border: 3px solid #1e1b4b;
+            box-shadow: 
+                inset -3px -3px 0px #fde68a,
+                3px 3px 0px #1e1b4b;
+        }
+        .pixel-input {
+            background: #ffffff;
+            border: 4px solid #1e1b4b;
+            box-shadow: inset 4px 4px 0px #e2e8f0;
+        }
+        .pixel-input:focus {
+            outline: none;
+            border-color: #ea580c;
+            background: #fff7ed;
+        }
+        /* CRT 微掃描線裝飾 */
+        .crt-overlay {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.06) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fde68a;
+            border-left: 3px solid #1e1b4b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f97316;
+            border: 2px solid #1e1b4b;
+        }
+        @keyframes pixelBlink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.25; }
+        }
+        .animate-pixel-blink {
+            animation: pixelBlink 0.8s steps(2, start) infinite;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center relative w-screen h-screen overflow-hidden select-none">
+
+    <!-- 輕微復古掃描線層 -->
+    <div class="fixed inset-0 z-10 crt-overlay"></div>
+
+    <!-- 頂部 8-Bit 街機 HUD 狀態列 -->
+    <div class="fixed top-2 sm:top-3 left-2 right-2 sm:left-5 sm:right-5 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <!-- 左側：玩家、分數、最高分、即時速度倍率 -->
+        <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+            <div class="pixel-hud px-2.5 py-1 sm:px-3.5 sm:py-1.5 flex items-center gap-1.5 text-slate-900 font-bold text-xs sm:text-sm">
+                <span class="text-sm sm:text-base">🐱</span>
+                <span id="hudPlayerName" class="max-w-[75px] sm:max-w-[130px] truncate">Guest</span>
+            </div>
+            <div class="pixel-hud px-2.5 py-1 sm:px-3.5 sm:py-1.5 flex items-center gap-1.5 text-slate-900 font-bold text-xs sm:text-sm">
+                <span class="text-amber-500">★</span>
+                <span>SCORE:</span>
+                <span id="hudScore" class="text-orange-600 font-black text-xs sm:text-base pixel-font-en">0000</span>
+            </div>
+            <div class="pixel-hud px-2.5 py-1 sm:px-3.5 sm:py-1.5 flex items-center gap-1.5 text-slate-900 font-bold text-xs sm:text-sm">
+                <span class="text-pink-500">♛</span>
+                <span>HI:</span>
+                <span id="hudBest" class="text-pink-600 font-black text-xs sm:text-base pixel-font-en">0000</span>
+            </div>
+            <!-- 即時加速倍率顯示 -->
+            <div id="speedBadge" class="pixel-hud px-2.5 py-1 sm:px-3.5 sm:py-1.5 flex items-center gap-1 text-slate-900 font-bold text-xs sm:text-sm transition-transform duration-150">
+                <span>⚡</span>
+                <span>速度:</span>
+                <span id="hudSpeed" class="text-emerald-600 font-black text-xs sm:text-sm pixel-font-en">1.0x</span>
+            </div>
+        </div>
+
+        <!-- 右側：二段跳能量 & 8-Bit BGM/音效開關 -->
+        <div class="flex items-center gap-2 pointer-events-auto">
+            <div id="jumpIndicator" class="pixel-hud px-2.5 py-1 sm:px-3 sm:py-1.5 hidden md:flex items-center gap-1.5 text-slate-900 font-bold text-xs">
+                <span>JUMP:</span>
+                <span id="paw1" class="text-sm transition-opacity">🐾</span>
+                <span id="paw2" class="text-sm transition-opacity">🐾</span>
+            </div>
+            <button id="bgmBtn" class="pixel-hud px-2.5 py-1 sm:px-3 sm:py-1.5 flex items-center gap-1 text-xs sm:text-sm font-bold text-slate-900 hover:bg-amber-100 active:translate-y-0.5 cursor-pointer" title="開關 8-Bit 背景音樂與音效">
+                <span id="bgmIcon">🎵</span>
+                <span id="bgmLabel" class="hidden sm:inline">BGM ON</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 遊戲主畫布容器 -->
+    <div id="canvasWrapper" class="w-full h-full flex items-center justify-center relative overflow-hidden">
+        <canvas id="gameCanvas" class="block w-full h-full cursor-pointer"></canvas>
+    </div>
+
+    <!-- 手機/平板專用右下角 8-Bit 街機大跳躍掣 -->
+    <div id="mobileControls" class="fixed bottom-4 right-4 z-20 hidden pointer-events-auto">
+        <button id="touchJumpBtn" class="pixel-btn-primary w-20 h-20 sm:w-24 sm:h-24 flex flex-col items-center justify-center text-white font-black select-none">
+            <span class="text-xl sm:text-2xl leading-none">🐾</span>
+            <span class="text-xs sm:text-sm mt-1 pixel-font-en">JUMP!</span>
+        </button>
+    </div>
+
+    <!-- 底部像素操作提示列 -->
+    <div id="controlHintBar" class="fixed bottom-2 left-1/2 -translate-x-1/2 z-20 pointer-events-none pixel-hud px-3 py-1 text-slate-900 font-bold text-[11px] sm:text-xs whitespace-nowrap">
+        🕹️ 撳 <span class="px-1.5 py-0.5 bg-amber-300 border border-slate-900 text-slate-950">SPACE 空白鍵</span> 或 <span class="px-1.5 py-0.5 bg-amber-300 border border-slate-900 text-slate-950">點擊畫面</span> 跳躍（半空再撳可二段跳 2UP！）
+    </div>
+
+    <!-- 1. 開始遊戲畫面 Modal (8-Bit 街機風格) -->
+    <div id="startModal" class="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-slate-950/65 backdrop-blur-[2px] overflow-y-auto">
+        <div class="pixel-card w-full max-w-lg p-5 sm:p-6 text-center my-auto">
+            <!-- 頂部像素標籤 -->
+            <div class="inline-block bg-amber-300 border-2 border-slate-900 px-3 py-0.5 text-slate-900 text-xs font-bold mb-2 shadow-[2px_2px_0px_#1e1b4b]">
+                ★ 8-BIT DIGIMON RUSH EDITION ★
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-wider mb-1 flex items-center justify-center gap-2">
+                <span>🐱</span> 喵喵跳跳大冒險
+            </h1>
+            <p class="text-orange-700 text-xs sm:text-sm font-bold mb-4">
+                8-Bit 像素貓仔二段跳！小心迎面衝過來嘅數碼暴龍同上下飛嘅小蜜蜂！⚡
+            </p>
+
+            <!-- 玩法說明框 -->
+            <div class="bg-amber-100 border-3 border-slate-900 p-3 mb-4 text-left text-xs sm:text-sm text-slate-900 space-y-1.5 shadow-[inset_3px_3px_0px_#fde68a]">
+                <div class="flex items-center gap-2">
+                    <span class="bg-orange-500 text-white border border-slate-900 px-1.5 py-0.5 font-bold text-[11px] shrink-0">CONTROL</span>
+                    <span>電腦撳 <b>Spacebar / 滑鼠</b>，手機平板<b>點擊畫面</b>跳躍（可二段跳）</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="bg-rose-600 text-white border border-slate-900 px-1.5 py-0.5 font-bold text-[11px] shrink-0">DIGIMON</span>
+                    <span><b>亞古獸、加布獸、巴達獸</b>會迎面加速衝過嚟，小蜜蜂會波浪上下飛！</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="bg-emerald-600 text-white border border-slate-900 px-1.5 py-0.5 font-bold text-[11px] shrink-0">SAFE GAP</span>
+                    <span>隨時間不斷加速，障礙物間距會<b>按物理滯空比例自動拉長</b>，保證跳得過！</span>
+                </div>
+            </div>
+
+            <!-- 玩家名稱輸入 -->
+            <div class="mb-4">
+                <label for="playerNameInput" class="block text-left text-xs sm:text-sm font-bold text-slate-900 mb-1">
+                    🕹️ 輸入玩家名稱 (PLAYER NAME)：
+                </label>
+                <input
+                    id="playerNameInput"
+                    type="text"
+                    maxlength="14"
+                    placeholder="例如：PIXEL_CAT、太一..."
+                    class="pixel-input w-full px-3.5 py-2.5 text-slate-900 font-bold text-sm sm:text-base"
+                />
+                <p id="nameHint" class="text-left text-xs text-orange-600 font-bold mt-1 hidden">
+                    ⚠️ 未輸入名稱，將自動使用 Guest 身份進入！
+                </p>
+            </div>
+
+            <!-- 開始按鈕組 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                <button id="startWithNameBtn" class="pixel-btn-primary py-2.5 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer">
+                    <span>▶</span> START GAME
+                </button>
+                <button id="startAsGuestBtn" class="pixel-btn-secondary py-2.5 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer">
+                    <span>🐾</span> GUEST PLAY
+                </button>
+            </div>
+
+            <!-- 8-Bit 榮譽排行榜 -->
+            <div class="bg-white border-3 border-slate-900 p-3 text-left shadow-[4px_4px_0px_#1e1b4b]">
+                <div class="flex items-center justify-between mb-2 border-b-2 border-slate-900 pb-1">
+                    <h2 class="font-black text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <span>🏆</span> TOP 5 HIGH SCORES (榮譽榜)
+                    </h2>
+                    <button id="clearRankBtn" class="text-[11px] text-rose-600 hover:underline font-bold cursor-pointer">
+                        [RESET 清除]
+                    </button>
+                </div>
+                <div id="startLeaderboardList" class="space-y-1.5 max-h-36 overflow-y-auto pr-1 text-xs sm:text-sm">
+                    <!-- JS 動態渲染 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Game Over 結算畫面 Modal (8-Bit 街機風格) -->
+    <div id="gameOverModal" class="fixed inset-0 z-30 hidden items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-[2px] overflow-y-auto">
+        <div class="pixel-card w-full max-w-lg p-5 sm:p-6 text-center my-auto">
+            <div class="inline-block bg-rose-600 text-white border-2 border-slate-900 px-3 py-0.5 text-xs font-bold mb-2 pixel-font-en animate-pixel-blink">
+                GAME OVER
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-rose-600 mb-1">😿 哎呀！撞親貓仔啦！</h2>
+            <p id="crashReasonText" class="text-slate-800 text-xs sm:text-sm font-bold mb-4">
+                唔緊要，撳 Spacebar 即刻再挑戰！
+            </p>
+
+            <!-- 本局分數、最高分、最高速度卡片 -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+                <div class="bg-orange-100 border-3 border-slate-900 p-2.5 shadow-[3px_3px_0px_#1e1b4b]">
+                    <div class="text-[11px] font-bold text-orange-900">SCORE 今次得分</div>
+                    <div id="finalScoreText" class="text-lg sm:text-2xl font-black text-orange-600 pixel-font-en mt-1">0000</div>
+                </div>
+                <div class="bg-emerald-100 border-3 border-slate-900 p-2.5 shadow-[3px_3px_0px_#1e1b4b]">
+                    <div class="text-[11px] font-bold text-emerald-900">MAX SPD 最高速</div>
+                    <div id="finalSpeedText" class="text-lg sm:text-2xl font-black text-emerald-600 pixel-font-en mt-1">1.0x</div>
+                </div>
+                <div class="bg-pink-100 border-3 border-slate-900 p-2.5 shadow-[3px_3px_0px_#1e1b4b] relative">
+                    <span id="newRecordBadge" class="hidden absolute -top-3 -right-1 bg-rose-600 text-white border-2 border-slate-900 text-[10px] font-black px-1.5 py-0.5 animate-bounce">
+                        NEW!
+                    </span>
+                    <div class="text-[11px] font-bold text-pink-900">BEST 最高紀錄</div>
+                    <div id="finalBestText" class="text-lg sm:text-2xl font-black text-pink-600 pixel-font-en mt-1">0000</div>
+                </div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <button id="playAgainBtn" class="pixel-btn-primary py-2.5 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer">
+                    <span>🔄</span> RETRY (Space)
+                </button>
+                <button id="changePlayerBtn" class="pixel-btn-secondary py-2.5 px-4 font-black text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer">
+                    <span>🏠</span> TITLE / 轉名
+                </button>
+            </div>
+
+            <!-- 排行榜區塊 -->
+            <div class="bg-white border-3 border-slate-900 p-3 text-left shadow-[4px_4px_0px_#1e1b4b]">
+                <h3 class="font-black text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 mb-2 border-b-2 border-slate-900 pb-1">
+                    <span>🏆</span> HIGH SCORES 榮譽排行榜
+                </h3>
+                <div id="gameOverLeaderboardList" class="space-y-1.5 max-h-36 overflow-y-auto pr-1 text-xs sm:text-sm">
+                    <!-- JS 動態渲染 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*************************************************************************
+         * 1. 8-Bit Chiptune 音樂合成器與像素音效引擎 (純 Web Audio API)
+         *************************************************************************/
+        class ChiptuneSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+                this.isPlayingBGM = false;
+                this.bgmTimer = null;
+                this.stepIndex = 0;
+                this.tempoMultiplier = 1.0;
+                this.noiseBuffer = null;
+
+                // 輕快 C 大調 / G 大調 8-Bit 冒險旋律 (64 步循環)
+                this.leadNotes = [
+                    523.25, 0,      659.25, 0,      783.99, 0,      1046.50, 0,
+                    880.00, 0,      1046.50,0,      783.99, 0,      659.25,  0,
+                    698.46, 783.99, 880.00, 0,      783.99, 698.46, 659.25,  0,
+                    587.33, 659.25, 698.46, 587.33, 783.99, 0,      987.77,  0,
+
+                    523.25, 0,      659.25, 0,      783.99, 0,      1046.50, 0,
+                    1174.66,0,      1318.51,0,      1046.50,0,      783.99,  0,
+                    880.00, 783.99, 698.46, 0,      783.99, 698.46, 659.25,  0,
+                    587.33, 783.99, 987.77, 1174.66,1046.50,0,      1046.50, 0
+                ];
+
+                // 副旋律琶音伴奏
+                this.arpNotes = [
+                    329.63, 392.00, 329.63, 392.00, 329.63, 392.00, 523.25, 392.00,
+                    349.23, 440.00, 349.23, 440.00, 329.63, 392.00, 329.63, 392.00,
+                    349.23, 440.00, 523.25, 440.00, 329.63, 392.00, 523.25, 392.00,
+                    293.66, 392.00, 493.88, 392.00, 293.66, 392.00, 493.88, 392.00,
+
+                    329.63, 392.00, 329.63, 392.00, 329.63, 392.00, 523.25, 392.00,
+                    392.00, 493.88, 587.33, 493.88, 329.63, 392.00, 523.25, 392.00,
+                    349.23, 440.00, 523.25, 440.00, 329.63, 392.00, 523.25, 392.00,
+                    293.66, 392.00, 493.88, 392.00, 329.63, 392.00, 523.25, 0
+                ];
+
+                // 8-Bit 三角波跳躍低音 Bassline
+                this.bassNotes = [
+                    130.81, 0, 261.63, 0, 196.00, 0, 261.63, 0,
+                    220.00, 0, 440.00, 0, 164.81, 0, 329.63, 0,
+                    174.61, 0, 349.23, 0, 130.81, 0, 261.63, 0,
+                    146.83, 0, 293.66, 0, 196.00, 0, 196.00, 246.94,
+
+                    130.81, 0, 261.63, 0, 196.00, 0, 261.63, 0,
+                    196.00, 0, 392.00, 0, 164.81, 0, 329.63, 0,
+                    174.61, 0, 349.23, 0, 130.81, 0, 261.63, 0,
+                    196.00, 0, 246.94, 0, 261.63, 0, 130.81, 0
+                ];
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                        this.createNoiseBuffer();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            createNoiseBuffer() {
+                if (!this.ctx) return;
+                const bufferSize = this.ctx.sampleRate * 0.25;
+                this.noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = this.noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                if (this.muted) {
+                    this.stopBGM();
+                } else if (gameState === 'PLAYING') {
+                    this.startBGM();
+                }
+                return this.muted;
+            }
+
+            setTempoMultiplier(mult) {
+                this.tempoMultiplier = Math.min(1.42, 1.0 + (mult - 1.0) * 0.16);
+            }
+
+            startBGM() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+                if (this.isPlayingBGM) return;
+
+                this.isPlayingBGM = true;
+                this.stepIndex = 0;
+                this.scheduleNextStep();
+            }
+
+            stopBGM() {
+                this.isPlayingBGM = false;
+                if (this.bgmTimer) {
+                    clearTimeout(this.bgmTimer);
+                    this.bgmTimer = null;
+                }
+            }
+
+            scheduleNextStep() {
+                if (!this.isPlayingBGM || this.muted) return;
+
+                this.playStep(this.stepIndex);
+                this.stepIndex = (this.stepIndex + 1) % this.leadNotes.length;
+
+                const stepMs = 102 / this.tempoMultiplier;
+                this.bgmTimer = setTimeout(() => this.scheduleNextStep(), stepMs);
+            }
+
+            playStep(idx) {
+                if (!this.ctx || this.muted) return;
+                const now = this.ctx.currentTime;
+                const dur = (0.095 / this.tempoMultiplier);
+
+                const leadFreq = this.leadNotes[idx];
+                if (leadFreq > 0) {
+                    this.playTone(leadFreq, 'square', 0.052, dur * 0.9, now);
+                }
+
+                const arpFreq = this.arpNotes[idx];
+                if (arpFreq > 0) {
+                    this.playTone(arpFreq, 'square', 0.02, dur * 0.75, now);
+                }
+
+                const bassFreq = this.bassNotes[idx];
+                if (bassFreq > 0) {
+                    this.playTone(bassFreq, 'triangle', 0.085, dur * 1.3, now);
+                }
+
+                if (idx % 4 === 0) {
+                    this.playKick(now);
+                } else if (idx % 4 === 2) {
+                    this.playNoisePerc(0.03, 0.045, now);
+                } else if (idx % 2 === 1) {
+                    this.playNoisePerc(0.012, 0.02, now);
+                }
+            }
+
+            playTone(freq, type, vol, duration, startTime) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, startTime);
+
+                gain.gain.setValueAtTime(vol, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            }
+
+            playKick(startTime) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(135, startTime);
+                osc.frequency.exponentialRampToValueAtTime(36, startTime + 0.065);
+
+                gain.gain.setValueAtTime(0.09, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.07);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + 0.07);
+            }
+
+            playNoisePerc(vol, duration, startTime) {
+                if (!this.noiseBuffer) return;
+                const src = this.ctx.createBufferSource();
+                src.buffer = this.noiseBuffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(1600, startTime);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(vol, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                src.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                src.start(startTime);
+                src.stop(startTime + duration);
+            }
+
+            // 8-Bit 第一段跳躍音效
+            playJump1() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(260, now);
+                osc.frequency.setValueAtTime(350, now + 0.03);
+                osc.frequency.setValueAtTime(480, now + 0.06);
+                osc.frequency.setValueAtTime(640, now + 0.09);
+
+                gain.gain.setValueAtTime(0.11, now);
+                gain.gain.exponentialRampToValueAtTime(0.008, now + 0.14);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.14);
+            }
+
+            // 8-Bit 第二段跳躍音效
+            playJump2() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((f, idx) => {
+                    this.playTone(f, 'square', 0.095, 0.055, now + idx * 0.028);
+                });
+            }
+
+            // 8-Bit 數碼暴龍亂入警報音效 (V-Pet 風格嗶嗶聲)
+            playDigimonAlert() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                this.playTone(987.77, 'square', 0.075, 0.05, now);
+                this.playTone(1318.51, 'square', 0.075, 0.06, now + 0.06);
+            }
+
+            // 8-Bit 加速里程碑音效
+            playSpeedUp() {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const notes = [440, 554.37, 659.25, 880, 659.25, 880];
+                notes.forEach((f, idx) => {
+                    this.playTone(f, 'square', 0.085, 0.065, now + idx * 0.045);
+                });
+            }
+
+            // 8-Bit 撞擊 Game Over 音效
+            playGameOver() {
+                this.stopBGM();
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                this.playNoisePerc(0.14, 0.15, now);
+
+                const sadNotes = [
+                    { f: 659.25, t: 0.06, d: 0.11 },
+                    { f: 622.25, t: 0.18, d: 0.11 },
+                    { f: 587.33, t: 0.30, d: 0.11 },
+                    { f: 523.25, t: 0.42, d: 0.28 },
+                    { f: 392.00, t: 0.72, d: 0.14 },
+                    { f: 261.63, t: 0.88, d: 0.35 }
+                ];
+                sadNotes.forEach(n => {
+                    this.playTone(n.f, 'square', 0.095, n.d, now + n.t);
+                    this.playTone(n.f * 0.5, 'triangle', 0.09, n.d, now + n.t);
+                });
+            }
+        }
+
+        const sound = new ChiptuneSoundEngine();
+
+        /*************************************************************************
+         * 2. 分數儲存與排行榜管理 (localStorage)
+         *************************************************************************/
+        const STORAGE_KEY = 'meow_jump_leaderboard_v1';
+        const LAST_PLAYER_KEY = 'meow_jump_last_player_v1';
+
+        function getLeaderboard() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveScoreToLeaderboard(name, scoreVal) {
+            const list = getLeaderboard();
+            const now = new Date();
+            const timeStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            list.push({
+                name: name || 'Guest',
+                score: Math.floor(scoreVal),
+                date: timeStr
+            });
+
+            list.sort((a, b) => b.score - a.score);
+            const trimmed = list.slice(0, 10);
+
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+            } catch (e) {}
+            return trimmed;
+        }
+
+        function getBestScore() {
+            const list = getLeaderboard();
+            return list.length > 0 ? list[0].score : 0;
+        }
+
+        function formatScorePad(num) {
+            return String(Math.floor(num)).padStart(4, '0');
+        }
+
+        function renderLeaderboardUI() {
+            const list = getLeaderboard().slice(0, 5);
+            const containers = [
+                document.getElementById('startLeaderboardList'),
+                document.getElementById('gameOverLeaderboardList')
+            ];
+
+            const rankTags = ['1ST', '2ND', '3RD', '4TH', '5TH'];
+            const rankColors = ['bg-amber-400', 'bg-slate-300', 'bg-orange-300', 'bg-amber-100', 'bg-amber-100'];
+
+            containers.forEach(container => {
+                if (!container) return;
+                if (list.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4 text-slate-600 font-bold">
+                            NO DATA YET - 快啲創造第一個像素紀錄啦！🐾
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = list.map((item, idx) => `
+                    <div class="flex items-center justify-between bg-amber-50 px-2.5 py-1.5 border-2 border-slate-900">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="${rankColors[idx]} border border-slate-900 px-1.5 py-0.5 text-[10px] font-black pixel-font-en">${rankTags[idx]}</span>
+                            <span class="font-bold text-slate-900 truncate">${escapeHtml(item.name)}</span>
+                            <span class="text-[10px] text-slate-500 hidden sm:inline">(${item.date})</span>
+                        </div>
+                        <div class="font-black text-orange-600 pixel-font-en text-xs sm:text-sm ml-2">${formatScorePad(item.score)}</div>
+                    </div>
+                `).join('');
+            });
+
+            document.getElementById('hudBest').textContent = formatScorePad(getBestScore());
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, s => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[s]));
+        }
+
+        /*************************************************************************
+         * 3. 8-Bit 像素畫渲染輔助工具與遊戲物理常數
+         *************************************************************************/
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const GAME_W = 960;
+        const GAME_H = 540;
+        const GROUND_Y = 444;
+        const PIXEL = 4;
+
+        // 物理跳躍參數
+        const GRAVITY = 2150;
+        const JUMP1_VEL = -755;
+        const JUMP2_VEL = -715;
+
+        // 計算貓仔單跳與二段跳嘅理論滯空時間 (秒)，用於按比例拉長障礙物安全距離
+        const AIR_TIME_SINGLE = (2 * Math.abs(JUMP1_VEL)) / GRAVITY; // ~0.70s
+        const AIR_TIME_DOUBLE = AIR_TIME_SINGLE * 1.62;               // ~1.13s
+
+        // 持續加速參數
+        const BASE_SPEED = 360;
+        const ACCEL_PER_SEC = 14.2; // 每秒持續平滑加速
+
+        let gameState = 'MENU'; // 'MENU' | 'PLAYING' | 'GAMEOVER'
+        let currentPlayer = 'Guest';
+        let score = 0;
+        let survivalTime = 0;
+        let gameSpeed = BASE_SPEED;
+        let speedMultiplier = 1.0;
+        let lastSpeedMilestone = 1.0;
+        let lastScoreMilestone = 0;
+        let speedBannerTimer = 0;
+        let speedBannerText = '';
+
+        // 動態像素安全距離目標 (取代固定秒數 Spawner)
+        let nextObstacleTargetGapPx = 360;
+
+        let floatingTexts = [];
+        let particles = [];
+        let obstacles = [];
+        let speedLines = [];
+
+        function pRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+        }
+
+        function drawPixelMatrix(matrix, x, y, pixelSize, palette) {
+            for (let r = 0; r < matrix.length; r++) {
+                const row = matrix[r];
+                for (let c = 0; c < row.length; c++) {
+                    const ch = row[c];
+                    if (ch !== '.' && palette[ch]) {
+                        ctx.fillStyle = palette[ch];
+                        ctx.fillRect(
+                            Math.round(x + c * pixelSize),
+                            Math.round(y + r * pixelSize),
+                            pixelSize,
+                            pixelSize
+                        );
+                    }
+                }
+            }
+        }
+
+        /*************************************************************************
+         * 4. 8-Bit 像素貓仔主角物件與動畫
+         *************************************************************************/
+        const CAT_PALETTE = {
+            'K': '#271c19',
+            'O': '#fb923c',
+            'D': '#ea580c',
+            'L': '#fff7ed',
+            'P': '#fb7185',
+            'R': '#ef4444',
+            'Y': '#facc15',
+            'E': '#1e1b4b',
+            'W': '#ffffff'
+        };
+
+        const cat = {
+            x: 148,
+            y: GROUND_Y,
+            w: 60,
+            h: 52,
+            vy: 0,
+            jumpsUsed: 0,
+            maxJumps: 2,
+            runFrame: 0,
+            animTimer: 0,
+            earTwitchTimer: 0,
+            isDead: false,
+            reset() {
+                this.y = GROUND_Y;
+                this.vy = 0;
+                this.jumpsUsed = 0;
+                this.runFrame = 0;
+                this.animTimer = 0;
+                this.earTwitchTimer = 0;
+                this.isDead = false;
+                updateJumpPawHUD(2);
+            },
+            jump() {
+                if (this.isDead) return;
+                if (this.jumpsUsed < this.maxJumps) {
+                    this.jumpsUsed++;
+                    if (this.jumpsUsed === 1) {
+                        this.vy = JUMP1_VEL;
+                        sound.playJump1();
+                        spawnJumpParticles(this.x + this.w / 2, this.y, false);
+                    } else {
+                        this.vy = JUMP2_VEL;
+                        sound.playJump2();
+                        spawnJumpParticles(this.x + this.w / 2, this.y - 8, true);
+                        addFloatingText('2UP JUMP! ★', this.x + 28, this.y - 68, '#ec4899');
+                    }
+                    updateJumpPawHUD(this.maxJumps - this.jumpsUsed);
+                }
+            },
+            update(dt) {
+                this.vy += GRAVITY * dt;
+                this.y += this.vy * dt;
+
+                if (this.y >= GROUND_Y) {
+                    if (this.jumpsUsed > 0) {
+                        spawnLandingDust(this.x + this.w / 2, GROUND_Y);
+                    }
+                    this.y = GROUND_Y;
+                    this.vy = 0;
+                    this.jumpsUsed = 0;
+                    updateJumpPawHUD(2);
+                }
+
+                this.animTimer += dt * (8 * speedMultiplier);
+                this.runFrame = Math.floor(this.animTimer) % 4;
+                this.earTwitchTimer += dt;
+            },
+            getHitbox() {
+                return {
+                    x: this.x + 10,
+                    y: this.y - this.h + 8,
+                    w: this.w - 18,
+                    h: this.h - 10
+                };
+            }
+        };
+
+        function updateJumpPawHUD(remaining) {
+            const p1 = document.getElementById('paw1');
+            const p2 = document.getElementById('paw2');
+            if (!p1 || !p2) return;
+            p1.style.opacity = remaining >= 1 ? '1' : '0.2';
+            p2.style.opacity = remaining >= 2 ? '1' : '0.2';
+        }
+
+        /*************************************************************************
+         * 5. 8-Bit 動態像素背景元素
+         *************************************************************************/
+        const bgElements = {
+            sunFrame: 0,
+            clouds: [],
+            birds: [],
+            butterflies: [],
+            hillsFar: [],
+            hillsNear: [],
+            windmills: [],
+            flowers: [],
+            grassOffset: 0,
+            init() {
+                this.clouds = Array.from({ length: 6 }, (_, i) => ({
+                    x: i * 185 + Math.random() * 50,
+                    y: 48 + (i % 3) * 38,
+                    scale: (i % 2 === 0) ? 4 : 3,
+                    speed: 22 + Math.random() * 16
+                }));
+
+                this.birds = Array.from({ length: 4 }, (_, i) => ({
+                    x: 200 + i * 250,
+                    y: 68 + (i % 3) * 42,
+                    flapTimer: Math.random() * 10,
+                    speed: 65 + Math.random() * 35,
+                    color: ['#f43f5e', '#3b82f6', '#a855f7', '#10b981'][i % 4]
+                }));
+
+                this.butterflies = Array.from({ length: 4 }, (_, i) => ({
+                    x: 150 + i * 230,
+                    baseY: 280 + (i % 3) * 32,
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 85 + Math.random() * 30,
+                    color: ['#fb7185', '#facc15', '#c084fc', '#38bdf8'][i % 4]
+                }));
+
+                this.hillsFar = [
+                    { x: 0, w: 380, h: 150, color: '#6ee7b7' },
+                    { x: 350, w: 440, h: 180, color: '#34d399' },
+                    { x: 740, w: 400, h: 145, color: '#6ee7b7' }
+                ];
+
+                this.hillsNear = [
+                    { x: -20, w: 280, h: 90, color: '#10b981' },
+                    { x: 240, w: 320, h: 105, color: '#059669' },
+                    { x: 540, w: 290, h: 85, color: '#10b981' },
+                    { x: 810, w: 310, h: 100, color: '#059669' }
+                ];
+
+                this.windmills = [
+                    { x: 280, bladeStep: 0 },
+                    { x: 760, bladeStep: 1.5 }
+                ];
+
+                this.flowers = Array.from({ length: 16 }, (_, i) => ({
+                    x: i * 64 + Math.random() * 20,
+                    y: GROUND_Y + 24 + (i % 3) * 18,
+                    color: ['#f472b6', '#facc15', '#fb923c', '#c084fc', '#ffffff'][i % 5]
+                }));
+
+                speedLines = Array.from({ length: 10 }, () => ({
+                    x: Math.random() * GAME_W,
+                    y: 40 + Math.random() * (GROUND_Y - 80),
+                    len: 48 + Math.random() * 80,
+                    speed: 900 + Math.random() * 400
+                }));
+            },
+            update(dt) {
+                const moveFactor = gameState === 'PLAYING' ? 1 : 0.3;
+                const currentMove = gameSpeed * moveFactor;
+
+                this.sunFrame += dt * 2;
+                this.grassOffset = (this.grassOffset + currentMove * dt) % 32;
+
+                this.clouds.forEach(c => {
+                    c.x -= c.speed * dt;
+                    if (c.x < -140) c.x = GAME_W + 80;
+                });
+
+                this.birds.forEach(b => {
+                    b.x -= b.speed * dt;
+                    b.flapTimer += dt * 8;
+                    if (b.x < -60) {
+                        b.x = GAME_W + 60 + Math.random() * 100;
+                        b.y = 60 + Math.floor(Math.random() * 4) * 32;
+                    }
+                });
+
+                this.butterflies.forEach(bf => {
+                    bf.x -= bf.speed * dt;
+                    bf.phase += dt * 10;
+                    if (bf.x < -40) {
+                        bf.x = GAME_W + 50 + Math.random() * 90;
+                    }
+                });
+
+                this.hillsFar.forEach(h => {
+                    h.x -= currentMove * 0.12 * dt;
+                    if (h.x + h.w < -60) h.x += 1120;
+                });
+
+                this.hillsNear.forEach(h => {
+                    h.x -= currentMove * 0.25 * dt;
+                    if (h.x + h.w < -60) h.x += 1120;
+                });
+
+                this.windmills.forEach(w => {
+                    w.x -= currentMove * 0.25 * dt;
+                    w.bladeStep += dt * 3.5;
+                    if (w.x < -100) w.x += GAME_W + 200;
+                });
+
+                this.flowers.forEach(f => {
+                    f.x -= currentMove * dt;
+                    if (f.x < -24) f.x += GAME_W + 48;
+                });
+
+                if (gameState === 'PLAYING' && speedMultiplier >= 1.25) {
+                    speedLines.forEach(sl => {
+                        sl.x -= sl.speed * speedMultiplier * dt;
+                        if (sl.x + sl.len < 0) {
+                            sl.x = GAME_W + Math.random() * 200;
+                            sl.y = 36 + Math.floor(Math.random() * 18) * 20;
+                        }
+                    });
+                }
+            }
+        };
+
+        /*************************************************************************
+         * 6. 8-Bit 障礙物、正弦波飛行蜜蜂、迎面衝刺數碼暴龍與物理級安全距離計算
+         *************************************************************************/
+        const OBSTACLE_TYPES = [
+            // 靜態地面可愛障礙物
+            {
+                type: 'YARN',
+                category: 'static',
+                name: '像素毛冷球',
+                w: 48,
+                h: 48,
+                speedFactor: 1.0,
+                requireDoubleJump: false
+            },
+            {
+                type: 'DOUBLE_YARN',
+                category: 'static',
+                name: '雙重毛冷球陣',
+                w: 100,
+                h: 48,
+                speedFactor: 1.0,
+                requireDoubleJump: false
+            },
+            {
+                type: 'BOX',
+                category: 'static',
+                name: '像素宅配紙箱',
+                w: 56,
+                h: 64,
+                speedFactor: 1.0,
+                requireDoubleJump: false
+            },
+            {
+                type: 'CANS',
+                category: 'static',
+                name: '三層魚罐頭塔',
+                w: 48,
+                h: 88,
+                speedFactor: 1.0,
+                requireDoubleJump: false
+            },
+            {
+                type: 'CACTUS',
+                category: 'static',
+                name: '高身像素仙人掌',
+                w: 56,
+                h: 136,
+                speedFactor: 1.0,
+                requireDoubleJump: true
+            },
+            {
+                type: 'CAT_TREE',
+                category: 'static',
+                name: '巨型貓抓板塔',
+                w: 64,
+                h: 146,
+                speedFactor: 1.0,
+                requireDoubleJump: true
+            },
+            // 正弦波上下飛行小蜜蜂
+            {
+                type: 'BEE',
+                category: 'bee',
+                name: '波浪飛行小蜜蜂',
+                w: 52,
+                h: 40,
+                speedFactor: 1.06,
+                baseFlyOffset: 62, // 基準離地高度
+                waveAmp: 22,       // 上下飛行振幅 (±22px，確保最高點仍可輕鬆跳過)
+                waveFreq: 4.8,
+                requireDoubleJump: false
+            },
+            // 3 款迎面衝過來嘅 8-Bit 數碼暴龍
+            {
+                type: 'AGUMON',
+                category: 'digimon_ground',
+                name: '亞古獸 (Agumon)',
+                tag: 'AGUMON',
+                w: 60,
+                h: 64,
+                speedFactor: 1.24, // 迎面奔跑衝刺速度倍率
+                requireDoubleJump: false
+            },
+            {
+                type: 'GABUMON',
+                category: 'digimon_ground',
+                name: '加布獸 (Gabumon)',
+                tag: 'GABUMON',
+                w: 64,
+                h: 76,
+                speedFactor: 1.20, // 迎面衝刺速度倍率
+                requireDoubleJump: false
+            },
+            {
+                type: 'PATAMON',
+                category: 'digimon_fly',
+                name: '巴達獸 (Patamon)',
+                tag: 'PATAMON',
+                w: 60,
+                h: 48,
+                speedFactor: 1.22, // 空中迎面飛行衝刺
+                baseFlyOffset: 66,
+                waveAmp: 20,       // 拍動大耳仔上下波浪飛行
+                waveFreq: 5.2,
+                requireDoubleJump: false
+            }
+        ];
+
+        /**
+         * 根據剛生成嘅障礙物屬性與當前速度 gameSpeed，按物理滯空比例計算下一個障礙物所需嘅像素安全距離
+         */
+        function calculateProportionalNextGap(spawnedObs) {
+            // 1. 決定越過此障礙物所需嘅滯空時間 (單跳 vs 二段跳)
+            const airTime = spawnedObs.requireDoubleJump ? AIR_TIME_DOUBLE : AIR_TIME_SINGLE;
+
+            // 2. 計算貓仔在空中期間，地面/障礙物相對移動嘅水平像素距離
+            const effectiveSpeed = gameSpeed * (spawnedObs.speedFactor || 1.0);
+            const jumpCoverDistPx = effectiveSpeed * airTime;
+
+            // 3. 落地後反應同再次起跳緩衝時間 (約 0.24 秒 * 當前速度)
+            const landingReactionBufferPx = gameSpeed * 0.24;
+
+            // 4. 最小安全像素距離 = 障礙物自身寬度 + 空中跨越距離 * 1.15 + 落地緩衝
+            const minSafeGapPx = spawnedObs.w + (jumpCoverDistPx * 1.15) + landingReactionBufferPx;
+
+            // 5. 加入適度隨機變化空間 (亦隨速度倍率按比例拉長)，避免節奏過於機械化
+            const randomExtraPx = (95 + Math.random() * 165) * Math.pow(speedMultiplier, 0.85);
+
+            return Math.round(minSafeGapPx + randomExtraPx);
+        }
+
+        function spawnObstacle() {
+            // 開局前 25 分先出簡單障礙物，之後全面解鎖蜜蜂同數碼暴龍
+            let pool = OBSTACLE_TYPES;
+            if (score < 25) {
+                pool = OBSTACLE_TYPES.filter(o =>
+                    o.type === 'YARN' || o.type === 'BOX' || o.type === 'AGUMON'
+                );
+            }
+
+            const tpl = pool[Math.floor(Math.random() * pool.length)];
+            const isFlyingWave = (tpl.category === 'bee' || tpl.category === 'digimon_fly');
+            const initialBaseY = isFlyingWave ? (GROUND_Y - tpl.baseFlyOffset) : GROUND_Y;
+
+            // 如果係迎面高速衝過來嘅數碼暴龍，額外將生成位置推後少少，補償佢喺路上追近前一個慢速障礙物嘅距離差
+            let rushCompensationPx = 0;
+            if (tpl.speedFactor > 1.05 && obstacles.length > 0) {
+                const prevObs = obstacles[obstacles.length - 1];
+                if ((prevObs.speedFactor || 1.0) < tpl.speedFactor) {
+                    const travelTimeAcrossScreen = (GAME_W - cat.x) / gameSpeed;
+                    rushCompensationPx = (tpl.speedFactor - 1.0) * gameSpeed * travelTimeAcrossScreen * 0.9;
+                }
+            }
+
+            const newObs = {
+                ...tpl,
+                x: GAME_W + 60 + rushCompensationPx,
+                y: initialBaseY,
+                baseY: initialBaseY,
+                wavePhase: Math.random() * Math.PI * 2,
+                trailHistory: [],
+                passed: false,
+                animTimer: 0,
+                animFrame: 0,
+                yarnColor: ['#ec4899', '#8b5cf6', '#06b6d4', '#f97316'][Math.floor(Math.random() * 4)]
+            };
+
+            if (tpl.category.startsWith('digimon')) {
+                sound.playDigimonAlert();
+            }
+
+            obstacles.push(newObs);
+
+            // 即時計算下一個障礙物必須相隔嘅物理像素距離
+            nextObstacleTargetGapPx = calculateProportionalNextGap(newObs);
+        }
+
+        function getObstacleHitbox(obs) {
+            const padX = 8;
+            const padY = 6;
+            return {
+                x: obs.x + padX,
+                y: obs.y - obs.h + padY,
+                w: obs.w - padX * 2,
+                h: obs.h - padY * 2
+            };
+        }
+
+        function isColliding(a, b) {
+            return (
+                a.x < b.x + b.w &&
+                a.x + a.w > b.x &&
+                a.y < b.y + b.h &&
+                a.y + a.h > b.y
+            );
+        }
+
+        /*************************************************************************
+         * 7. 8-Bit 方形像素粒子與浮動文字特效
+         *************************************************************************/
+        function spawnJumpParticles(x, y, isDouble) {
+            const count = isDouble ? 16 : 8;
+            for (let i = 0; i < count; i++) {
+                const angle = Math.PI * (0.1 + Math.random() * 0.8);
+                const spd = 80 + Math.random() * 150;
+                particles.push({
+                    x: x + (Math.random() - 0.5) * 24,
+                    y: y - 4,
+                    vx: Math.cos(angle) * spd * (Math.random() > 0.5 ? 1 : -1) - 40,
+                    vy: Math.sin(angle) * spd * (isDouble ? 0.6 : 0.3),
+                    size: isDouble ? 8 : 6,
+                    life: 1,
+                    decay: 2.0 + Math.random() * 0.8,
+                    color: isDouble
+                        ? ['#f472b6', '#facc15', '#38bdf8', '#ffffff', '#4ade80'][i % 5]
+                        : '#ffffff',
+                    isCross: isDouble && i % 2 === 0
+                });
+            }
+        }
+
+        function spawnLandingDust(x, y) {
+            for (let i = 0; i < 6; i++) {
+                particles.push({
+                    x: x + (Math.random() - 0.5) * 24,
+                    y: y - 4,
+                    vx: (Math.random() - 0.5) * 100 - 50,
+                    vy: -25 - Math.random() * 40,
+                    size: 6,
+                    life: 1,
+                    decay: 2.8,
+                    color: '#fef08a',
+                    isCross: false
+                });
+            }
+        }
+
+        function addFloatingText(text, x, y, color = '#f97316') {
+            floatingTexts.push({
+                text,
+                x,
+                y,
+                vy: -60,
+                life: 1,
+                color
+            });
+        }
+
+        /*************************************************************************
+         * 8. 8-Bit 像素畫布渲染器 (Sky, Hills, Cat, Obstacles, Digimon, UI)
+         *************************************************************************/
+        function drawRetroSkyAndSun() {
+            const skyBands = [
+                { h: 90,  c: '#38bdf8' },
+                { h: 95,  c: '#7dd3fc' },
+                { h: 100, c: '#bae6fd' },
+                { h: 95,  c: '#e0f2fe' },
+                { h: 64,  c: '#fef9c3' }
+            ];
+            let curY = 0;
+            skyBands.forEach(b => {
+                pRect(0, curY, GAME_W, b.h, b.c);
+                curY += b.h;
+            });
+
+            const sx = 816;
+            const sy = 76;
+            const rayToggle = Math.floor(bgElements.sunFrame) % 2 === 0;
+            const rayOffset = rayToggle ? 4 : 0;
+
+            pRect(sx - 4, sy - 44 - rayOffset, 8, 8, '#fde047');
+            pRect(sx - 4, sy + 36 + rayOffset, 8, 8, '#fde047');
+            pRect(sx - 44 - rayOffset, sy - 4, 8, 8, '#fde047');
+            pRect(sx + 36 + rayOffset, sy - 4, 8, 8, '#fde047');
+            pRect(sx - 32, sy - 32, 8, 8, '#fde047');
+            pRect(sx + 24, sy - 32, 8, 8, '#fde047');
+            pRect(sx - 32, sy + 24, 8, 8, '#fde047');
+            pRect(sx + 24, sy + 24, 8, 8, '#fde047');
+
+            pRect(sx - 20, sy - 28, 40, 56, '#1e1b4b');
+            pRect(sx - 28, sy - 20, 56, 40, '#1e1b4b');
+            pRect(sx - 16, sy - 24, 32, 48, '#facc15');
+            pRect(sx - 24, sy - 16, 48, 32, '#facc15');
+            pRect(sx - 16, sy - 20, 24, 4, '#fef08a');
+            pRect(sx - 12, sy - 8, 4, 8, '#1e1b4b');
+            pRect(sx + 8,  sy - 8, 4, 8, '#1e1b4b');
+            pRect(sx - 18, sy + 2, 6, 4, '#fb7185');
+            pRect(sx + 12, sy + 2, 6, 4, '#fb7185');
+            pRect(sx - 6,  sy + 6, 12, 4, '#1e1b4b');
+        }
+
+        function drawPixelClouds() {
+            const cloudMatrix = [
+                "....KKKKKK......",
+                "..KKWWWWWWKK....",
+                ".KWWWWWWWWWWKK..",
+                "KWWWWWWWWWWWWWKK",
+                "KWWWWEWWWWWWWWWK",
+                "KWWWWWWWWWWWWWWK",
+                ".KKKKKKKKKKKKKK."
+            ];
+            const palette = { 'K': '#334155', 'W': '#ffffff', 'E': '#94a3b8' };
+            bgElements.clouds.forEach(c => {
+                drawPixelMatrix(cloudMatrix, c.x, c.y, c.scale, palette);
+            });
+        }
+
+        function drawPixelHillsAndWindmills() {
+            const drawSteppedHill = (h, borderCol) => {
+                const steps = 10;
+                const stepH = Math.floor(h.h / steps / 4) * 4;
+                for (let i = 0; i < steps; i++) {
+                    const ratio = (i + 1) / steps;
+                    const w = Math.floor((h.w * ratio) / 8) * 8;
+                    const x = Math.floor((h.x + (h.w - w) / 2) / 4) * 4;
+                    const y = GROUND_Y - (steps - i) * stepH;
+                    pRect(x - 4, y - 4, w + 8, stepH + 4, borderCol);
+                    pRect(x, y, w, stepH + 4, h.color);
+                }
+            };
+
+            bgElements.hillsFar.forEach(h => drawSteppedHill(h, '#047857'));
+            bgElements.hillsNear.forEach(h => drawSteppedHill(h, '#064e3b'));
+
+            bgElements.windmills.forEach(w => {
+                const wx = Math.round(w.x / 4) * 4;
+                const wy = GROUND_Y;
+                pRect(wx - 20, wy - 76, 40, 76, '#1e1b4b');
+                pRect(wx - 16, wy - 72, 32, 72, '#fffbeb');
+                pRect(wx - 24, wy - 88, 48, 12, '#1e1b4b');
+                pRect(wx - 20, wy - 84, 40, 8, '#f43f5e');
+                pRect(wx - 12, wy - 96, 24, 8, '#f43f5e');
+                pRect(wx - 6, wy - 24, 12, 24, '#b45309');
+
+                const cx = wx;
+                const cy = wy - 72;
+                const isDiag = Math.floor(w.bladeStep) % 2 === 0;
+                if (!isDiag) {
+                    pRect(cx - 4, cy - 36, 8, 72, '#1e1b4b');
+                    pRect(cx - 36, cy - 4, 72, 8, '#1e1b4b');
+                    pRect(cx - 2, cy - 32, 4, 64, '#fde047');
+                    pRect(cx - 32, cy - 2, 64, 4, '#fde047');
+                } else {
+                    for (let d = -24; d <= 24; d += 6) {
+                        pRect(cx + d - 3, cy + d - 3, 6, 6, '#fde047');
+                        pRect(cx + d - 3, cy - d - 3, 6, 6, '#fde047');
+                    }
+                }
+                pRect(cx - 4, cy - 4, 8, 8, '#f43f5e');
+            });
+        }
+
+        function drawPixelBirdsAndButterflies() {
+            bgElements.birds.forEach(b => {
+                const bx = Math.round(b.x / 4) * 4;
+                const by = Math.round(b.y / 4) * 4;
+                const wingUp = Math.floor(b.flapTimer) % 2 === 0;
+
+                pRect(bx, by, 16, 12, b.color);
+                pRect(bx - 4, by + 4, 4, 4, '#facc15');
+                pRect(bx + 4, by + 2, 4, 4, '#ffffff');
+                if (wingUp) {
+                    pRect(bx + 4, by - 8, 8, 8, '#ffffff');
+                } else {
+                    pRect(bx + 4, by + 8, 8, 8, '#ffffff');
+                }
+            });
+
+            bgElements.butterflies.forEach(bf => {
+                const bx = Math.round(bf.x / 4) * 4;
+                const by = Math.round((bf.baseY + Math.sin(bf.phase * 0.5) * 16) / 4) * 4;
+                const open = Math.floor(bf.phase) % 2 === 0;
+                if (open) {
+                    pRect(bx - 6, by - 6, 6, 12, bf.color);
+                    pRect(bx + 4, by - 6, 6, 12, bf.color);
+                } else {
+                    pRect(bx - 3, by - 4, 3, 8, bf.color);
+                    pRect(bx + 4, by - 4, 3, 8, bf.color);
+                }
+                pRect(bx, by - 4, 4, 10, '#1e1b4b');
+            });
+        }
+
+        function drawPixelGround() {
+            pRect(0, GROUND_Y, GAME_W, 4, '#1e1b4b');
+            pRect(0, GROUND_Y + 4, GAME_W, 16, '#22c55e');
+
+            const offset = Math.floor(bgElements.grassOffset / 4) * 4;
+            for (let x = -offset; x < GAME_W + 32; x += 32) {
+                pRect(x, GROUND_Y + 8, 12, 4, '#4ade80');
+                pRect(x + 16, GROUND_Y + 14, 12, 6, '#15803d');
+            }
+
+            pRect(0, GROUND_Y + 20, GAME_W, 4, '#14532d');
+            pRect(0, GROUND_Y + 24, GAME_W, GAME_H - GROUND_Y - 24, '#16a34a');
+
+            bgElements.flowers.forEach(f => {
+                const fx = Math.round(f.x / 4) * 4;
+                const fy = Math.round(f.y / 4) * 4;
+                pRect(fx, fy - 4, 4, 4, f.color);
+                pRect(fx, fy + 4, 4, 4, f.color);
+                pRect(fx - 4, fy, 4, 4, f.color);
+                pRect(fx + 4, fy, 4, 4, f.color);
+                pRect(fx, fy, 4, 4, '#facc15');
+            });
+        }
+
+        function drawPixelCat() {
+            const isAirborne = cat.y < GROUND_Y - 2;
+            const bounceY = isAirborne ? 0 : (cat.runFrame % 2 === 1 ? -4 : 0);
+            const cx = Math.round(cat.x);
+            const cy = Math.round(cat.y - cat.h + bounceY);
+
+            if (!isAirborne) {
+                pRect(cx + 8, GROUND_Y, 44, 4, 'rgba(0,0,0,0.22)');
+            }
+
+            // 1. 像素搖擺尾巴
+            const tailUp = (cat.runFrame % 2 === 0);
+            pRect(cx - 8, cy + (tailUp ? 16 : 20), 8, 8, '#271c19');
+            pRect(cx - 12, cy + (tailUp ? 8 : 14), 8, 10, '#fb923c');
+            pRect(cx - 8, cy + (tailUp ? 18 : 22), 6, 4, '#fb923c');
+
+            // 2. 耳仔微動與主體矩陣
+            const earTwitch = Math.floor(cat.earTwitchTimer * 3) % 7 === 0;
+            const earRow1 = earTwitch ? "....KK.....KK..." : ".....KK....KK...";
+            let eyeRow = "....KKOOOOLELLEK";
+            if (cat.isDead) {
+                eyeRow = "....KKOOOOLKLLKK";
+            } else if (cat.jumpsUsed === 2 && cat.vy < 0) {
+                eyeRow = "....KKOOOOLKLLEK";
+            }
+
+            const bodyMatrix = [
+                earRow1,
+                "....KPOK..KPOK..",
+                "....KOOOKKOOOK..",
+                "....KOOOOOOOOOK.",
+                eyeRow,
+                "....KOOOOPLLLLPK",
+                "....KRRRRRRRRK..",
+                ".KKKKKKKKYYYYK..",
+                "KODODODODLLLLK..",
+                "KOOOOOOOOLLLLK..",
+                "KOOOOOOOOOOOOK..",
+                ".KKKKKKKKKKKK..."
+            ];
+
+            drawPixelMatrix(bodyMatrix, cx, cy, PIXEL, CAT_PALETTE);
+
+            const headX = cx + 28;
+            const headY = cy + 12;
+            if (cat.isDead) {
+                pRect(headX, headY, 4, 4, '#1e1b4b');
+                pRect(headX + 4, headY + 4, 4, 4, '#1e1b4b');
+                pRect(headX + 4, headY, 4, 4, '#1e1b4b');
+                pRect(headX, headY + 4, 4, 4, '#1e1b4b');
+
+                pRect(headX + 16, headY, 4, 4, '#1e1b4b');
+                pRect(headX + 20, headY + 4, 4, 4, '#1e1b4b');
+                pRect(headX + 20, headY, 4, 4, '#1e1b4b');
+                pRect(headX + 16, headY + 4, 4, 4, '#1e1b4b');
+            } else if (cat.jumpsUsed === 2 && cat.vy < 0) {
+                pRect(headX, headY + 2, 4, 4, '#1e1b4b');
+                pRect(headX + 4, headY - 2, 4, 4, '#1e1b4b');
+                pRect(headX + 8, headY + 2, 4, 4, '#1e1b4b');
+
+                pRect(headX + 16, headY + 2, 4, 4, '#1e1b4b');
+                pRect(headX + 20, headY - 2, 4, 4, '#1e1b4b');
+                pRect(headX + 24, headY + 2, 4, 4, '#1e1b4b');
+            } else {
+                pRect(headX + 2, headY, 6, 8, '#1e1b4b');
+                pRect(headX + 2, headY, 3, 3, '#ffffff');
+
+                pRect(headX + 18, headY, 6, 8, '#1e1b4b');
+                pRect(headX + 18, headY, 3, 3, '#ffffff');
+            }
+
+            pRect(headX + 12, headY + 6, 4, 4, '#fb7185');
+
+            // 3. 4幀像素小短腿動畫
+            const legY = cy + 44;
+            if (isAirborne) {
+                pRect(cx + 4,  legY, 8, 8, '#271c19');
+                pRect(cx + 6,  legY, 4, 6, '#fb923c');
+                pRect(cx + 40, legY, 8, 8, '#271c19');
+                pRect(cx + 42, legY, 4, 6, '#fb923c');
+            } else if (cat.runFrame === 0 || cat.runFrame === 2) {
+                pRect(cx + 8,  legY, 8, 8, '#271c19');
+                pRect(cx + 10, legY, 4, 6, '#fb923c');
+                pRect(cx + 34, legY, 8, 8, '#271c19');
+                pRect(cx + 36, legY, 4, 6, '#fb923c');
+            } else if (cat.runFrame === 1) {
+                pRect(cx + 2,  legY - 2, 8, 8, '#271c19');
+                pRect(cx + 4,  legY - 2, 4, 6, '#fb923c');
+                pRect(cx + 40, legY - 2, 8, 8, '#271c19');
+                pRect(cx + 42, legY - 2, 4, 6, '#fb923c');
+            } else {
+                pRect(cx + 14, legY, 8, 8, '#271c19');
+                pRect(cx + 16, legY, 4, 6, '#ea580c');
+                pRect(cx + 28, legY, 8, 8, '#271c19');
+                pRect(cx + 30, legY, 4, 6, '#ea580c');
+            }
+        }
+
+        function drawPixelYarn(x, y, size, color, step) {
+            const bx = Math.round(x);
+            const by = Math.round(y);
+            pRect(bx + 8, by, size - 16, size, '#1e1b4b');
+            pRect(bx, by + 8, size, size - 16, '#1e1b4b');
+            pRect(bx + 4, by + 4, size - 8, size - 8, '#1e1b4b');
+
+            pRect(bx + 8, by + 4, size - 16, size - 8, color);
+            pRect(bx + 4, by + 8, size - 8, size - 16, color);
+
+            const toggle = Math.floor(step) % 2 === 0;
+            pRect(bx + 12, by + (toggle ? 12 : 16), size - 24, 4, 'rgba(255,255,255,0.65)');
+            pRect(bx + (toggle ? 16 : 12), by + 24, size - 24, 4, 'rgba(255,255,255,0.65)');
+            pRect(bx + 16, by + 32, 12, 4, 'rgba(0,0,0,0.2)');
+        }
+
+        function draw2UpBadge(cx, topY) {
+            const blink = Math.floor(performance.now() / 220) % 2 === 0;
+            const bx = Math.round(cx - 28);
+            const by = Math.round(topY - 24);
+            pRect(bx, by, 56, 18, '#1e1b4b');
+            pRect(bx + 2, by + 2, 52, 14, blink ? '#ec4899' : '#f43f5e');
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 10px "Press Start 2P", "DotGothic16", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('2UP▲', cx, by + 10);
+        }
+
+        function drawDigimonBadge(cx, topY, label, bgColor = '#ef4444') {
+            const w = Math.max(58, label.length * 7 + 12);
+            const bx = Math.round(cx - w / 2);
+            const by = Math.round(topY - 22);
+            pRect(bx, by, w, 16, '#1e1b4b');
+            pRect(bx + 2, by + 2, w - 4, 12, bgColor);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 8px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, cx, by + 9);
+        }
+
+        /**
+         * 繪製 8-Bit 亞古獸 (Agumon) 迎面奔跑
+         */
+        function drawPixelAgumon(ox, oy, obs) {
+            const top = oy - obs.h;
+            const step = Math.floor(obs.animTimer * 2.2) % 2 === 0;
+            const bounce = step ? -3 : 0;
+            const dy = top + bounce;
+
+            // 地面陰影
+            pRect(ox + 8, GROUND_Y, 44, 4, 'rgba(0,0,0,0.25)');
+
+            // 亞古獸 15x14 像素點陣 (面向左方衝向貓仔)
+            const palette = {
+                'K': '#1e1b4b', // 黑邊
+                'O': '#f59e0b', // 亞古獸橙黃主色
+                'H': '#fbbf24', // 亮黃高光
+                'D': '#d97706', // 陰影橙
+                'G': '#10b981', // 碧綠眼瞳
+                'W': '#ffffff', // 牙齒/爪/眼神光
+                'R': '#ef4444'  // 口內紅/火焰
+            };
+
+            const agumonMatrix = [
+                "....KKKKKKK....",
+                "..KKHHHHHHHKK..",
+                ".KHOOOOOOOOOOK.",
+                "KKOOWGKOOOOOOOK",
+                "KOOOGWKOOOOOOOK",
+                "KOOOOOOOOOOOOK.",
+                "KKKKRRRRKKKK...",
+                "..KWWWWWWOOOOOK",
+                "...KKKKKOOOOODK",
+                "..KKWOOOOOOOOOK",
+                "..KWWKOOOOOODK.",
+                "...KK.KOOOOOK..",
+                "......KOOOOOK..",
+                ".......KKKKK..."
+            ];
+
+            drawPixelMatrix(agumonMatrix, ox, dy, 4, palette);
+
+            // 口部前方閃爍小型火焰粒子 (Baby Flame!)
+            if (Math.floor(obs.animTimer * 4) % 2 === 0) {
+                pRect(ox - 10, dy + 22, 8, 8, '#ef4444');
+                pRect(ox - 6,  dy + 24, 6, 4, '#fde047');
+            } else {
+                pRect(ox - 6,  dy + 24, 6, 6, '#f97316');
+            }
+
+            // 雙腿快速交替衝刺動畫
+            const legY = oy - 12;
+            if (step) {
+                pRect(ox + 12, legY - 2, 14, 12, '#1e1b4b');
+                pRect(ox + 14, legY, 10, 8, '#f59e0b');
+                pRect(ox + 10, legY + 6, 6, 4, '#ffffff'); // 白爪
+
+                pRect(ox + 34, legY + 2, 14, 10, '#1e1b4b');
+                pRect(ox + 36, legY + 2, 10, 8, '#d97706');
+            } else {
+                pRect(ox + 18, legY + 2, 14, 10, '#1e1b4b');
+                pRect(ox + 20, legY + 2, 10, 8, '#d97706');
+
+                pRect(ox + 28, legY - 2, 14, 12, '#1e1b4b');
+                pRect(ox + 30, legY, 10, 8, '#f59e0b');
+                pRect(ox + 26, legY + 6, 6, 4, '#ffffff');
+            }
+
+            drawDigimonBadge(ox + obs.w / 2, dy, 'AGUMON', '#ea580c');
+        }
+
+        /**
+         * 繪製 8-Bit 加布獸 (Gabumon) 披毛皮迎面衝刺
+         */
+        function drawPixelGabumon(ox, oy, obs) {
+            const top = oy - obs.h;
+            const step = Math.floor(obs.animTimer * 2.2) % 2 === 0;
+            const dy = top + (step ? -3 : 0);
+
+            pRect(ox + 8, GROUND_Y, 48, 4, 'rgba(0,0,0,0.25)');
+
+            const palette = {
+                'K': '#1e1b4b',
+                'B': '#3b82f6', // 藍毛皮
+                'C': '#93c5fd', // 淺藍條紋
+                'Y': '#facc15', // 黃色獨角/肚皮
+                'P': '#f472b6', // 肚皮粉紫紋
+                'R': '#ef4444', // 紅眼
+                'W': '#ffffff'
+            };
+
+            // 頭頂標誌性黃色獨角 (向左上斜指)
+            pRect(ox + 12, dy, 12, 16, '#1e1b4b');
+            pRect(ox + 16, dy + 4, 8, 12, '#facc15');
+
+            const gabumonMatrix = [
+                ".....KKKK..KKKK.",
+                "....KBBBBKKBBBBK",
+                "..KKBBBBBBBBBBBK",
+                ".KBBBBBCBBBBBCBK",
+                "KBBWRKBBBBBBCBBK",
+                "KBBRWKBBBBBBBBBK",
+                "KYYYYYYKBBBBBBBK",
+                ".KKKKKKBBBBWCBBK",
+                "..KWWKBBBBBWWCBK",
+                "...KK.KYYYYBBBBK",
+                "......KYPYYBBBKK",
+                "......KYYYYBBK..",
+                ".......KKKKKK..."
+            ];
+
+            drawPixelMatrix(gabumonMatrix, ox, dy + 12, 4, palette);
+
+            // 奔跑雙足
+            const legY = oy - 12;
+            if (step) {
+                pRect(ox + 14, legY - 2, 16, 12, '#1e1b4b');
+                pRect(ox + 16, legY, 12, 8, '#facc15');
+                pRect(ox + 36, legY + 2, 14, 10, '#1e1b4b');
+                pRect(ox + 38, legY + 2, 10, 8, '#3b82f6');
+            } else {
+                pRect(ox + 20, legY + 2, 14, 10, '#1e1b4b');
+                pRect(ox + 22, legY + 2, 10, 8, '#3b82f6');
+                pRect(ox + 30, legY - 2, 16, 12, '#1e1b4b');
+                pRect(ox + 32, legY, 12, 8, '#facc15');
+            }
+
+            drawDigimonBadge(ox + obs.w / 2, dy, 'GABUMON', '#2563eb');
+        }
+
+        /**
+         * 繪製 8-Bit 巴達獸 (Patamon) 拍動白色大耳翼波浪飛行
+         */
+        function drawPixelPatamon(ox, oy, obs) {
+            const top = oy - obs.h;
+            const wingUp = Math.floor(obs.animTimer * 3.2) % 2 === 0;
+
+            // 繪製飛行軌跡像素點
+            obs.trailHistory.forEach((pt, idx) => {
+                if (idx % 2 === 0) {
+                    pRect(pt.x, pt.y, 4, 4, 'rgba(255, 255, 255, 0.55)');
+                }
+            });
+
+            // 巴達獸白色大耳翼 (隨拍動上下切換)
+            const earY = wingUp ? top - 12 : top + 4;
+            pRect(ox + 16, earY, 36, 16, '#1e1b4b');
+            pRect(ox + 20, earY + 4, 28, 10, '#ffffff');
+            pRect(ox + 36, earY - 4, 16, 8, '#ffffff');
+            pRect(ox + 22, earY + 10, 20, 4, '#bae6fd');
+
+            // 圓滾滾橙色身體與奶油白肚腩
+            pRect(ox + 6, top + 10, 44, 32, '#1e1b4b');
+            pRect(ox + 2, top + 14, 52, 24, '#1e1b4b');
+            pRect(ox + 10, top + 14, 36, 24, '#fb923c');
+            pRect(ox + 6, top + 18, 44, 16, '#fb923c');
+            pRect(ox + 10, top + 30, 32, 8, '#fff7ed'); // 白肚皮
+
+            // 大眼睛
+            pRect(ox + 12, top + 20, 6, 8, '#1e1b4b');
+            pRect(ox + 12, top + 20, 3, 3, '#ffffff');
+
+            // 小短爪
+            pRect(ox + 12, top + 38, 8, 6, '#fb923c');
+            pRect(ox + 34, top + 38, 8, 6, '#fb923c');
+
+            drawDigimonBadge(ox + obs.w / 2, top - 12, 'PATAMON', '#f59e0b');
+        }
+
+        function drawPixelObstacles() {
+            obstacles.forEach(obs => {
+                const ox = Math.round(obs.x / 2) * 2;
+                const oy = Math.round(obs.y);
+
+                if (obs.type === 'YARN') {
+                    drawPixelYarn(ox, oy - obs.h, obs.w, obs.yarnColor, obs.animTimer);
+                } else if (obs.type === 'DOUBLE_YARN') {
+                    drawPixelYarn(ox, oy - 48, 48, '#ec4899', obs.animTimer);
+                    drawPixelYarn(ox + 52, oy - 48, 48, '#3b82f6', obs.animTimer + 1);
+                } else if (obs.type === 'BOX') {
+                    const top = oy - obs.h;
+                    pRect(ox, top, obs.w, obs.h, '#1e1b4b');
+                    pRect(ox + 4, top + 4, obs.w - 8, obs.h - 8, '#f59e0b');
+                    pRect(ox + 4, top + 4, obs.w - 8, 8, '#fbbf24');
+                    pRect(ox + obs.w / 2 - 6, top + 4, 12, 22, '#fef08a');
+                    const px = ox + obs.w / 2;
+                    const py = top + 40;
+                    pRect(px - 6, py, 12, 8, '#78350f');
+                    pRect(px - 10, py - 6, 4, 4, '#78350f');
+                    pRect(px - 2, py - 8, 4, 4, '#78350f');
+                    pRect(px + 6, py - 6, 4, 4, '#78350f');
+                } else if (obs.type === 'CANS') {
+                    const colors = ['#06b6d4', '#f43f5e', '#a855f7'];
+                    const canH = 28;
+                    for (let i = 0; i < 3; i++) {
+                        const cy = oy - (i + 1) * canH;
+                        pRect(ox + 2, cy, obs.w - 4, canH, '#1e1b4b');
+                        pRect(ox + 6, cy + 4, obs.w - 12, canH - 6, colors[i]);
+                        pRect(ox + 6, cy + 2, obs.w - 12, 4, '#e2e8f0');
+                        pRect(ox + 16, cy + 12, 12, 6, '#ffffff');
+                        pRect(ox + 28, cy + 10, 4, 10, '#ffffff');
+                    }
+                } else if (obs.type === 'CACTUS') {
+                    const top = oy - obs.h;
+                    pRect(ox + 8, oy - 32, obs.w - 16, 32, '#1e1b4b');
+                    pRect(ox + 4, oy - 36, obs.w - 8, 10, '#1e1b4b');
+                    pRect(ox + 12, oy - 28, obs.w - 24, 24, '#ea580c');
+                    pRect(ox + 8, oy - 32, obs.w - 16, 6, '#f97316');
+
+                    pRect(ox + 16, top + 8, 24, obs.h - 40, '#1e1b4b');
+                    pRect(ox + 20, top + 12, 16, obs.h - 44, '#22c55e');
+                    pRect(ox + 22, top + 14, 4, obs.h - 48, '#4ade80');
+
+                    pRect(ox + 2, top + 44, 16, 12, '#1e1b4b');
+                    pRect(ox + 2, top + 28, 12, 24, '#1e1b4b');
+                    pRect(ox + 6, top + 32, 6, 20, '#22c55e');
+
+                    pRect(ox + 38, top + 34, 16, 12, '#1e1b4b');
+                    pRect(ox + 42, top + 18, 12, 24, '#1e1b4b');
+                    pRect(ox + 44, top + 22, 6, 20, '#22c55e');
+
+                    pRect(ox + 22, top, 12, 8, '#f43f5e');
+                    pRect(ox + 26, top + 2, 4, 4, '#facc15');
+
+                    pRect(ox + 22, top + 28, 4, 4, '#1e1b4b');
+                    pRect(ox + 30, top + 28, 4, 4, '#1e1b4b');
+
+                    draw2UpBadge(ox + obs.w / 2, top);
+                } else if (obs.type === 'CAT_TREE') {
+                    const top = oy - obs.h;
+                    pRect(ox, oy - 16, obs.w, 16, '#1e1b4b');
+                    pRect(ox + 4, oy - 12, obs.w - 8, 8, '#ec4899');
+
+                    pRect(ox + 18, top + 24, 28, obs.h - 40, '#1e1b4b');
+                    pRect(ox + 22, top + 28, 20, obs.h - 44, '#fde68a');
+                    for (let y = top + 34; y < oy - 20; y += 12) {
+                        pRect(ox + 22, y, 20, 4, '#d97706');
+                    }
+
+                    pRect(ox + 4, top + 8, obs.w - 8, 20, '#1e1b4b');
+                    pRect(ox + 8, top + 12, obs.w - 16, 12, '#f472b6');
+
+                    draw2UpBadge(ox + obs.w / 2, top + 4);
+                } else if (obs.type === 'BEE') {
+                    // 繪製蜜蜂正弦波飛行像素軌跡點
+                    obs.trailHistory.forEach((pt, idx) => {
+                        if (idx % 2 === 0) {
+                            pRect(pt.x, pt.y, 4, 4, 'rgba(250, 204, 21, 0.55)');
+                        }
+                    });
+
+                    const by = oy - obs.h;
+                    const wingOpen = Math.floor(obs.animTimer * 4.5) % 2 === 0;
+                    pRect(ox + 14, by - (wingOpen ? 8 : 4), 20, 8, '#ffffff');
+                    pRect(ox + 12, by - (wingOpen ? 10 : 6), 24, 2, '#38bdf8');
+
+                    pRect(ox + 4, by + 4, obs.w - 8, obs.h - 12, '#1e1b4b');
+                    pRect(ox + 8, by + 8, obs.w - 16, obs.h - 20, '#facc15');
+                    pRect(ox + 20, by + 8, 6, obs.h - 20, '#1e1b4b');
+                    pRect(ox + 32, by + 8, 6, obs.h - 20, '#1e1b4b');
+                    pRect(ox + 12, by + 12, 4, 6, '#1e1b4b');
+                    pRect(ox + obs.w - 4, by + 14, 6, 4, '#1e1b4b');
+                } else if (obs.type === 'AGUMON') {
+                    drawPixelAgumon(ox, oy, obs);
+                } else if (obs.type === 'GABUMON') {
+                    drawPixelGabumon(ox, oy, obs);
+                } else if (obs.type === 'PATAMON') {
+                    drawPixelPatamon(ox, oy, obs);
+                }
+            });
+        }
+
+        function drawPixelParticlesAndUI() {
+            if (gameState === 'PLAYING' && speedMultiplier >= 1.25) {
+                const alpha = Math.min(0.65, (speedMultiplier - 1.2) * 0.45);
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                speedLines.forEach(sl => {
+                    ctx.fillRect(Math.round(sl.x), Math.round(sl.y), Math.round(sl.len), 4);
+                });
+            }
+
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.life);
+                const px = Math.round(p.x / 2) * 2;
+                const py = Math.round(p.y / 2) * 2;
+                if (p.isCross) {
+                    pRect(px - p.size, py - 2, p.size * 2, 4, p.color);
+                    pRect(px - 2, py - p.size, 4, p.size * 2, p.color);
+                } else {
+                    pRect(px - p.size / 2, py - p.size / 2, p.size, p.size, p.color);
+                }
+                ctx.restore();
+            });
+
+            floatingTexts.forEach(ft => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.life);
+                ctx.font = '900 15px "Press Start 2P", "DotGothic16", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#1e1b4b';
+                ctx.fillText(ft.text, Math.round(ft.x) + 2, Math.round(ft.y) + 2);
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, Math.round(ft.x), Math.round(ft.y));
+                ctx.restore();
+            });
+
+            if (speedBannerTimer > 0) {
+                const blink = Math.floor(performance.now() / 110) % 2 === 0;
+                if (blink) {
+                    const bx = GAME_W / 2 - 165;
+                    const by = 88;
+                    pRect(bx - 4, by - 4, 338, 44, '#1e1b4b');
+                    pRect(bx, by, 330, 36, '#facc15');
+                    pRect(bx + 4, by + 4, 322, 28, '#dc2626');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '900 14px "Press Start 2P", "DotGothic16", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(speedBannerText, GAME_W / 2, by + 19);
+                }
+            }
+        }
+
+        /*************************************************************************
+         * 9. 遊戲主迴圈與狀態控制
+         *************************************************************************/
+        let lastTime = performance.now();
+
+        function updateSpeedHUD(mult) {
+            const hudSpeed = document.getElementById('hudSpeed');
+            hudSpeed.textContent = `${mult.toFixed(1)}x`;
+            if (mult >= 2.0) {
+                hudSpeed.className = 'text-rose-600 font-black text-xs sm:text-sm pixel-font-en';
+            } else if (mult >= 1.5) {
+                hudSpeed.className = 'text-orange-600 font-black text-xs sm:text-sm pixel-font-en';
+            } else {
+                hudSpeed.className = 'text-emerald-600 font-black text-xs sm:text-sm pixel-font-en';
+            }
+        }
+
+        function startGame(playerName) {
+            currentPlayer = (playerName && playerName.trim()) ? playerName.trim() : 'Guest';
+            try {
+                localStorage.setItem(LAST_PLAYER_KEY, currentPlayer);
+            } catch (e) {}
+
+            document.getElementById('hudPlayerName').textContent = currentPlayer;
+            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('gameOverModal').classList.add('hidden');
+            document.getElementById('gameOverModal').classList.remove('flex');
+
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                document.getElementById('mobileControls').classList.remove('hidden');
+            }
+
+            score = 0;
+            survivalTime = 0;
+            gameSpeed = BASE_SPEED;
+            speedMultiplier = 1.0;
+            lastSpeedMilestone = 1.0;
+            lastScoreMilestone = 0;
+            speedBannerTimer = 0;
+            nextObstacleTargetGapPx = 320;
+            obstacles = [];
+            particles = [];
+            floatingTexts = [];
+
+            updateSpeedHUD(1.0);
+            document.getElementById('hudScore').textContent = '0000';
+
+            cat.reset();
+            gameState = 'PLAYING';
+
+            sound.setTempoMultiplier(1.0);
+            sound.startBGM();
+        }
+
+        function triggerGameOver(obstacleName) {
+            gameState = 'GAMEOVER';
+            cat.isDead = true;
+            sound.playGameOver();
+
+            const finalScore = Math.floor(score);
+            const prevBest = getBestScore();
+            const isNewRecord = finalScore > prevBest && finalScore > 0;
+
+            saveScoreToLeaderboard(currentPlayer, finalScore);
+            renderLeaderboardUI();
+
+            document.getElementById('crashReasonText').textContent =
+                `今次唔小心撞到「${obstacleName}」，撳 Spacebar 即刻再戰！`;
+            document.getElementById('finalScoreText').textContent = formatScorePad(finalScore);
+            document.getElementById('finalSpeedText').textContent = `${speedMultiplier.toFixed(1)}x`;
+            document.getElementById('finalBestText').textContent = formatScorePad(getBestScore());
+
+            const badge = document.getElementById('newRecordBadge');
+            if (isNewRecord) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('gameOverModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function updateGame(dt) {
+            bgElements.update(dt);
+
+            if (speedBannerTimer > 0) {
+                speedBannerTimer -= dt;
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= p.decay * dt;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy * dt;
+                ft.life -= 1.25 * dt;
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            if (gameState !== 'PLAYING') {
+                if (gameState === 'MENU') {
+                    cat.animTimer += dt * 7;
+                    cat.runFrame = Math.floor(cat.animTimer) % 4;
+                    cat.earTwitchTimer += dt;
+                }
+                return;
+            }
+
+            // 隨時間持續平滑加速
+            survivalTime += dt;
+            gameSpeed = BASE_SPEED + survivalTime * ACCEL_PER_SEC;
+            speedMultiplier = gameSpeed / BASE_SPEED;
+
+            updateSpeedHUD(speedMultiplier);
+            sound.setTempoMultiplier(speedMultiplier);
+
+            if (speedMultiplier >= lastSpeedMilestone + 0.5) {
+                lastSpeedMilestone = Math.floor(speedMultiplier * 2) / 2;
+                speedBannerText = `⚡ 速度提升! SPEED ${lastSpeedMilestone.toFixed(1)}x ⚡`;
+                speedBannerTimer = 2.0;
+                sound.playSpeedUp();
+            }
+
+            score += dt * 14 * speedMultiplier;
+            const currentIntScore = Math.floor(score);
+            document.getElementById('hudScore').textContent = formatScorePad(currentIntScore);
+
+            if (currentIntScore >= lastScoreMilestone + 100) {
+                lastScoreMilestone = Math.floor(currentIntScore / 100) * 100;
+                addFloatingText(`★ ${lastScoreMilestone} PTS! ★`, cat.x + 36, cat.y - 88, '#f59e0b');
+            }
+
+            cat.update(dt);
+
+            // 基於物理安全像素距離嘅障礙物生成判定
+            if (obstacles.length === 0) {
+                spawnObstacle();
+            } else {
+                const lastObs = obstacles[obstacles.length - 1];
+                const distFromSpawnEdge = (GAME_W + 60) - (lastObs.x + lastObs.w);
+                if (distFromSpawnEdge >= nextObstacleTargetGapPx) {
+                    spawnObstacle();
+                }
+            }
+
+            const catBox = cat.getHitbox();
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                const moveSpd = gameSpeed * (obs.speedFactor || 1.0);
+                obs.x -= moveSpd * dt;
+                obs.animTimer += dt * 5;
+
+                // 正弦波上下飛行邏輯 (小蜜蜂 & 巴達獸)
+                if (obs.category === 'bee' || obs.category === 'digimon_fly') {
+                    obs.wavePhase += (obs.waveFreq || 4.8) * dt;
+                    const waveOffset = Math.sin(obs.wavePhase) * (obs.waveAmp || 20);
+                    // 嚴格夾限飛行高度喺安全可跳躍範圍內
+                    const rawY = obs.baseY + waveOffset;
+                    obs.y = Math.max(GROUND_Y - 92, Math.min(GROUND_Y - 28, rawY));
+
+                    if (Math.floor(obs.animTimer * 10) % 2 === 0) {
+                        obs.trailHistory.push({
+                            x: obs.x + obs.w - 4,
+                            y: obs.y - obs.h / 2
+                        });
+                        if (obs.trailHistory.length > 8) {
+                            obs.trailHistory.shift();
+                        }
+                    }
+                }
+
+                const obsBox = getObstacleHitbox(obs);
+                if (isColliding(catBox, obsBox)) {
+                    triggerGameOver(obs.name);
+                    return;
+                }
+
+                if (!obs.passed && obs.x + obs.w < cat.x) {
+                    obs.passed = true;
+                    const isDigimon = obs.category && obs.category.startsWith('digimon');
+                    const bonus = obs.requireDoubleJump ? 15 : (isDigimon ? 18 : 10);
+                    score += bonus;
+                    addFloatingText(
+                        isDigimon ? `+${bonus} DIGI!` : `+${bonus}`,
+                        cat.x + 25,
+                        cat.y - 68,
+                        isDigimon ? '#f43f5e' : '#10b981'
+                    );
+                }
+
+                if (obs.x + obs.w < -120) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        function renderGame() {
+            const cw = canvas.width;
+            const ch = canvas.height;
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, cw, ch);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(0, 0, cw, ch * 0.7);
+            ctx.fillStyle = '#16a34a';
+            ctx.fillRect(0, ch * 0.7, cw, ch * 0.3);
+
+            const scale = Math.min(cw / GAME_W, ch / GAME_H);
+            const offsetX = Math.floor((cw - GAME_W * scale) / 2);
+            const offsetY = Math.floor((ch - GAME_H * scale) / 2);
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            ctx.beginPath();
+            ctx.rect(0, 0, GAME_W, GAME_H);
+            ctx.clip();
+
+            drawRetroSkyAndSun();
+            drawPixelClouds();
+            drawPixelHillsAndWindmills();
+            drawPixelBirdsAndButterflies();
+            drawPixelGround();
+            drawPixelObstacles();
+            drawPixelCat();
+            drawPixelParticlesAndUI();
+
+            ctx.restore();
+        }
+
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+
+            updateGame(dt);
+            renderGame();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /*************************************************************************
+         * 10. 響應式畫布與跨平台輸入控制 (Spacebar / 滑鼠 / 觸控)
+         *************************************************************************/
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(window.innerWidth * dpr);
+            canvas.height = Math.floor(window.innerHeight * dpr);
+            ctx.imageSmoothingEnabled = false;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === ' ') {
+                if (document.activeElement === document.getElementById('playerNameInput')) {
+                    return;
+                }
+                e.preventDefault();
+                if (gameState === 'PLAYING') {
+                    cat.jump();
+                } else if (gameState === 'GAMEOVER') {
+                    startGame(currentPlayer);
+                }
+            } else if (e.code === 'Enter' && gameState === 'MENU') {
+                const nameVal = document.getElementById('playerNameInput').value;
+                startGame(nameVal || 'Guest');
+            }
+        });
+
+        function handlePointerJump(e) {
+            if (gameState !== 'PLAYING') return;
+            e.preventDefault();
+            cat.jump();
+        }
+
+        canvas.addEventListener('pointerdown', handlePointerJump);
+        document.getElementById('touchJumpBtn').addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            handlePointerJump(e);
+        });
+
+        document.getElementById('startWithNameBtn').addEventListener('click', () => {
+            const inputVal = document.getElementById('playerNameInput').value.trim();
+            if (!inputVal) {
+                document.getElementById('nameHint').classList.remove('hidden');
+            }
+            startGame(inputVal || 'Guest');
+        });
+
+        document.getElementById('startAsGuestBtn').addEventListener('click', () => {
+            document.getElementById('playerNameInput').value = 'Guest';
+            startGame('Guest');
+        });
+
+        document.getElementById('playAgainBtn').addEventListener('click', () => {
+            startGame(currentPlayer);
+        });
+
+        document.getElementById('changePlayerBtn').addEventListener('click', () => {
+            gameState = 'MENU';
+            sound.stopBGM();
+            document.getElementById('gameOverModal').classList.add('hidden');
+            document.getElementById('gameOverModal').classList.remove('flex');
+            document.getElementById('startModal').classList.remove('hidden');
+            const input = document.getElementById('playerNameInput');
+            input.value = currentPlayer === 'Guest' ? '' : currentPlayer;
+            input.focus();
+        });
+
+        document.getElementById('clearRankBtn').addEventListener('click', () => {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (e) {}
+            renderLeaderboardUI();
+        });
+
+        document.getElementById('bgmBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isMuted = sound.toggleMute();
+            document.getElementById('bgmIcon').textContent = isMuted ? '🔇' : '🎵';
+            document.getElementById('bgmLabel').textContent = isMuted ? 'BGM OFF' : 'BGM ON';
+        });
+
+        window.onload = () => {
+            resizeCanvas();
+            bgElements.init();
+            renderLeaderboardUI();
+
+            try {
+                const savedName = localStorage.getItem(LAST_PLAYER_KEY);
+                if (savedName && savedName !== 'Guest') {
+                    document.getElementById('playerNameInput').value = savedName;
+                }
+            } catch (e) {}
+
+            requestAnimationFrame((t) => {
+                lastTime = t;
+                gameLoop(t);
+            });
+        };
+    </script>
+</body>
+</html>
