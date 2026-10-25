@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>數碼暴龍 3D：亞古獸疾走大冒險 (Digimon Surfers 3D)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #070b18;
+      --bg-card: #111930;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-orange: #f97316;
+      --accent-gold: #facc15;
+      --accent-cyan: #06b6d4;
+      --danger-red: #ef4444;
+    }
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      font-family: 'Noto Sans TC', 'Inter', sans-serif;
+      touch-action: none;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    .btn-press {
+      transition: transform 140ms ease-out, background-color 140ms ease-out, border-color 140ms ease-out;
+    }
+    .btn-press:active {
+      transform: scale(0.96);
+    }
+    .btn-press:focus-visible {
+      outline: 2px solid var(--accent-gold);
+      outline-offset: 2px;
+    }
+    @keyframes pulseScale {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .animate-pulse-subtle {
+      animation: pulseScale 1.8s infinite ease-in-out;
+    }
+    @keyframes digiFlash {
+      0% { opacity: 0.9; transform: scale(0.92); }
+      50% { opacity: 1; transform: scale(1.04); }
+      100% { opacity: 0; transform: scale(1.12); }
+    }
+    .evo-banner-anim {
+      animation: digiFlash 1.6s ease-out forwards;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .animate-pulse-subtle, .evo-banner-anim {
+        animation: none;
+      }
+      .btn-press {
+        transition: none;
+      }
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(249, 115, 22, 0.6);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="relative w-full h-dvh flex flex-col bg-slate-950 overflow-hidden">
+
+  <!-- Top HUD Bar -->
+  <header class="relative z-20 flex items-center justify-between px-3 py-2 sm:px-5 sm:py-2.5 bg-slate-900/95 border-b border-slate-800 shrink-0">
+    <!-- Player & Zone Info with Detailed Anime SVG Portrait -->
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div id="hudAvatarBadge" class="w-11 h-11 rounded-xl bg-amber-500/20 border-2 border-amber-400/70 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
+        <!-- SVG injected dynamically for Agumon / Greymon -->
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5">
+          <span id="hudPlayerName" class="font-bold text-sm sm:text-base text-white truncate max-w-[100px] sm:max-w-[150px]">八神太一</span>
+          <span id="hudDigimonForm" class="px-2 py-0.5 text-xs font-bold rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/40">亞古獸</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+          <span id="hudZoneName" class="truncate">🌴 法易路島・創始村</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Metrics: Score, Coins, Distance -->
+    <div class="flex items-center gap-1.5 sm:gap-3">
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1 text-center">
+        <div class="text-[10px] text-slate-400 font-medium leading-tight">總分 SCORE</div>
+        <div id="hudScore" class="text-sm sm:text-lg font-black text-amber-400 tabular-nums leading-tight">00000</div>
+      </div>
+      <div class="bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1 text-center">
+        <div class="text-[10px] text-slate-400 font-medium leading-tight">數碼幣 DATA</div>
+        <div id="hudCoins" class="text-sm sm:text-lg font-black text-cyan-400 tabular-nums leading-tight">0</div>
+      </div>
+      <div class="hidden md:block bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1 text-center">
+        <div class="text-[10px] text-slate-400 font-medium leading-tight">距離 DIST</div>
+        <div id="hudDistance" class="text-sm sm:text-lg font-black text-emerald-400 tabular-nums leading-tight">0m</div>
+      </div>
+    </div>
+
+    <!-- Right Controls: Camera Angle, Guide, Mute, Pause -->
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <button id="btnCameraMode" type="button" class="btn-press min-w-[44px] min-h-[44px] px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs sm:text-sm font-semibold text-cyan-300 flex items-center justify-center gap-1" title="切換 3D 鏡頭視角">
+        <span>🎥</span>
+        <span id="cameraModeLabel" class="hidden xl:inline">標準視角</span>
+      </button>
+      <button id="btnOpenGuide" type="button" class="btn-press min-w-[44px] min-h-[44px] px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-1" title="數碼圖鑑與玩法">
+        <span>📘</span>
+        <span class="hidden sm:inline">圖鑑</span>
+      </button>
+      <button id="btnMute" type="button" class="btn-press min-w-[44px] min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-base flex items-center justify-center" title="音效開關" aria-label="音效開關">
+        🔊
+      </button>
+      <button id="btnPause" type="button" class="btn-press min-w-[44px] min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-base flex items-center justify-center" title="暫停遊戲" aria-label="暫停遊戲">
+        ⏸️
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 3D Stage -->
+  <main id="canvasContainer" class="relative flex-1 w-full overflow-hidden bg-slate-950">
+    <!-- Three.js WebGL Canvas -->
+    <canvas id="gameCanvas" class="block w-full h-full"></canvas>
+    <!-- Overlay Canvas (kept clean without floating obstacle text clutter) -->
+    <canvas id="overlayCanvas" class="pointer-events-none absolute inset-0 block w-full h-full z-10"></canvas>
+
+    <!-- Evolution & Mega Flame Status Bar (Floating Top-Center inside stage) -->
+    <div class="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 w-full max-w-md px-3">
+      <!-- Mega Flame Charges Pill -->
+      <div id="flameHudBar" class="w-full bg-slate-900/90 border border-slate-700/90 rounded-2xl px-3.5 py-2 flex items-center justify-between shadow-lg">
+        <div class="flex items-center gap-2">
+          <span id="evoStatusBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+            成長期：亞古獸
+          </span>
+          <span id="activeBuffText" class="text-xs font-semibold text-cyan-300 hidden">🧲 友情磁鐵生效中</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-slate-300 font-semibold">超級火焰:</span>
+          <div id="flameSlots" class="flex items-center gap-1 text-base tabular-nums">
+            <span class="opacity-25">🔥</span>
+            <span class="opacity-25">🔥</span>
+            <span class="opacity-25">🔥</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Companion / Event Speech Toast -->
+      <div id="companionToast" class="hidden bg-slate-900/95 border border-amber-500/60 rounded-xl px-3.5 py-1.5 text-xs sm:text-sm font-bold text-amber-200 shadow-lg flex items-center gap-2">
+        <span id="companionIcon">🦋</span>
+        <span id="companionText">巴達獸：小心前面嘅黑色齒輪呀！跳起後喺空中都可以左右轉線！</span>
+      </div>
+    </div>
+
+    <!-- Dramatic Digivolution Center Cut-in Banner -->
+    <div id="evoCutInBanner" class="hidden pointer-events-none absolute inset-x-0 top-1/4 z-20 flex flex-col items-center justify-center">
+      <div class="bg-amber-500/95 border-2 border-yellow-200 text-slate-950 px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-3">
+        <div id="evoCutInSvg" class="w-12 h-12 shrink-0"></div>
+        <div>
+          <div class="text-xs font-black tracking-wider uppercase text-amber-950">Digivolution • 勇氣徽章發動</div>
+          <div class="text-xl sm:text-2xl font-black">亞古獸 進化 —— 暴龍獸！</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- On-Screen Touch & Action Controls (Bottom Overlay) -->
+    <div id="touchControlsBar" class="absolute bottom-3 inset-x-0 z-20 px-3 sm:px-6 flex items-end justify-between pointer-events-none">
+      <!-- Left/Right/Jump/Slide D-Pad for Mobile & Quick Click -->
+      <div class="pointer-events-auto grid grid-cols-3 gap-1.5 bg-slate-900/85 border border-slate-700/80 p-1.5 rounded-2xl shadow-lg">
+        <div></div>
+        <button id="btnCtrlUp" type="button" class="btn-press w-12 h-11 sm:w-13 sm:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-orange-500 border border-slate-600 text-white font-bold flex flex-col items-center justify-center leading-none" aria-label="向上跳">
+          <span class="text-sm">▲</span>
+          <span class="text-[10px] text-slate-300">上跳</span>
+        </button>
+        <div></div>
+        <button id="btnCtrlLeft" type="button" class="btn-press w-12 h-11 sm:w-13 sm:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-orange-500 border border-slate-600 text-white font-bold flex flex-col items-center justify-center leading-none" aria-label="向左移">
+          <span class="text-sm">◀</span>
+          <span class="text-[10px] text-slate-300">左移</span>
+        </button>
+        <button id="btnCtrlDown" type="button" class="btn-press w-12 h-11 sm:w-13 sm:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-orange-500 border border-slate-600 text-white font-bold flex flex-col items-center justify-center leading-none" aria-label="向下剷">
+          <span class="text-sm">▼</span>
+          <span class="text-[10px] text-slate-300">下剷</span>
+        </button>
+        <button id="btnCtrlRight" type="button" class="btn-press w-12 h-11 sm:w-13 sm:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-orange-500 border border-slate-600 text-white font-bold flex flex-col items-center justify-center leading-none" aria-label="向右移">
+          <span class="text-sm">▶</span>
+          <span class="text-[10px] text-slate-300">右移</span>
+        </button>
+      </div>
+
+      <!-- Center Keyboard Hint (Desktop) -->
+      <div class="hidden lg:flex flex-col items-center bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl text-xs text-slate-300 shadow-lg">
+        <div><span class="text-amber-400 font-bold">方向鍵 / WASD</span>：上跳、下剷、左右轉線（<span class="text-cyan-300 font-semibold">跳起喺半空中亦可左右轉向</span>）</div>
+        <div><span class="text-orange-400 font-bold">空白鍵 Space / F</span>：進化暴龍獸後發射「超級火焰」擊破障礙物</div>
+      </div>
+
+      <!-- Right: Mega Flame Action Button -->
+      <div class="pointer-events-auto flex flex-col items-end gap-1.5">
+        <button id="btnMegaFlame" type="button" disabled class="btn-press min-w-[132px] sm:min-w-[156px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-slate-800/90 border-slate-700 text-slate-500 cursor-not-allowed">
+          <span class="text-xl">🔥</span>
+          <div class="text-left leading-tight">
+            <div id="btnFlameTitle">超級火焰</div>
+            <div id="btnFlameSub" class="text-[11px] font-semibold">需拾取進化道具</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- START / LOGIN MODAL -->
+    <div id="startModal" class="absolute inset-0 z-30 bg-slate-950/90 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div class="w-full max-w-2xl bg-slate-900 border border-slate-700/90 rounded-3xl p-4 sm:p-6 shadow-2xl my-auto max-h-[94dvh] overflow-y-auto custom-scroll">
+        <!-- Header Title with Symmetrical Front-Facing Anime Digimon Artworks -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/15 border border-orange-500/40 text-orange-300 text-xs font-bold mb-1.5">
+              <span>⚡ Three.js 3D 數碼世界跑酷</span>
+              <span>•</span>
+              <span>Digimon Surfers 3D</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight text-balance">
+              數碼暴龍：亞古獸疾走大冒險
+            </h1>
+          </div>
+          <!-- Detailed SVG Showcase of Agumon, Digivice & Greymon -->
+          <div class="flex items-center gap-2 self-start sm:self-center bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-2xl">
+            <div id="heroAgumonSvg" class="w-11 h-11" title="亞古獸"></div>
+            <span class="text-amber-400 font-black text-xs">➔</span>
+            <div id="heroDigiviceSvg" class="w-9 h-9" title="神聖計劃・勇氣徽章"></div>
+            <span class="text-amber-400 font-black text-xs">➔</span>
+            <div id="heroGreymonSvg" class="w-12 h-12" title="暴龍獸"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mt-4">
+          <!-- Left Column: Name Input & Start -->
+          <div class="md:col-span-7 flex flex-col justify-between space-y-4">
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+              <label for="playerNameInput" class="block text-sm font-bold text-amber-300">
+                1. 輸入被選中細路（玩家）名稱：
+              </label>
+              <div class="flex gap-2">
+                <input
+                  id="playerNameInput"
+                  type="text"
+                  maxlength="16"
+                  value="八神太一"
+                  placeholder="請輸入你的名字..."
+                  class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-600 text-white font-bold text-base focus:outline-none focus:border-orange-500"
+                />
+              </div>
+              <div id="nameErrorMsg" class="hidden text-xs font-semibold text-red-400">
+                ⚠️ 請輸入最少 1 個字元嘅玩家名稱！
+              </div>
+              <!-- Quick Preset Names -->
+              <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                <span class="text-xs text-slate-400">快速選擇：</span>
+                <button type="button" data-preset-name="八神太一" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">八神太一</button>
+                <button type="button" data-preset-name="石田大和" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">石田大和</button>
+                <button type="button" data-preset-name="泉光子郎" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">泉光子郎</button>
+                <button type="button" data-preset-name="八神光" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">八神光</button>
+              </div>
+            </div>
+
+            <!-- Feature Highlights -->
+            <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-3.5 space-y-2 text-xs sm:text-sm text-slate-200">
+              <div class="font-bold text-amber-400 text-sm">🎮 3D 數碼世界核心玩法與秘笈：</div>
+              <ul class="space-y-1.5 text-slate-300">
+                <li class="flex items-start gap-2">
+                  <span class="text-orange-400 font-bold">▲▼◀▶</span>
+                  <span><strong>全立體三線閃避</strong>：上跳越過「3D 黑色齒輪 / 鼻涕獸路障」、下剷穿過「惡魔獸激光閘」、左右閃避「3D 暴走列車獸」。</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-cyan-400 font-bold">🪽 空中轉向</span>
+                  <span><strong>空中自由變線</strong>：跳起喺半空中時，隨時按左右鍵或左右滑動即可改變方向落點！</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-amber-400 font-bold">🔥 超級火焰</span>
+                  <span><strong>隨機降下「神聖計劃・勇氣徽章」</strong>：拾取後亞古獸進化成 <strong>3D 暴龍獸</strong>，可發射 <strong>3次超級火焰</strong>擊破前方障礙物！</span>
+                </li>
+              </ul>
+            </div>
+
+            <button id="btnStartGame" type="button" class="btn-press w-full min-h-[52px] py-3 px-6 rounded-2xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-lg shadow-lg flex items-center justify-center gap-2">
+              <span>🚀 進入數碼世界開始奔跑！</span>
+            </button>
+          </div>
+
+          <!-- Right Column: Leaderboard -->
+          <div class="md:col-span-5 bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2.5">
+                <h2 class="text-sm font-bold text-amber-300 flex items-center gap-1.5">
+                  <span>🏆 數碼世界排行榜</span>
+                </h2>
+                <button id="btnAskClearBoard" type="button" class="btn-press text-xs text-slate-400 hover:text-red-400 px-2 py-1 rounded-lg">
+                  清除紀錄
+                </button>
+              </div>
+              <!-- Confirmation Box for Clearing Leaderboard -->
+              <div id="clearConfirmBox" class="hidden mb-2.5 p-2.5 rounded-xl bg-red-950/80 border border-red-500/50 text-xs text-red-200 space-y-2">
+                <div>確定要清空所有排行榜紀錄嗎？</div>
+                <div class="flex justify-end gap-2">
+                  <button id="btnCancelClear" type="button" class="btn-press px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-semibold">取消</button>
+                  <button id="btnConfirmClear" type="button" class="btn-press px-2.5 py-1 rounded-lg bg-red-600 text-white font-bold">確定清空</button>
+                </div>
+              </div>
+              <div id="startLeaderboardList" class="space-y-1.5 max-h-[220px] overflow-y-auto custom-scroll pr-1">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-700/60 text-[11px] text-slate-400 flex items-center justify-between">
+              <span>Three.js WebGL 3D 引擎 • 支援鍵盤/觸控</span>
+              <span class="text-orange-300 font-semibold">60 FPS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME OVER MODAL -->
+    <div id="gameOverModal" class="hidden absolute inset-0 z-30 bg-slate-950/90 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div class="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <span class="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">奔跑結束 • Run Complete</span>
+            <h2 class="text-2xl font-black text-white mt-1" id="goHeadline">亞古獸撞上障礙物了！</h2>
+          </div>
+          <div id="goAvatarArt" class="w-14 h-14 shrink-0"></div>
+        </div>
+
+        <!-- Score Summary Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 text-center">
+            <div class="text-xs text-slate-400">最終得分</div>
+            <div id="goScore" class="text-xl font-black text-amber-400 tabular-nums mt-0.5">0</div>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 text-center">
+            <div class="text-xs text-slate-400">奔跑距離</div>
+            <div id="goDistance" class="text-xl font-black text-emerald-400 tabular-nums mt-0.5">0m</div>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 text-center">
+            <div class="text-xs text-slate-400">數碼資料幣</div>
+            <div id="goCoins" class="text-xl font-black text-cyan-400 tabular-nums mt-0.5">0</div>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 text-center">
+            <div class="text-xs text-slate-400">火焰擊破</div>
+            <div id="goBlasted" class="text-xl font-black text-orange-400 tabular-nums mt-0.5">0</div>
+          </div>
+        </div>
+
+        <!-- Updated Leaderboard in Game Over -->
+        <div class="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-3.5">
+          <div class="text-xs font-bold text-amber-300 mb-2">🏆 最新數碼世界排行榜 (Top 5)</div>
+          <div id="goLeaderboardList" class="space-y-1.5 text-xs"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-1">
+          <button id="btnChangeName" type="button" class="btn-press sm:w-1/3 min-h-[48px] py-2.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-sm">
+            👤 更改玩家名稱
+          </button>
+          <button id="btnRestartGame" type="button" class="btn-press sm:w-2/3 min-h-[48px] py-2.5 px-6 rounded-2xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-base shadow-lg">
+            🔄 再次挑戰數碼世界！
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GUIDE / DIGIMON ENCYCLOPEDIA MODAL -->
+    <div id="guideModal" class="hidden absolute inset-0 z-30 bg-slate-950/90 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div class="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto max-h-[90dvh] overflow-y-auto custom-scroll space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h2 class="text-xl font-black text-amber-300">📘 3D 數碼暴龍角色、道具與障礙物圖鑑</h2>
+          <button id="btnCloseGuide" type="button" class="btn-press min-w-[44px] min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">✕</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+          <div class="bg-slate-800/70 border border-orange-500/40 rounded-2xl p-3.5 space-y-1.5">
+            <div class="font-bold text-orange-300 text-base">🦖 亞古獸 ➔ 暴龍獸 (3D 進化系統)</div>
+            <p class="text-slate-300 leading-relaxed">
+              跑道上會隨機從天空降下<strong>「勇氣徽章・神聖計劃」</strong>道具！拾取後 3D 亞古獸即刻超進化為<strong>頭戴棕色三角頭盔、身披藍紋嘅暴龍獸 (Greymon)</strong>，並獲得 <strong>3發「超級火焰」</strong>！
+            </p>
+            <p class="text-amber-300 font-semibold">
+              💡 按空白鍵 / F 鍵 / 右下角火焰按鈕即可噴射 3D 巨型火球粉碎前方障礙物；若進化期間唔小心撞上障礙物，暴龍獸亦會自動噴出1發超級火焰幫你擋劫！3發用盡後退化回亞古獸。
+            </p>
+          </div>
+
+          <div class="bg-slate-800/70 border border-cyan-500/40 rounded-2xl p-3.5 space-y-1.5">
+            <div class="font-bold text-cyan-300 text-base">🪽 空中變向與 3D 多視角切換</div>
+            <p class="text-slate-300 leading-relaxed">
+              除咗地面左右轉線、上跳、下剷之外，當亞古獸<strong>跳起喺半空中時</strong>，你可以隨時按<strong>左 / 右方向鍵（或左右滑動）</strong>進行「空中翻身轉向」！
+            </p>
+            <p class="text-cyan-200 font-semibold">
+              💡 點擊頂部「🎥 視角」按鈕，仲可以隨時切換「標準視角」、「動感近鏡」同埋「廣角遠景」！
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="font-bold text-sm text-white">🚧 3D 數碼世界障礙物與夥伴一覽：</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
+              <span class="text-2xl">⚙️</span>
+              <div>
+                <div class="font-bold text-amber-300">黑色齒輪 / 鼻涕獸路障（需上跳 ▲）</div>
+                <div class="text-slate-300">高速旋轉嘅立體黑色齒輪與綠色鼻涕獸病毒欄，向上跳起即可越過。</div>
+              </div>
+            </div>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
+              <span class="text-2xl">🦇</span>
+              <div>
+                <div class="font-bold text-purple-300">惡魔獸激光閘 / 小惡魔獸群（需下剷 ▼）</div>
+                <div class="text-slate-300">半空攔截嘅紫色惡魔激光閘與拍翼小惡魔獸，必須向下剷穿過底部！</div>
+              </div>
+            </div>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
+              <span class="text-2xl">🚂</span>
+              <div>
+                <div class="font-bold text-red-300">暴走列車獸 / 機械邪龍巨柱（需左右閃 ◀▶）</div>
+                <div class="text-slate-300">全高度迎面駛來嘅裝甲列車獸與機械邪龍炮塔，必須左右轉線或用超級火焰轟碎！</div>
+              </div>
+            </div>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
+              <span class="text-2xl">🦋</span>
+              <div>
+                <div class="font-bold text-emerald-300">數碼夥伴（巴達獸、比丘獸、加布獸、迪路獸）</div>
+                <div class="text-slate-300">3D 巴達獸與比丘獸喺空中伴飛，加布獸同迪路獸喺跑道兩側打氣支援！</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button id="btnResumeFromGuide" type="button" class="btn-press min-h-[44px] px-6 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-sm">
+            明白，返回遊戲
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ===================================================================
+      // 0. AUTHENTIC SYMMETRICAL ANIME SVG PORTRAITS FOR UI & HUD BADGES
+      // ===================================================================
+      const DigimonArt = {
+        agumonSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <defs>
+                <linearGradient id="aguGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ffaa33"/>
+                  <stop offset="70%" stop-color="#f97316"/>
+                  <stop offset="100%" stop-color="#ea580c"/>
+                </linearGradient>
+              </defs>
+              <!-- Shoulders & Cream Chest -->
+              <path d="M22,94 C22,74 34,68 50,68 C66,68 78,74 78,94 Z" fill="url(#aguGrad)" stroke="#7c2d12" stroke-width="3"/>
+              <path d="M36,94 C36,77 42,73 50,73 C58,73 64,77 64,94 Z" fill="#ffedd5"/>
+              <!-- Cranium & Brow Ridges -->
+              <path d="M24,42 C22,24 35,14 50,14 C65,14 78,24 76,42 C82,48 82,64 68,69 C58,73 42,73 32,69 C18,64 18,48 24,42 Z" fill="url(#aguGrad)" stroke="#7c2d12" stroke-width="3" stroke-linejoin="round"/>
+              <!-- Left & Right Anime Emerald Eyes (Two symmetrical eyes!) -->
+              <g>
+                <ellipse cx="35" cy="39" rx="7.5" ry="9.5" fill="#ffffff" stroke="#431407" stroke-width="2.2"/>
+                <ellipse cx="36" cy="40" rx="5" ry="6.8" fill="#16a34a"/>
+                <ellipse cx="36" cy="40" rx="2.2" ry="4.5" fill="#052e16"/>
+                <circle cx="33.5" cy="36.5" r="2.2" fill="#ffffff"/>
+              </g>
+              <g>
+                <ellipse cx="65" cy="39" rx="7.5" ry="9.5" fill="#ffffff" stroke="#431407" stroke-width="2.2"/>
+                <ellipse cx="64" cy="40" rx="5" ry="6.8" fill="#16a34a"/>
+                <ellipse cx="64" cy="40" rx="2.2" ry="4.5" fill="#052e16"/>
+                <circle cx="61.5" cy="36.5" r="2.2" fill="#ffffff"/>
+              </g>
+              <!-- Wide Snout & Two Nostrils -->
+              <ellipse cx="50" cy="55" rx="22" ry="11" fill="#ff9f29" stroke="#7c2d12" stroke-width="2.2"/>
+              <circle cx="42" cy="51" r="2.2" fill="#7c2d12"/>
+              <circle cx="58" cy="51" r="2.2" fill="#7c2d12"/>
+              <!-- Happy Dino Mouth & Two Little Fangs -->
+              <path d="M33,59 Q50,67 67,59" fill="none" stroke="#7c2d12" stroke-width="2.6" stroke-linecap="round"/>
+              <polygon points="38,60 40,65 43,61" fill="#ffffff" stroke="#7c2d12" stroke-width="1"/>
+              <polygon points="62,60 60,65 57,61" fill="#ffffff" stroke="#7c2d12" stroke-width="1"/>
+            </svg>
+          `;
+        },
+
+        greymonSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <defs>
+                <linearGradient id="helmGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#854d0e"/>
+                  <stop offset="50%" stop-color="#5c280e"/>
+                  <stop offset="100%" stop-color="#3b1704"/>
+                </linearGradient>
+              </defs>
+              <!-- Left & Right Sweeping Antler Horns -->
+              <path d="M26,38 L6,10 L18,46 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M74,38 L94,10 L82,46 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
+              <!-- Muscular Orange Shoulders with Blue Stripes -->
+              <path d="M18,94 C20,72 34,66 50,66 C66,66 80,72 82,94 Z" fill="#f97316" stroke="#7c2d12" stroke-width="3"/>
+              <path d="M25,78 L38,86 M75,78 L62,86" stroke="#1d4ed8" stroke-width="4.5" stroke-linecap="round"/>
+              <!-- Brown Carapace Skull Helmet -->
+              <path d="M22,52 C20,28 34,18 50,18 C66,18 80,28 78,52 L72,62 L50,58 L28,62 Z" fill="url(#helmGrad)" stroke="#2e1305" stroke-width="3" stroke-linejoin="round"/>
+              <!-- Two Fierce Crimson Eyes under Helmet Brow -->
+              <polygon points="28,44 43,48 40,54 27,51" fill="#ef4444" stroke="#000" stroke-width="1.8"/>
+              <circle cx="35" cy="49" r="2.2" fill="#fef08a"/>
+              <polygon points="72,44 57,48 60,54 73,51" fill="#ef4444" stroke="#000" stroke-width="1.8"/>
+              <circle cx="65" cy="49" r="2.2" fill="#fef08a"/>
+              <!-- Center Nose Horn -->
+              <path d="M44,54 L50,24 L56,54 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
+              <!-- Orange Snout & Teeth -->
+              <path d="M30,60 L70,60 L65,73 L35,73 Z" fill="#f97316" stroke="#7c2d12" stroke-width="2.5"/>
+              <polygon points="36,61 40,67 44,61 50,68 56,61 60,67 64,61" fill="#ffffff"/>
+            </svg>
+          `;
+        },
+
+        digiviceSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <circle cx="50" cy="50" r="44" fill="#facc15" opacity="0.25"/>
+              <rect x="18" y="22" width="64" height="56" rx="24" fill="#38bdf8" stroke="#0284c7" stroke-width="4"/>
+              <rect x="25" y="28" width="50" height="44" rx="18" fill="#0ea5e9" stroke="#bae6fd" stroke-width="2"/>
+              <rect x="33" y="34" width="34" height="32" rx="6" fill="#fef08a" stroke="#ca8a04" stroke-width="2.5"/>
+              <circle cx="50" cy="50" r="7" fill="#f97316"/>
+              <path d="M50,37 L50,41 M50,59 L50,63 M37,50 L41,50 M59,50 L63,50 M41,41 L44,44 M56,56 L59,59 M59,41 L56,44 M41,59 L44,56" stroke="#ea580c" stroke-width="2.2" stroke-linecap="round"/>
+              <rect x="12" y="38" width="8" height="24" rx="4" fill="#f97316" stroke="#9a3412" stroke-width="2"/>
+              <rect x="80" y="38" width="8" height="24" rx="4" fill="#f97316" stroke="#9a3412" stroke-width="2"/>
+            </svg>
+          `;
+        }
+      };
+
+      document.getElementById('hudAvatarBadge').innerHTML = DigimonArt.agumonSVG();
+      document.getElementById('heroAgumonSvg').innerHTML = DigimonArt.agumonSVG();
+      document.getElementById('heroDigiviceSvg').innerHTML = DigimonArt.digiviceSVG();
+      document.getElementById('heroGreymonSvg').innerHTML = DigimonArt.greymonSVG();
+      document.getElementById('evoCutInSvg').innerHTML = DigimonArt.greymonSVG();
+      document.getElementById('goAvatarArt').innerHTML = DigimonArt.agumonSVG();
+
+      // ==========================================
+      // 1. WEB AUDIO SYNTHESIZER (No external files)
+      // ==========================================
+      const SoundFX = {
+        ctx: null,
+        muted: false,
+        bgmTimer: null,
+        bgmStep: 0,
+
+        init() {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) {
+              this.ctx = new AudioCtx();
+            }
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        },
+
+        playTone(freq, type, duration, vol = 0.12, slideFreq = null) {
+          if (this.muted || !this.ctx) return;
+          try {
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now);
+            if (slideFreq) {
+              osc.frequency.exponentialRampToValueAtTime(slideFreq, now + duration);
+            }
+            gain.gain.setValueAtTime(vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + duration);
+          } catch (e) {}
+        },
+
+        jump() {
+          this.playTone(290, 'sine', 0.18, 0.14, 650);
+        },
+
+        airShift() {
+          this.playTone(440, 'triangle', 0.12, 0.12, 820);
+        },
+
+        slide() {
+          this.playTone(320, 'sawtooth', 0.16, 0.08, 120);
+        },
+
+        coin() {
+          this.playTone(920, 'sine', 0.09, 0.1, 1380);
+        },
+
+        evolve() {
+          const notes = [392, 493.88, 587.33, 659.25, 783.99, 987.77, 1174.66];
+          notes.forEach((n, idx) => {
+            setTimeout(() => {
+              this.playTone(n, 'triangle', 0.24, 0.15, n * 1.05);
+            }, idx * 70);
+          });
+        },
+
+        megaFlame() {
+          this.playTone(170, 'sawtooth', 0.42, 0.22, 50);
+          setTimeout(() => this.playTone(460, 'square', 0.28, 0.15, 110), 55);
+        },
+
+        crash() {
+          this.playTone(150, 'sawtooth', 0.45, 0.22, 42);
+        },
+
+        startBGM() {
+          this.stopBGM();
+          const scale = [220, 261.63, 293.66, 329.63, 392, 329.63, 293.66, 246.94];
+          this.bgmTimer = setInterval(() => {
+            if (this.muted || !Game.running || Game.paused) return;
+            const note = scale[this.bgmStep % scale.length];
+            this.playTone(note, 'triangle', 0.14, 0.032);
+            this.bgmStep++;
+          }, 210);
+        },
+
+        stopBGM() {
+          if (this.bgmTimer) {
+            clearInterval(this.bgmTimer);
+            this.bgmTimer = null;
+          }
+        }
+      };
+
+      // ==========================================
+      // 2. IN-MEMORY LEADERBOARD MANAGER
+      // ==========================================
+      const DEFAULT_BOARD = [
+        { name: '八神太一', score: 4850, distance: 620, blasted: 6 },
+        { name: '石田大和', score: 3920, distance: 510, blasted: 4 },
+        { name: '泉光子郎', score: 3180, distance: 430, blasted: 3 },
+        { name: '武之內空', score: 2450, distance: 340, blasted: 2 }
+      ];
+      let sessionBoard = [...DEFAULT_BOARD];
+
+      function loadLeaderboard() {
+        return sessionBoard.length > 0 ? [...sessionBoard] : [...DEFAULT_BOARD];
+      }
+
+      function saveScoreToLeaderboard(entry) {
+        sessionBoard.push(entry);
+        sessionBoard.sort((a, b) => b.score - a.score);
+        sessionBoard = sessionBoard.slice(0, 8);
+        return sessionBoard;
+      }
+
+      function clearLeaderboard() {
+        sessionBoard = [...DEFAULT_BOARD];
+        renderLeaderboards();
+      }
+
+      function escapeHTML(str) {
+        return String(str).replace(/[&<>"']/g, (c) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[c]));
+      }
+
+      function renderLeaderboards() {
+        const board = loadLeaderboard();
+        const startList = document.getElementById('startLeaderboardList');
+        const goList = document.getElementById('goLeaderboardList');
+
+        const buildHTML = (items, limit) =>
+          items.slice(0, limit).map((item, idx) => {
+            const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+            return `
+              <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-xs">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-bold text-amber-400 w-5">${rankBadge}</span>
+                  <span class="font-bold text-white truncate max-w-[110px]">${escapeHTML(item.name)}</span>
+                </div>
+                <div class="flex items-center gap-3 tabular-nums shrink-0">
+                  <span class="text-emerald-400 font-semibold">${item.distance}m</span>
+                  <span class="text-orange-300 font-semibold">🔥${item.blasted || 0}</span>
+                  <span class="font-black text-amber-300 text-sm">${item.score}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+        if (startList) startList.innerHTML = buildHTML(board, 6);
+        if (goList) goList.innerHTML = buildHTML(board, 5);
+      }
+
+      // ==========================================
+      // 3. DIGITAL WORLD ZONES & COMPANIONS
+      // ==========================================
+      const ZONES = [
+        {
+          name: '🌴 法易路島・創始村',
+          fogColor: 0x0d214f,
+          groundColor: 0x064e3b,
+          trackColor: 0x1e293b,
+          railColor: 0x38bdf8
+        },
+        {
+          name: '⚙️ 齒輪草原・伺服器山脈',
+          fogColor: 0x26174a,
+          groundColor: 0x452715,
+          trackColor: 0x1f2437,
+          railColor: 0xf59e0b
+        },
+        {
+          name: '🗼 東京御台場・數碼裂縫',
+          fogColor: 0x1c103b,
+          groundColor: 0x111827,
+          trackColor: 0x181826,
+          railColor: 0xec4899
+        },
+        {
+          name: '🌀 黑暗龍捲山・中樞塔',
+          fogColor: 0x19092b,
+          groundColor: 0x1e1b2e,
+          trackColor: 0x13111c,
+          railColor: 0xa855f7
+        }
+      ];
+
+      const COMPANION_MESSAGES = [
+        { icon: '🦋', text: '巴達獸：跳起喺半空時，按左右鍵可以隨時空中轉向㗎！' },
+        { icon: '🐺', text: '加布獸：見到神聖計劃進化道具記得去執，可以進化成暴龍獸！' },
+        { icon: '🐞', text: '甲蟲獸：惡魔獸激光閘好高，記得按「下」向下剷滑過去！' },
+        { icon: '🐱', text: '迪路獸：進化成暴龍獸後有 3 次超級火焰，按空白鍵或右下掣即刻轟碎障礙！' },
+        { icon: '🌺', text: '巴魯獸：小心迎面駛嚟嘅 3D 暴走列車獸，快啲左右跳閃開！' }
+      ];
+
+      // =========================================================================
+      // 4. THREE.JS 3D DIGIMON & WORLD BUILDER (Proper Forward Orientation & Compact Scale)
+      // =========================================================================
+      const Digi3DBuilder = {
+        textures: {},
+
+        getTextures() {
+          if (this.textures.initialized) return this.textures;
+
+          // Polka-Dot Digi-Egg Texture (Primary Village Scenery)
+          const eggCanvas = document.createElement('canvas');
+          eggCanvas.width = 128;
+          eggCanvas.height = 128;
+          const ectx = eggCanvas.getContext('2d');
+          ectx.fillStyle = '#fef9c3';
+          ectx.fillRect(0, 0, 128, 128);
+          ectx.fillStyle = '#f43f5e';
+          [[32, 32], [96, 40], [64, 88], [24, 96], [100, 98]].forEach(([x, y]) => {
+            ectx.beginPath();
+            ectx.arc(x, y, 14, 0, Math.PI * 2);
+            ectx.fill();
+          });
+          this.textures.digiEgg = new THREE.CanvasTexture(eggCanvas);
+          this.textures.initialized = true;
+          return this.textures;
+        },
+
+        // BUILD 3D AGUMON (亞古獸) - Strictly faces forward (-Z) down the track!
+        createAgumonMesh() {
+          const root = new THREE.Group();
+          const model = new THREE.Group();
+
+          const orangeMat = new THREE.MeshStandardMaterial({ color: 0xff9419, roughness: 0.42, metalness: 0.05 });
+          const darkOrangeMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.5 });
+          const bellyMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.55 });
+          const clawMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+          const eyeGreenMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.2 });
+          const pupilMat = new THREE.MeshBasicMaterial({ color: 0x052e16 });
+
+          // 1. Pear-shaped Dinosaur Torso & Short Neck
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.95, 20, 18), orangeMat);
+          torso.scale.set(0.92, 1.12, 0.88);
+          torso.position.set(0, 1.65, 0);
+          model.add(torso);
+
+          // Cream front belly (facing -Z forward)
+          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.76, 16, 14), bellyMat);
+          belly.scale.set(0.82, 0.98, 0.45);
+          belly.position.set(0, 1.62, -0.58);
+          model.add(belly);
+
+          // Subtle dorsal spine bumps along the back (+Z)
+          [2.15, 1.72, 1.32].forEach((by, idx) => {
+            const ridge = new THREE.Mesh(new THREE.ConeGeometry(0.14 - idx * 0.02, 0.26, 8), darkOrangeMat);
+            ridge.rotation.x = Math.PI * 0.45;
+            ridge.position.set(0, by, 0.78);
+            model.add(ridge);
+          });
+
+          // 2. Sculpted Agumon Head (Snout & 2 Eyes face forward -Z!)
+          const headGroup = new THREE.Group();
+          headGroup.position.set(0, 2.95, -0.12);
+
+          const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.92, 22, 20), orangeMat);
+          cranium.scale.set(1.02, 0.94, 1.0);
+          headGroup.add(cranium);
+
+          // Prominent Brow Ridges on front-left & front-right (-Z)
+          [-0.46, 0.46].forEach((bx) => {
+            const brow = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), orangeMat);
+            brow.scale.set(1.1, 0.65, 1.2);
+            brow.position.set(bx, 0.34, -0.56);
+            headGroup.add(brow);
+          });
+
+          // Wide Rounded Dinosaur Snout projecting strictly forward (-Z)
+          const snoutUpper = new THREE.Mesh(new THREE.SphereGeometry(0.74, 18, 16), orangeMat);
+          snoutUpper.scale.set(1.05, 0.68, 1.25);
+          snoutUpper.position.set(0, -0.06, -0.82);
+          headGroup.add(snoutUpper);
+
+          const jawLower = new THREE.Mesh(new THREE.SphereGeometry(0.64, 16, 14), orangeMat);
+          jawLower.scale.set(0.96, 0.45, 1.15);
+          jawLower.position.set(0, -0.34, -0.76);
+          headGroup.add(jawLower);
+
+          // Two Nostril Bumps on the front tip of the snout (-Z)
+          [-0.24, 0.24].forEach((nx) => {
+            const nostril = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), darkOrangeMat);
+            nostril.position.set(nx, 0.16, -1.52);
+            headGroup.add(nostril);
+          });
+
+          // Two Forward-Facing Emerald Eyes
+          [-0.56, 0.56].forEach((ex) => {
+            const eyeSclera = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), clawMat);
+            eyeSclera.scale.set(0.65, 1.1, 0.85);
+            eyeSclera.position.set(ex, 0.14, -0.62);
+            eyeSclera.rotation.y = ex < 0 ? 0.35 : -0.35;
+
+            const iris = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), eyeGreenMat);
+            iris.scale.set(0.65, 1.1, 0.85);
+            iris.position.set(ex * 1.04, 0.14, -0.72);
+
+            const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
+            pupil.position.set(ex * 1.06, 0.14, -0.80);
+
+            headGroup.add(eyeSclera, iris, pupil);
+          });
+
+          model.add(headGroup);
+
+          // 3. Articulated Left & Right Legs with 3 Forward-Pointing White Claws (-Z)
+          const createLeg = (isLeft) => {
+            const legGroup = new THREE.Group();
+            legGroup.position.set(isLeft ? -0.58 : 0.58, 1.05, 0);
+
+            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 12), orangeMat);
+            thigh.scale.set(0.9, 1.25, 1.0);
+            thigh.position.set(0, -0.32, 0);
+            legGroup.add(thigh);
+
+            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.32, 0.88), orangeMat);
+            foot.position.set(0, -0.82, -0.15);
+            legGroup.add(foot);
+
+            [-0.19, 0, 0.19].forEach((cx) => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.32, 8), clawMat);
+              claw.rotation.x = -Math.PI / 2;
+              claw.position.set(cx, -0.86, -0.68);
+              legGroup.add(claw);
+            });
+            return legGroup;
+          };
+
+          const leftLeg = createLeg(true);
+          const rightLeg = createLeg(false);
+          model.add(leftLeg, rightLeg);
+
+          // 4. Articulated Left & Right Arms with 3 Claws
+          const createArm = (isLeft) => {
+            const armGroup = new THREE.Group();
+            armGroup.position.set(isLeft ? -0.92 : 0.92, 2.1, -0.08);
+
+            const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), orangeMat);
+            armGroup.add(shoulder);
+
+            const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.18, 0.68, 12), orangeMat);
+            forearm.rotation.z = isLeft ? 0.32 : -0.32;
+            forearm.rotation.x = 0.35;
+            forearm.position.set(isLeft ? -0.14 : 0.14, -0.26, -0.18);
+            armGroup.add(forearm);
+
+            [-0.1, 0, 0.1].forEach((cx) => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.22, 8), clawMat);
+              claw.rotation.x = -Math.PI / 2;
+              claw.position.set((isLeft ? -0.22 : 0.22) + cx, -0.52, -0.44);
+              armGroup.add(claw);
+            });
+            return armGroup;
+          };
+
+          const leftArm = createArm(true);
+          const rightArm = createArm(false);
+          model.add(leftArm, rightArm);
+
+          // 5. Smooth Multi-Segment Wagging Dinosaur Tail extending backward (+Z)
+          const tailGroup = new THREE.Group();
+          tailGroup.position.set(0, 1.22, 0.62);
+
+          const tailSeg1 = new THREE.Mesh(new THREE.SphereGeometry(0.48, 14, 12), orangeMat);
+          tailSeg1.scale.set(0.85, 0.85, 1.35);
+          tailSeg1.position.set(0, 0.04, 0.38);
+          tailGroup.add(tailSeg1);
+
+          const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.35, 14), orangeMat);
+          tailTip.rotation.x = Math.PI * 0.42;
+          tailTip.position.set(0, 0.22, 1.12);
+          tailGroup.add(tailTip);
+
+          model.add(tailGroup);
+
+          model.scale.setScalar(0.50);
+          root.add(model);
+
+          root.userData = { headGroup, leftLeg, rightLeg, leftArm, rightArm, tailGroup, innerModel: model };
+          return root;
+        },
+
+        // BUILD 3D GREYMON (暴龍獸 - Evolved Form)
+        createGreymonMesh() {
+          const root = new THREE.Group();
+          const model = new THREE.Group();
+
+          const orangeMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
+          const blueStripeMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.42 });
+          const helmMat = new THREE.MeshStandardMaterial({ color: 0x5c280e, roughness: 0.35, metalness: 0.18 });
+          const helmRidgeMat = new THREE.MeshStandardMaterial({ color: 0x3b1704, roughness: 0.4 });
+          const hornMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.25 });
+          const eyeRedMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+          const auraRingMat = new THREE.MeshBasicMaterial({
+            color: 0xf97316,
+            transparent: true,
+            opacity: 0.45,
+            side: THREE.DoubleSide
+          });
+
+          // 1. Muscular Forward-Leaning Dinosaur Torso + Blue Stripes on Back
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(1.25, 22, 18), orangeMat);
+          torso.scale.set(1.02, 1.18, 1.05);
+          torso.position.set(0, 2.15, 0);
+          torso.rotation.x = 0.18;
+          model.add(torso);
+
+          [2.65, 2.22, 1.78].forEach((sy, idx) => {
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.75 - idx * 0.18, 0.16, 0.32), blueStripeMat);
+            stripe.position.set(0, sy, 0.92 - idx * 0.06);
+            model.add(stripe);
+          });
+
+          const auraMesh = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.85, 24), auraRingMat);
+          auraMesh.rotation.x = -Math.PI / 2;
+          auraMesh.position.set(0, 0.08, 0);
+          model.add(auraMesh);
+
+          // 2. Greymon Head with Iconic Brown Carapace Helmet & 3 Curved Ivory Horns
+          const headGroup = new THREE.Group();
+          headGroup.position.set(0, 3.65, -0.35);
+
+          const skullDome = new THREE.Mesh(new THREE.SphereGeometry(1.12, 20, 18), helmMat);
+          skullDome.scale.set(1.06, 0.92, 1.25);
+          headGroup.add(skullDome);
+
+          const neckPlate = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.55, 0.65), helmRidgeMat);
+          neckPlate.position.set(0, -0.15, 0.85);
+          neckPlate.rotation.x = 0.25;
+          headGroup.add(neckPlate);
+
+          const snoutHelm = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.68, 1.35), helmMat);
+          snoutHelm.position.set(0, -0.12, -0.95);
+          headGroup.add(snoutHelm);
+
+          const lowerJaw = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.45, 1.28), orangeMat);
+          lowerJaw.position.set(0, -0.52, -0.88);
+          headGroup.add(lowerJaw);
+
+          [-0.58, 0.58].forEach((ex) => {
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 10), eyeRedMat);
+            eye.position.set(ex, 0.05, -0.82);
+            headGroup.add(eye);
+          });
+
+          const createAntlerHorn = (isLeft) => {
+            const hGroup = new THREE.Group();
+            hGroup.position.set(isLeft ? -0.85 : 0.85, 0.38, 0.05);
+            hGroup.rotation.z = isLeft ? 0.68 : -0.68;
+            hGroup.rotation.x = -0.22;
+
+            const baseHorn = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.75, 12), hornMat);
+            baseHorn.position.set(0, 0.75, 0);
+            hGroup.add(baseHorn);
+
+            const tine = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.65, 8), hornMat);
+            tine.position.set(0, 0.45, 0.25);
+            tine.rotation.x = 0.6;
+            hGroup.add(tine);
+            return hGroup;
+          };
+          headGroup.add(createAntlerHorn(true), createAntlerHorn(false));
+
+          const noseHorn = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.45, 12), hornMat);
+          noseHorn.position.set(0, 0.52, -1.42);
+          noseHorn.rotation.x = -0.58;
+          headGroup.add(noseHorn);
+
+          model.add(headGroup);
+
+          // 3. Powerful Striped Legs
+          const createLeg = (isLeft) => {
+            const legGroup = new THREE.Group();
+            legGroup.position.set(isLeft ? -0.78 : 0.78, 1.32, 0);
+
+            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.52, 14, 12), orangeMat);
+            thigh.scale.set(0.95, 1.3, 1.05);
+            thigh.position.set(0, -0.38, 0);
+            legGroup.add(thigh);
+
+            const legStripe = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.58), blueStripeMat);
+            legStripe.position.set(0, -0.35, 0.25);
+            legGroup.add(legStripe);
+
+            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.38, 1.08), orangeMat);
+            foot.position.set(0, -1.02, -0.18);
+            legGroup.add(foot);
+
+            [-0.24, 0, 0.24].forEach((cx) => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.38, 8), hornMat);
+              claw.rotation.x = -Math.PI / 2;
+              claw.position.set(cx, -1.06, -0.82);
+              legGroup.add(claw);
+            });
+            return legGroup;
+          };
+          const leftLeg = createLeg(true);
+          const rightLeg = createLeg(false);
+          model.add(leftLeg, rightLeg);
+
+          // 4. Muscular Arms
+          const createArm = (isLeft) => {
+            const armGroup = new THREE.Group();
+            armGroup.position.set(isLeft ? -1.22 : 1.22, 2.55, -0.18);
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.92, 12), orangeMat);
+            arm.rotation.z = isLeft ? 0.38 : -0.38;
+            arm.rotation.x = 0.35;
+            armGroup.add(arm);
+            return armGroup;
+          };
+          const leftArm = createArm(true);
+          const rightArm = createArm(false);
+          model.add(leftArm, rightArm);
+
+          // 5. Long Striped Greymon Tail
+          const tailGroup = new THREE.Group();
+          tailGroup.position.set(0, 1.55, 0.82);
+          const tailCone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 2.6, 16), orangeMat);
+          tailCone.rotation.x = Math.PI * 0.42;
+          tailCone.position.set(0, 0.22, 1.05);
+          tailGroup.add(tailCone);
+
+          const tailStripe = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.22, 0.65), blueStripeMat);
+          tailStripe.position.set(0, 0.18, 0.75);
+          tailGroup.add(tailStripe);
+          model.add(tailGroup);
+
+          model.scale.setScalar(0.54);
+          root.add(model);
+
+          root.userData = { headGroup, leftLeg, rightLeg, leftArm, rightArm, tailGroup, auraMesh, innerModel: model };
+          return root;
+        },
+
+        // Build 3D Flying Patamon (巴達獸) Companion
+        createPatamonMesh() {
+          const group = new THREE.Group();
+          const bodyMat = new THREE.MeshStandardMaterial({ color: 0xfb923c, roughness: 0.4 });
+          const bellyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+          const earMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.4, side: THREE.DoubleSide });
+
+          const body = new THREE.Mesh(new THREE.SphereGeometry(0.65, 16, 14), bodyMat);
+          body.scale.set(1.0, 0.85, 1.25);
+          group.add(body);
+
+          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.50, 12, 12), bellyMat);
+          belly.position.set(0, -0.18, 0);
+          group.add(belly);
+
+          const leftEar = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.1, 0.6), earMat);
+          leftEar.position.set(-0.82, 0.38, -0.1);
+          const rightEar = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.1, 0.6), earMat);
+          rightEar.position.set(0.82, 0.38, -0.1);
+          group.add(leftEar, rightEar);
+
+          group.scale.setScalar(0.65);
+          group.userData = { leftEar, rightEar };
+          return group;
+        },
+
+        // Build 3D Flying Biyomon (比丘獸) Companion
+        createBiyomonMesh() {
+          const group = new THREE.Group();
+          const pinkMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.4 });
+          const beakMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
+          const ringMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 });
+
+          const body = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 14), pinkMat);
+          group.add(body);
+
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.08, 10, 18), ringMat);
+          ring.rotation.x = Math.PI / 2;
+          ring.position.set(0, 0.48, 0);
+          group.add(ring);
+
+          const leftWing = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.1, 0.55), pinkMat);
+          leftWing.position.set(-0.75, 0.1, 0);
+          const rightWing = leftWing.clone();
+          rightWing.position.x = 0.75;
+          const beak = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.42, 10), beakMat);
+          beak.rotation.x = -Math.PI / 2;
+          beak.position.set(0, 0, -0.7);
+          group.add(leftWing, rightWing, beak);
+
+          group.scale.setScalar(0.65);
+          group.userData = { leftWing, rightWing };
+          return group;
+        },
+
+        // Build 3D Obstacle Mesh by Type
+        createObstacleMesh(kind) {
+          const group = new THREE.Group();
+
+          if (kind === 'dark_gear') {
+            const gearGroup = new THREE.Group();
+            gearGroup.position.set(0, 0.95, 0);
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.25 });
+            const redGlowMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.34, 20), darkMat);
+            wheel.rotation.z = Math.PI / 2;
+            gearGroup.add(wheel);
+
+            const coreRing = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.38, 16), redGlowMat);
+            coreRing.rotation.z = Math.PI / 2;
+            gearGroup.add(coreRing);
+
+            for (let i = 0; i < 10; i++) {
+              const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.28, 0.32), darkMat);
+              const angle = (i / 10) * Math.PI * 2;
+              tooth.position.set(0, Math.cos(angle) * 1.04, Math.sin(angle) * 1.04);
+              tooth.rotation.x = -angle;
+              gearGroup.add(tooth);
+            }
+            group.add(gearGroup);
+            group.userData.spinPart = gearGroup;
+          } else if (kind === 'numemon_wall') {
+            const barMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 });
+            const stripeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+            const slimeMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.25 });
+
+            const barrier = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.15, 0.52), barMat);
+            barrier.position.set(0, 0.58, 0);
+            group.add(barrier);
+
+            const topStripe = new THREE.Mesh(new THREE.BoxGeometry(2.24, 0.20, 0.56), stripeMat);
+            topStripe.position.set(0, 1.05, 0);
+            group.add(topStripe);
+
+            const slimeBody = new THREE.Mesh(new THREE.SphereGeometry(0.48, 14, 12), slimeMat);
+            slimeBody.scale.set(1.15, 0.85, 1.0);
+            slimeBody.position.set(0, 1.42, 0);
+            group.add(slimeBody);
+          } else if (kind === 'devimon_gate' || kind === 'demidevimon_swarm') {
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3b0764, metalness: 0.5, roughness: 0.3 });
+            const laserMat = new THREE.MeshBasicMaterial({ color: 0xd946ef });
+            const batMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.4 });
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+
+            const leftP = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.20, 3.8, 12), pillarMat);
+            leftP.position.set(-1.18, 1.9, 0);
+            const rightP = leftP.clone();
+            rightP.position.x = 1.18;
+            group.add(leftP, rightP);
+
+            const headerBox = new THREE.Mesh(new THREE.BoxGeometry(2.55, 1.55, 0.48), pillarMat);
+            headerBox.position.set(0, 2.85, 0);
+            group.add(headerBox);
+
+            [1.92, 2.38, 2.84].forEach((ly) => {
+              const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 2.4, 10), laserMat);
+              beam.rotation.z = Math.PI / 2;
+              beam.position.set(0, ly, 0.26);
+              group.add(beam);
+            });
+
+            [-0.45, 0.45].forEach((ex) => {
+              const eye = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 10), eyeMat);
+              eye.scale.set(1.4, 0.7, 0.5);
+              eye.position.set(ex, 3.05, 0.26);
+              group.add(eye);
+            });
+
+            const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.55, 0.12), batMat);
+            wingL.position.set(-1.32, 3.0, 0.14);
+            wingL.rotation.z = 0.3;
+            const wingR = wingL.clone();
+            wingR.position.x = 1.32;
+            wingR.rotation.z = -0.3;
+            group.add(wingL, wingR);
+          } else {
+            const isTrain = kind === 'trailmon_train';
+            const bodyMat = new THREE.MeshStandardMaterial({
+              color: isTrain ? 0x7c2d12 : 0x334155,
+              metalness: 0.6,
+              roughness: 0.32
+            });
+            const trimMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7, roughness: 0.25 });
+            const visorMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            const headlightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+
+            const carriage = new THREE.Mesh(new THREE.BoxGeometry(2.15, 3.15, 4.8), bodyMat);
+            carriage.position.set(0, 1.65, 0);
+            group.add(carriage);
+
+            const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 0.98, 4.6, 14), trimMat);
+            roof.rotation.x = Math.PI / 2;
+            roof.position.set(0, 3.22, 0);
+            group.add(roof);
+
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.75, 0.15), visorMat);
+            visor.position.set(0, 2.35, 2.42);
+            group.add(visor);
+
+            [-0.62, 0.62].forEach((hx) => {
+              const light = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), headlightMat);
+              light.position.set(hx, 0.98, 2.45);
+              group.add(light);
+            });
+          }
+
+          return group;
+        },
+
+        // Build 3D Collectibles
+        createItemMesh(type) {
+          const group = new THREE.Group();
+
+          if (type === 'coin') {
+            const coinMat = new THREE.MeshStandardMaterial({
+              color: 0x06b6d4,
+              emissive: 0x0891b2,
+              emissiveIntensity: 0.45,
+              metalness: 0.8,
+              roughness: 0.2
+            });
+            const rimMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+            const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.16, 16), coinMat);
+            disc.rotation.x = Math.PI / 2;
+            const core = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.20, 8), rimMat);
+            core.rotation.x = Math.PI / 2;
+            group.add(disc, core);
+          } else if (type === 'digivice_crest') {
+            const caseMat = new THREE.MeshStandardMaterial({
+              color: 0x38bdf8,
+              emissive: 0x0284c7,
+              emissiveIntensity: 0.5,
+              roughness: 0.2
+            });
+            const gripMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
+            const crestMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+            const beamMat = new THREE.MeshBasicMaterial({
+              color: 0xfacc15,
+              transparent: true,
+              opacity: 0.18,
+              side: THREE.DoubleSide
+            });
+
+            const device = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.30, 18), caseMat);
+            device.rotation.x = Math.PI / 2;
+            group.add(device);
+
+            const screen = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.35, 14), crestMat);
+            screen.rotation.x = Math.PI / 2;
+            group.add(screen);
+
+            [-0.72, 0.72].forEach((gx) => {
+              const grip = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.72, 0.35), gripMat);
+              grip.position.set(gx, 0, 0);
+              group.add(grip);
+            });
+
+            const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 12, 14, 1, true), beamMat);
+            beam.position.set(0, 5.5, 0);
+            group.add(beam);
+          } else {
+            const magMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, emissive: 0x1d4ed8, emissiveIntensity: 0.4 });
+            const torus = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.18, 12, 20), magMat);
+            group.add(torus);
+          }
+
+          return group;
+        },
+
+        // Build 3D Trackside Scenery
+        createSceneryMesh(index) {
+          const tex = this.getTextures();
+          const group = new THREE.Group();
+          const kind = index % 3;
+
+          if (kind === 0) {
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.5 });
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.38, 4.5, 10), trunkMat);
+            trunk.position.set(0, 2.25, 0);
+            group.add(trunk);
+
+            for (let i = 0; i < 4; i++) {
+              const leaf = new THREE.Mesh(new THREE.ConeGeometry(1.25, 2.2, 6), leafMat);
+              leaf.position.set(0, 4.0 + i * 0.3, 0);
+              group.add(leaf);
+            }
+          } else if (kind === 1) {
+            const eggMat = new THREE.MeshStandardMaterial({ map: tex.digiEgg, roughness: 0.35 });
+            const egg = new THREE.Mesh(new THREE.SphereGeometry(1.35, 18, 16), eggMat);
+            egg.scale.set(1.0, 1.32, 1.0);
+            egg.position.set(0, 1.75, 0);
+            group.add(egg);
+          } else {
+            const towerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.2 });
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            const tower = new THREE.Mesh(new THREE.BoxGeometry(1.5, 6.5, 1.5), towerMat);
+            tower.position.set(0, 3.25, 0);
+            group.add(tower);
+
+            [1.8, 3.8, 5.8].forEach((ry) => {
+              const ring = new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.24, 1.68), ringMat);
+              ring.position.set(0, ry, 0);
+              group.add(ring);
+            });
+          }
+
+          return group;
+        }
+      };
+
+      // ==========================================
+      // 5. MAIN 3D GAME ENGINE & STATE
+      // ==========================================
+      const canvas = document.getElementById('gameCanvas');
+      const overlayCanvas = document.getElementById('overlayCanvas');
+      const octx = overlayCanvas.getContext('2d');
+
+      const LANE_WIDTH = 3.1;
+      const Z_SCALE = 0.22;
+
+      const CAMERA_MODES = [
+        { name: '標準視角', y: 6.4, z: 12.2, lookY: 1.5, lookZ: -22, fov: 54 },
+        { name: '動感近鏡', y: 4.6, z: 9.2, lookY: 1.6, lookZ: -25, fov: 60 },
+        { name: '廣角遠景', y: 9.2, z: 15.8, lookY: 1.2, lookZ: -24, fov: 50 }
+      ];
+
+      const Game = {
+        running: false,
+        paused: false,
+        playerName: '八神太一',
+        score: 0,
+        coins: 0,
+        distance: 0,
+        blastedCount: 0,
+        speed: 440,
+        maxSpeed: 920,
+        worldZ: 0,
+        zoneIndex: 0,
+        cameraModeIdx: 0,
+        lastTime: 0,
+        animId: null,
+
+        player: {
+          lane: 0,
+          x: 0,
+          y: 0,
+          vy: 0,
+          isJumping: false,
+          isSliding: false,
+          slideTimer: 0,
+          airShiftsCount: 0,
+          airShiftFlash: 0,
+          evolved: false,
+          flameCharges: 0,
+          evoAnimTimer: 0,
+          magnetTimer: 0,
+          invincibleTimer: 0,
+          runCycle: 0
+        },
+
+        obstacles: [],
+        items: [],
+        fireballs: [],
+        particles3D: [],
+        sceneryObjects: [],
+        spawnTimer: 0,
+        evoDropCooldown: 3.5,
+        toastTimer: 0,
+
+        scene: null,
+        camera: null,
+        renderer: null,
+        agumonMesh: null,
+        greymonMesh: null,
+        patamonMesh: null,
+        biyomonMesh: null,
+        playerLight: null,
+        sleepers: [],
+        railMeshes: [],
+        groundMesh: null,
+
+        initThree() {
+          if (this.scene) return;
+
+          this.scene = new THREE.Scene();
+          this.scene.background = new THREE.Color(ZONES[0].fogColor);
+          this.scene.fog = new THREE.FogExp2(ZONES[0].fogColor, 0.0042);
+
+          this.camera = new THREE.PerspectiveCamera(54, 16 / 9, 0.5, 420);
+
+          this.renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            powerPreference: 'high-performance'
+          });
+          this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+          const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.95);
+          hemiLight.position.set(0, 50, 0);
+          this.scene.add(hemiLight);
+
+          const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+          dirLight.position.set(18, 38, 24);
+          this.scene.add(dirLight);
+
+          this.playerLight = new THREE.PointLight(0xf97316, 0, 18);
+          this.playerLight.position.set(0, 3, 0);
+          this.scene.add(this.playerLight);
+
+          // Ground Plane Outside Track
+          const groundGeo = new THREE.PlaneGeometry(360, 480);
+          const groundMat = new THREE.MeshStandardMaterial({ color: ZONES[0].groundColor, roughness: 0.9 });
+          this.groundMesh = new THREE.Mesh(groundGeo, groundMat);
+          this.groundMesh.rotation.x = -Math.PI / 2;
+          this.groundMesh.position.set(0, -0.1, -180);
+          this.scene.add(this.groundMesh);
+
+          // 3-Lane Cyber Road Bed
+          const roadGeo = new THREE.PlaneGeometry(LANE_WIDTH * 3.35, 460);
+          const roadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65, metalness: 0.2 });
+          const roadMesh = new THREE.Mesh(roadGeo, roadMat);
+          roadMesh.rotation.x = -Math.PI / 2;
+          roadMesh.position.set(0, 0.01, -180);
+          this.scene.add(roadMesh);
+
+          // Glowing Neon Rails & Lane Dividers
+          const railMat = new THREE.MeshBasicMaterial({ color: ZONES[0].railColor });
+          const dividerMat = new THREE.MeshBasicMaterial({ color: 0x475569 });
+          [-1.62, -0.5, 0.5, 1.62].forEach((factor, idx) => {
+            const isOuter = idx === 0 || idx === 3;
+            const rGeo = new THREE.BoxGeometry(isOuter ? 0.18 : 0.08, 0.12, 460);
+            const rMesh = new THREE.Mesh(rGeo, isOuter ? railMat : dividerMat);
+            rMesh.position.set(factor * LANE_WIDTH, 0.06, -180);
+            this.scene.add(rMesh);
+            if (isOuter) this.railMeshes.push(rMesh);
+          });
+
+          // Moving Track Sleepers
+          const sleeperMat = new THREE.MeshBasicMaterial({ color: 0x334155 });
+          for (let i = 0; i < 28; i++) {
+            const sMesh = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH * 3.2, 0.04, 0.48), sleeperMat);
+            sMesh.position.set(0, 0.03, 15 - i * 12);
+            this.scene.add(sMesh);
+            this.sleepers.push(sMesh);
+          }
+
+          // Trackside 3D Scenery
+          for (let i = 0; i < 18; i++) {
+            const side = i % 2 === 0 ? -1 : 1;
+            const sObj = Digi3DBuilder.createSceneryMesh(i);
+            sObj.position.set(side * (LANE_WIDTH * 2.25 + (i % 3) * 1.8), 0, 10 - i * 18);
+            this.scene.add(sObj);
+            this.sceneryObjects.push(sObj);
+          }
+
+          // Create Compact Forward-Facing Agumon & Greymon 3D Player Models
+          this.agumonMesh = Digi3DBuilder.createAgumonMesh();
+          this.greymonMesh = Digi3DBuilder.createGreymonMesh();
+          this.greymonMesh.visible = false;
+          this.scene.add(this.agumonMesh);
+          this.scene.add(this.greymonMesh);
+
+          // Create 3D Flying Companions (Patamon & Biyomon)
+          this.patamonMesh = Digi3DBuilder.createPatamonMesh();
+          this.patamonMesh.position.set(-5.2, 4.5, -11);
+          this.scene.add(this.patamonMesh);
+
+          this.biyomonMesh = Digi3DBuilder.createBiyomonMesh();
+          this.biyomonMesh.position.set(5.4, 4.8, -14);
+          this.scene.add(this.biyomonMesh);
+        },
+
+        resize() {
+          const container = document.getElementById('canvasContainer');
+          if (!container) return;
+          const rect = container.getBoundingClientRect();
+          const w = Math.max(320, Math.floor(rect.width));
+          const h = Math.max(320, Math.floor(rect.height));
+          this.viewW = w;
+          this.viewH = h;
+
+          this.initThree();
+          this.camera.aspect = w / h;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(w, h, false);
+
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          overlayCanvas.width = Math.floor(w * dpr);
+          overlayCanvas.height = Math.floor(h * dpr);
+          octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          if (!this.running) {
+            this.render(0);
+          }
+        },
+
+        clearDynamicMeshes() {
+          for (const ob of this.obstacles) {
+            if (ob.mesh) this.scene.remove(ob.mesh);
+          }
+          for (const it of this.items) {
+            if (it.mesh) this.scene.remove(it.mesh);
+          }
+          for (const fb of this.fireballs) {
+            if (fb.mesh) this.scene.remove(fb.mesh);
+          }
+          for (const pt of this.particles3D) {
+            if (pt.mesh) this.scene.remove(pt.mesh);
+          }
+          this.obstacles = [];
+          this.items = [];
+          this.fireballs = [];
+          this.particles3D = [];
+        },
+
+        resetState() {
+          this.initThree();
+          this.clearDynamicMeshes();
+
+          this.score = 0;
+          this.coins = 0;
+          this.distance = 0;
+          this.blastedCount = 0;
+          this.speed = 460;
+          this.worldZ = 0;
+          this.zoneIndex = 0;
+
+          this.player.lane = 0;
+          this.player.x = 0;
+          this.player.y = 0;
+          this.player.vy = 0;
+          this.player.isJumping = false;
+          this.player.isSliding = false;
+          this.player.slideTimer = 0;
+          this.player.airShiftsCount = 0;
+          this.player.airShiftFlash = 0;
+          this.player.evolved = false;
+          this.player.flameCharges = 0;
+          this.player.evoAnimTimer = 0;
+          this.player.magnetTimer = 0;
+          this.player.invincibleTimer = 0;
+          this.player.runCycle = 0;
+
+          this.spawnTimer = 0.5;
+          this.evoDropCooldown = 3.2;
+
+          this.applyZoneTheme(0);
+          this.updateHUD();
+          this.updateEvolutionUI();
+        },
+
+        applyZoneTheme(idx) {
+          const safeIdx = ((idx % ZONES.length) + ZONES.length) % ZONES.length;
+          const z = ZONES[safeIdx] || ZONES[0];
+          const zoneEl = document.getElementById('hudZoneName');
+          if (zoneEl) zoneEl.textContent = z.name;
+          if (this.scene) {
+            this.scene.background = new THREE.Color(z.fogColor);
+            this.scene.fog.color.setHex(z.fogColor);
+          }
+          if (this.groundMesh) {
+            this.groundMesh.material.color.setHex(z.groundColor);
+          }
+          this.railMeshes.forEach((rm) => rm.material.color.setHex(z.railColor));
+        },
+
+        start(name) {
+          if (name && name.trim()) {
+            this.playerName = name.trim();
+          }
+          document.getElementById('hudPlayerName').textContent = this.playerName;
+          document.getElementById('startModal').classList.add('hidden');
+          document.getElementById('gameOverModal').classList.add('hidden');
+          document.getElementById('guideModal').classList.add('hidden');
+
+          SoundFX.init();
+          this.resetState();
+          this.running = true;
+          this.paused = false;
+          document.getElementById('btnPause').textContent = '⏸️';
+          this.showCompanionToast('🦖', `亞古獸：${this.playerName}，3D 數碼世界冒險開始！跳起喺空中都可以左右變向㗎！`);
+          SoundFX.startBGM();
+
+          if (this.animId) cancelAnimationFrame(this.animId);
+          this.lastTime = performance.now();
+          const loop = (now) => {
+            const dt = Math.min(0.05, (now - this.lastTime) / 1000);
+            this.lastTime = now;
+            if (this.running && !this.paused) {
+              this.update(dt);
+            }
+            this.render(dt);
+            if (this.running) {
+              this.animId = requestAnimationFrame(loop);
+            }
+          };
+          this.animId = requestAnimationFrame(loop);
+        },
+
+        togglePause() {
+          if (!this.running) return;
+          this.paused = !this.paused;
+          document.getElementById('btnPause').textContent = this.paused ? '▶️' : '⏸️';
+          if (!this.paused) {
+            this.lastTime = performance.now();
+          }
+        },
+
+        cycleCameraMode() {
+          this.cameraModeIdx = (this.cameraModeIdx + 1) % CAMERA_MODES.length;
+          const mode = CAMERA_MODES[this.cameraModeIdx];
+          document.getElementById('cameraModeLabel').textContent = mode.name;
+          if (this.camera) {
+            this.camera.fov = mode.fov;
+            this.camera.updateProjectionMatrix();
+          }
+          this.showCompanionToast('🎥', `已切換至「${mode.name}」！`);
+        },
+
+        moveHorizontal(dir) {
+          if (!this.running || this.paused) return;
+          const prevLane = this.player.lane;
+          const nextLane = Math.max(-1, Math.min(1, this.player.lane + dir));
+          if (nextLane !== prevLane) {
+            this.player.lane = nextLane;
+            if (this.player.y > 8) {
+              this.player.airShiftsCount++;
+              this.player.airShiftFlash = 0.32;
+              SoundFX.airShift();
+              this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.0 + this.player.y * 0.032, 0, 0x38bdf8, 10);
+            } else {
+              SoundFX.playTone(350, 'sine', 0.07, 0.07, 450);
+            }
+          }
+        },
+
+        jump() {
+          if (!this.running || this.paused) return;
+          if (this.player.y <= 2) {
+            this.player.isSliding = false;
+            this.player.slideTimer = 0;
+            this.player.y = 1;
+            this.player.vy = 620;
+            this.player.isJumping = true;
+            SoundFX.jump();
+          }
+        },
+
+        slide() {
+          if (!this.running || this.paused) return;
+          if (this.player.y > 5) {
+            this.player.vy = -1080;
+          }
+          this.player.isSliding = true;
+          this.player.slideTimer = 0.68;
+          SoundFX.slide();
+        },
+
+        fireMegaFlame() {
+          if (!this.running || this.paused) return;
+          if (!this.player.evolved || this.player.flameCharges <= 0) return;
+
+          this.player.flameCharges--;
+          SoundFX.megaFlame();
+
+          const fbGroup = new THREE.Group();
+          const core = new THREE.Mesh(
+            new THREE.SphereGeometry(0.75, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xfef08a })
+          );
+          const outer = new THREE.Mesh(
+            new THREE.SphereGeometry(1.18, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.72 })
+          );
+          const fbLight = new THREE.PointLight(0xf97316, 2.0, 22);
+          fbGroup.add(core, outer, fbLight);
+
+          const startZ = 130;
+          fbGroup.position.set(this.player.x * LANE_WIDTH, 1.6, -(startZ - 110) * Z_SCALE);
+          this.scene.add(fbGroup);
+
+          this.fireballs.push({
+            lane: this.player.lane,
+            x: this.player.x,
+            z: startZ,
+            mesh: fbGroup
+          });
+
+          this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.6, -1.5, 0xf97316, 16);
+
+          if (this.player.flameCharges <= 0) {
+            setTimeout(() => {
+              if (this.player.flameCharges <= 0 && this.player.evolved) {
+                this.player.evolved = false;
+                this.player.invincibleTimer = 1.2;
+                this.updateEvolutionUI();
+                this.showCompanionToast('🦖', '亞古獸：3次超級火焰用完退化喇！繼續執神聖計劃再次進化啦！');
+              }
+            }, 340);
+          }
+          this.updateEvolutionUI();
+        },
+
+        triggerEvolution() {
+          this.player.evolved = true;
+          this.player.flameCharges = 3;
+          this.player.evoAnimTimer = 1.6;
+          this.player.invincibleTimer = 1.8;
+          this.score += 250;
+          SoundFX.evolve();
+
+          const banner = document.getElementById('evoCutInBanner');
+          banner.classList.remove('hidden');
+          setTimeout(() => banner.classList.add('hidden'), 1650);
+
+          this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.6, 0, 0xfacc15, 26);
+          this.updateEvolutionUI();
+          this.showCompanionToast('🔥', '亞古獸超進化——暴龍獸！獲得 3 次「超級火焰」擊破前方障礙物！');
+        },
+
+        updateEvolutionUI() {
+          const formBadge = document.getElementById('hudDigimonForm');
+          const avatarBadge = document.getElementById('hudAvatarBadge');
+          const evoStatus = document.getElementById('evoStatusBadge');
+          const flameSlots = document.getElementById('flameSlots');
+          const btnFlame = document.getElementById('btnMegaFlame');
+          const btnTitle = document.getElementById('btnFlameTitle');
+          const btnSub = document.getElementById('btnFlameSub');
+
+          const charges = this.player.flameCharges;
+          let slotsHTML = '';
+          for (let i = 0; i < 3; i++) {
+            slotsHTML += `<span class="${i < charges ? 'opacity-100 scale-110' : 'opacity-20'} transition-transform">🔥</span>`;
+          }
+          if (flameSlots) flameSlots.innerHTML = slotsHTML;
+
+          if (this.player.evolved && charges > 0) {
+            formBadge.textContent = '暴龍獸 (成熟期)';
+            formBadge.className = 'px-2 py-0.5 text-xs font-bold rounded-md bg-amber-500/30 text-amber-200 border border-amber-400';
+            avatarBadge.innerHTML = DigimonArt.greymonSVG();
+            evoStatus.textContent = `⚡ 暴龍獸進化中 (${charges}/3)`;
+            evoStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-orange-500 text-slate-950';
+
+            btnFlame.disabled = false;
+            btnFlame.className = 'btn-press animate-pulse-subtle min-w-[132px] sm:min-w-[156px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-orange-500 hover:bg-orange-400 border-amber-300 text-slate-950 cursor-pointer';
+            btnTitle.textContent = `超級火焰 (${charges}/3)`;
+            btnSub.textContent = '按 Space / 點擊發射';
+          } else {
+            formBadge.textContent = '亞古獸';
+            formBadge.className = 'px-2 py-0.5 text-xs font-bold rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/40';
+            avatarBadge.innerHTML = DigimonArt.agumonSVG();
+            evoStatus.textContent = '成長期：亞古獸';
+            evoStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700';
+
+            btnFlame.disabled = true;
+            btnFlame.className = 'btn-press min-w-[132px] sm:min-w-[156px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-slate-800/90 border-slate-700 text-slate-500 cursor-not-allowed';
+            btnTitle.textContent = '超級火焰 (0/3)';
+            btnSub.textContent = '執進化道具變暴龍獸';
+          }
+        },
+
+        showCompanionToast(icon, text) {
+          const toast = document.getElementById('companionToast');
+          const iconEl = document.getElementById('companionIcon');
+          const textEl = document.getElementById('companionText');
+          if (!toast) return;
+          iconEl.textContent = icon;
+          textEl.textContent = text;
+          toast.classList.remove('hidden');
+          this.toastTimer = 4.2;
+        },
+
+        spawnBurst3D(x, y, z, hexColor, count = 14) {
+          const geo = new THREE.BoxGeometry(0.24, 0.24, 0.24);
+          const mat = new THREE.MeshBasicMaterial({ color: hexColor });
+          for (let i = 0; i < count; i++) {
+            const m = new THREE.Mesh(geo, mat);
+            m.position.set(x, y, z);
+            const angle = Math.random() * Math.PI * 2;
+            const spd = 3.5 + Math.random() * 9.5;
+            this.scene.add(m);
+            this.particles3D.push({
+              mesh: m,
+              vx: Math.cos(angle) * spd,
+              vy: 1.8 + Math.random() * 7.5,
+              vz: Math.sin(angle) * spd,
+              life: 0.42 + Math.random() * 0.25
+            });
+          }
+        },
+
+        spawnWave() {
+          const zStart = 1280;
+          const lanes = [-1, 0, 1];
+          const shuffled = [...lanes].sort(() => Math.random() - 0.5);
+
+          const obstacleTypes = [
+            { kind: 'dark_gear', req: 'jump', label: '黑色齒輪' },
+            { kind: 'numemon_wall', req: 'jump', label: '鼻涕獸病毒欄' },
+            { kind: 'devimon_gate', req: 'slide', label: '惡魔獸激光閘' },
+            { kind: 'demidevimon_swarm', req: 'slide', label: '小惡魔獸飛襲' },
+            { kind: 'trailmon_train', req: 'dodge', label: '暴走列車獸' },
+            { kind: 'machinedramon_pillar', req: 'dodge', label: '機械邪龍巨柱' }
+          ];
+
+          const count = Math.random() < 0.58 ? 2 : 1;
+          let fullBlockCount = 0;
+
+          for (let i = 0; i < count; i++) {
+            const lane = shuffled[i];
+            let chosen = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+            if (chosen.req === 'dodge') {
+              fullBlockCount++;
+              if (fullBlockCount >= 2 && count === 2) {
+                chosen = obstacleTypes[Math.floor(Math.random() * 4)];
+              }
+            }
+            const obZ = zStart + (i === 1 && Math.random() < 0.35 ? 110 : 0);
+            const mesh = Digi3DBuilder.createObstacleMesh(chosen.kind);
+            mesh.position.set(lane * LANE_WIDTH, 0, -(obZ - 110) * Z_SCALE);
+            this.scene.add(mesh);
+
+            this.obstacles.push({
+              lane,
+              z: obZ,
+              kind: chosen.kind,
+              req: chosen.req,
+              label: chosen.label,
+              mesh
+            });
+          }
+
+          // Spawn Coins (Digi-Bytes)
+          const coinLane = shuffled[count % 3];
+          const isArc = Math.random() < 0.5;
+          for (let c = 0; c < 4; c++) {
+            const targetLane = (isArc && c >= 2 && Math.random() < 0.5)
+              ? Math.max(-1, Math.min(1, coinLane + (coinLane === 0 ? 1 : -coinLane)))
+              : coinLane;
+            const cZ = zStart - 90 + c * 65;
+            const cY = isArc ? Math.sin((c / 3) * Math.PI) * 95 : 22;
+            const mesh = Digi3DBuilder.createItemMesh('coin');
+            mesh.position.set(targetLane * LANE_WIDTH, 0.8 + cY * 0.032, -(cZ - 110) * Z_SCALE);
+            this.scene.add(mesh);
+
+            this.items.push({
+              type: 'coin',
+              lane: targetLane,
+              z: cZ,
+              y: cY,
+              mesh
+            });
+          }
+
+          // Randomly Drop Evolution Item (Crest of Courage Digivice) or Friendship Magnet
+          if (this.evoDropCooldown <= 0 && (!this.player.evolved || this.player.flameCharges <= 1)) {
+            const dropLane = shuffled[2];
+            const dZ = zStart + 160;
+            const mesh = Digi3DBuilder.createItemMesh('digivice_crest');
+            mesh.position.set(dropLane * LANE_WIDTH, 6.8, -(dZ - 110) * Z_SCALE);
+            this.scene.add(mesh);
+
+            this.items.push({
+              type: 'digivice_crest',
+              lane: dropLane,
+              z: dZ,
+              y: 185,
+              vy: -135,
+              mesh
+            });
+            this.evoDropCooldown = 8.0 + Math.random() * 4.5;
+          } else if (Math.random() < 0.16 && this.player.magnetTimer <= 0) {
+            const mLane = shuffled[2];
+            const mZ = zStart + 140;
+            const mesh = Digi3DBuilder.createItemMesh('friendship_magnet');
+            mesh.position.set(mLane * LANE_WIDTH, 1.3, -(mZ - 110) * Z_SCALE);
+            this.scene.add(mesh);
+
+            this.items.push({
+              type: 'friendship_magnet',
+              lane: mLane,
+              z: mZ,
+              y: 30,
+              mesh
+            });
+          }
+        },
+
+        update(dt) {
+          if (!Number.isFinite(dt) || dt <= 0) return;
+          this.speed = Math.min(this.maxSpeed, this.speed + dt * 9.5);
+          const moveDist = this.speed * dt;
+          this.worldZ += moveDist;
+          this.distance = Math.max(0, Math.floor(this.worldZ / 18));
+          this.score += Math.floor(moveDist * 0.25);
+
+          const rawZoneIdx = Math.floor(this.distance / 250);
+          const newZoneIndex = ((rawZoneIdx % ZONES.length) + ZONES.length) % ZONES.length;
+          if (newZoneIndex !== this.zoneIndex) {
+            this.zoneIndex = newZoneIndex;
+            this.applyZoneTheme(this.zoneIndex);
+            const msgIdx = ((this.zoneIndex % COMPANION_MESSAGES.length) + COMPANION_MESSAGES.length) % COMPANION_MESSAGES.length;
+            const msg = COMPANION_MESSAGES[msgIdx] || COMPANION_MESSAGES[0] || { icon: '🦋', text: '繼續向前衝呀！' };
+            const zoneInfo = ZONES[this.zoneIndex] || ZONES[0];
+            this.showCompanionToast(msg.icon, `進入新區域【${zoneInfo.name}】！${msg.text}`);
+          }
+
+          if (this.toastTimer > 0) {
+            this.toastTimer -= dt;
+            if (this.toastTimer <= 0) {
+              document.getElementById('companionToast').classList.add('hidden');
+            }
+          }
+
+          // Smooth Horizontal Interpolation (Ground & Mid-Air!)
+          const lerpSpeed = this.player.y > 5 ? 16 : 14;
+          this.player.x += (this.player.lane - this.player.x) * Math.min(1, dt * lerpSpeed);
+
+          if (this.player.airShiftFlash > 0) {
+            this.player.airShiftFlash = Math.max(0, this.player.airShiftFlash - dt);
+          }
+
+          // Jump Physics
+          if (this.player.y > 0 || this.player.vy !== 0) {
+            this.player.y += this.player.vy * dt;
+            this.player.vy -= 1650 * dt;
+            if (this.player.y <= 0) {
+              this.player.y = 0;
+              this.player.vy = 0;
+              this.player.isJumping = false;
+            }
+          }
+
+          // Slide Timer
+          if (this.player.isSliding) {
+            this.player.slideTimer -= dt;
+            if (this.player.slideTimer <= 0) {
+              this.player.isSliding = false;
+            }
+          }
+
+          if (this.player.evoAnimTimer > 0) this.player.evoAnimTimer -= dt;
+          if (this.player.invincibleTimer > 0) this.player.invincibleTimer -= dt;
+          if (this.player.magnetTimer > 0) {
+            this.player.magnetTimer -= dt;
+            document.getElementById('activeBuffText').classList.remove('hidden');
+          } else {
+            document.getElementById('activeBuffText').classList.add('hidden');
+          }
+
+          this.player.runCycle += dt * (this.speed * 0.028);
+          this.evoDropCooldown -= dt;
+
+          // Move Track Sleepers & Scenery Objects in 3D
+          const zDelta3D = moveDist * Z_SCALE;
+          for (const sMesh of this.sleepers) {
+            sMesh.position.z += zDelta3D;
+            if (sMesh.position.z > 18) sMesh.position.z -= 336;
+          }
+          for (const scObj of this.sceneryObjects) {
+            scObj.position.z += zDelta3D;
+            if (scObj.position.z > 22) scObj.position.z -= 324;
+          }
+
+          // Animate Flying Patamon & Biyomon Companions
+          const tNow = this.player.runCycle;
+          if (this.patamonMesh) {
+            this.patamonMesh.position.y = 4.5 + Math.sin(tNow * 1.5) * 0.5;
+            this.patamonMesh.position.x = -5.2 + Math.cos(tNow * 0.8) * 0.6;
+            this.patamonMesh.userData.leftEar.rotation.z = Math.sin(tNow * 4.5) * 0.45;
+            this.patamonMesh.userData.rightEar.rotation.z = -Math.sin(tNow * 4.5) * 0.45;
+          }
+          if (this.biyomonMesh) {
+            this.biyomonMesh.position.y = 4.8 + Math.cos(tNow * 1.4) * 0.55;
+            this.biyomonMesh.position.x = 5.4 + Math.sin(tNow * 0.7) * 0.6;
+            this.biyomonMesh.userData.leftWing.rotation.z = Math.sin(tNow * 4.8) * 0.5;
+            this.biyomonMesh.userData.rightWing.rotation.z = -Math.sin(tNow * 4.8) * 0.5;
+          }
+
+          // Spawn Waves
+          this.spawnTimer -= dt;
+          if (this.spawnTimer <= 0) {
+            this.spawnWave();
+            this.spawnTimer = Math.max(0.68, 1.45 - (this.speed - 450) / 900);
+          }
+
+          // Update Mega Flame Fireballs in 3D
+          for (let i = this.fireballs.length - 1; i >= 0; i--) {
+            const fb = this.fireballs[i];
+            fb.z += 1250 * dt;
+            fb.mesh.position.z = -(fb.z - 110) * Z_SCALE;
+            fb.mesh.rotation.z += dt * 10;
+
+            for (let j = this.obstacles.length - 1; j >= 0; j--) {
+              const ob = this.obstacles[j];
+              if (Math.abs(ob.z - fb.z) < 95 && Math.abs(ob.lane - fb.lane) <= 1) {
+                this.spawnBurst3D(ob.lane * LANE_WIDTH, 1.6, ob.mesh.position.z, 0xf97316, 22);
+                this.scene.remove(ob.mesh);
+                this.obstacles.splice(j, 1);
+                this.blastedCount++;
+                this.score += 150;
+                SoundFX.playTone(220, 'square', 0.15, 0.12, 90);
+              }
+            }
+            if (fb.z > 1350) {
+              this.scene.remove(fb.mesh);
+              this.fireballs.splice(i, 1);
+            }
+          }
+
+          // Update Items
+          for (let i = this.items.length - 1; i >= 0; i--) {
+            const it = this.items[i];
+            it.z -= moveDist;
+
+            if (it.type === 'digivice_crest' && it.y > 28) {
+              it.y = Math.max(28, it.y + (it.vy || -135) * dt);
+            }
+
+            if (it.type === 'coin' && this.player.magnetTimer > 0 && it.z < 460 && it.z > 60) {
+              it.lane += (this.player.x - it.lane) * Math.min(1, dt * 10);
+              it.y += (this.player.y + 30 - it.y) * Math.min(1, dt * 10);
+            }
+
+            it.mesh.position.set(
+              it.lane * LANE_WIDTH,
+              0.8 + it.y * 0.032,
+              -(it.z - 110) * Z_SCALE
+            );
+            it.mesh.rotation.y += dt * 3.5;
+
+            if (Math.abs(it.z - 110) < 48 && Math.abs(it.lane - this.player.x) < 0.58) {
+              const heightDiff = Math.abs((this.player.y + 35) - it.y);
+              if (heightDiff < 78) {
+                if (it.type === 'coin') {
+                  this.coins++;
+                  this.score += 25;
+                  SoundFX.coin();
+                  this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.2, 0, 0x22d3ee, 6);
+                } else if (it.type === 'digivice_crest') {
+                  this.triggerEvolution();
+                } else if (it.type === 'friendship_magnet') {
+                  this.player.magnetTimer = 8.0;
+                  this.score += 100;
+                  SoundFX.evolve();
+                  this.showCompanionToast('🐺', '加布獸友情支援！8秒內自動吸取所有路線嘅數碼資料幣！');
+                }
+                this.scene.remove(it.mesh);
+                this.items.splice(i, 1);
+                continue;
+              }
+            }
+
+            if (it.z < -40) {
+              this.scene.remove(it.mesh);
+              this.items.splice(i, 1);
+            }
+          }
+
+          // Update Obstacles & Check Collisions
+          for (let i = this.obstacles.length - 1; i >= 0; i--) {
+            const ob = this.obstacles[i];
+            ob.z -= moveDist;
+            if (ob.kind === 'trailmon_train') {
+              ob.z -= 90 * dt;
+            }
+
+            ob.mesh.position.z = -(ob.z - 110) * Z_SCALE;
+            if (ob.mesh.userData.spinPart) {
+              ob.mesh.userData.spinPart.rotation.x -= dt * 7;
+            }
+
+            if (ob.z < 142 && ob.z > 78 && Math.abs(ob.lane - this.player.x) < 0.46) {
+              let hit = false;
+              if (ob.req === 'jump') {
+                if (this.player.y < 46) hit = true;
+              } else if (ob.req === 'slide') {
+                if (!this.player.isSliding || this.player.y > 28) hit = true;
+              } else {
+                hit = true;
+              }
+
+              if (hit && this.player.invincibleTimer <= 0) {
+                if (this.player.evolved && this.player.flameCharges > 0) {
+                  this.player.flameCharges--;
+                  this.blastedCount++;
+                  this.score += 150;
+                  SoundFX.megaFlame();
+                  this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.6, 0, 0xf97316, 24);
+                  this.scene.remove(ob.mesh);
+                  this.obstacles.splice(i, 1);
+
+                  if (this.player.flameCharges <= 0) {
+                    this.player.evolved = false;
+                    this.player.invincibleTimer = 1.2;
+                    this.showCompanionToast('🦖', `暴龍獸用最後一發超級火焰轟碎咗【${ob.label}】，退化回亞古獸！`);
+                  } else {
+                    this.showCompanionToast('🔥', `暴龍獸噴射超級火焰粉碎咗【${ob.label}】！（剩餘 ${this.player.flameCharges}/3 發）`);
+                  }
+                  this.updateEvolutionUI();
+                  continue;
+                } else {
+                  this.handleGameOver(ob.label);
+                  return;
+                }
+              }
+            }
+
+            if (ob.z < -60) {
+              this.scene.remove(ob.mesh);
+              this.obstacles.splice(i, 1);
+            }
+          }
+
+          // Update 3D Particles
+          for (let i = this.particles3D.length - 1; i >= 0; i--) {
+            const pt = this.particles3D[i];
+            pt.mesh.position.x += pt.vx * dt;
+            pt.mesh.position.y += pt.vy * dt;
+            pt.mesh.position.z += pt.vz * dt;
+            pt.vy -= 22 * dt;
+            pt.life -= dt;
+            pt.mesh.scale.setScalar(Math.max(0.1, pt.life * 1.8));
+            if (pt.life <= 0) {
+              this.scene.remove(pt.mesh);
+              this.particles3D.splice(i, 1);
+            }
+          }
+
+          this.updateHUD();
+        },
+
+        updateHUD() {
+          document.getElementById('hudScore').textContent = String(this.score).padStart(5, '0');
+          document.getElementById('hudCoins').textContent = String(this.coins);
+          document.getElementById('hudDistance').textContent = `${this.distance}m`;
+        },
+
+        handleGameOver(obstacleName) {
+          this.running = false;
+          SoundFX.stopBGM();
+          SoundFX.crash();
+
+          saveScoreToLeaderboard({
+            name: this.playerName,
+            score: this.score,
+            distance: this.distance,
+            blasted: this.blastedCount
+          });
+          renderLeaderboards();
+
+          document.getElementById('goHeadline').textContent = `${this.playerName} 嘅亞古獸撞上「${obstacleName}」了！`;
+          document.getElementById('goScore').textContent = this.score;
+          document.getElementById('goDistance').textContent = `${this.distance}m`;
+          document.getElementById('goCoins').textContent = this.coins;
+          document.getElementById('goBlasted').textContent = this.blastedCount;
+          document.getElementById('gameOverModal').classList.remove('hidden');
+        },
+
+        // ====================================================
+        // 6. RENDER THREE.JS 3D SCENE
+        // ====================================================
+        render() {
+          if (!this.scene || !this.renderer) return;
+
+          const playerWorldX = this.player.x * LANE_WIDTH;
+          const playerWorldY = this.player.y * 0.032;
+
+          // Toggle active 3D mesh between Agumon and Greymon
+          const activeMesh = this.player.evolved ? this.greymonMesh : this.agumonMesh;
+          this.agumonMesh.visible = !this.player.evolved;
+          this.greymonMesh.visible = this.player.evolved;
+
+          activeMesh.position.set(playerWorldX, playerWorldY, 0);
+
+          // Smooth banking & forward-looking turn angle when changing lanes
+          const laneDiff = this.player.lane - this.player.x;
+          activeMesh.rotation.z = laneDiff * -0.32;
+          activeMesh.rotation.y = laneDiff * -0.35;
+
+          // Slide crouch vs normal running posture
+          if (this.player.isSliding) {
+            activeMesh.scale.set(1.12, 0.50, 1.18);
+            activeMesh.rotation.x = -0.38;
+          } else {
+            activeMesh.scale.set(1, 1, 1);
+            activeMesh.rotation.x = this.player.y > 5 ? 0.14 : 0;
+          }
+
+          // Animate articulated limbs
+          const swing = Math.sin(this.player.runCycle * 1.35) * 0.65;
+          const parts = activeMesh.userData;
+          if (parts) {
+            parts.leftLeg.rotation.x = swing;
+            parts.rightLeg.rotation.x = -swing;
+            parts.leftArm.rotation.x = -swing * 0.7;
+            parts.rightArm.rotation.x = swing * 0.7;
+            parts.tailGroup.rotation.y = Math.cos(this.player.runCycle * 1.35) * 0.30;
+            parts.headGroup.position.y = (this.player.evolved ? 3.65 : 2.95) + Math.abs(Math.sin(this.player.runCycle * 1.35)) * 0.10;
+            if (parts.auraMesh) {
+              parts.auraMesh.rotation.z += 0.04;
+            }
+          }
+
+          this.playerLight.position.set(playerWorldX, playerWorldY + 2.4, 1.0);
+          this.playerLight.intensity = this.player.evolved ? 1.5 : 0.25;
+
+          // Smooth 3D Camera Follow
+          const camPreset = CAMERA_MODES[this.cameraModeIdx] || CAMERA_MODES[0];
+          this.camera.position.x = playerWorldX * 0.48;
+          this.camera.position.y = camPreset.y + playerWorldY * 0.25;
+          this.camera.position.z = camPreset.z;
+          this.camera.lookAt(playerWorldX * 0.25, camPreset.lookY + playerWorldY * 0.15, camPreset.lookZ);
+
+          // Render Three.js WebGL Scene
+          this.renderer.render(this.scene, this.camera);
+
+          // Keep overlayCanvas completely clear
+          const w = this.viewW || 800;
+          const h = this.viewH || 500;
+          octx.clearRect(0, 0, w, h);
+        }
+      };
+
+      // ==========================================
+      // 7. INPUT LISTENERS (Keyboard, Touch, UI Buttons)
+      // ==========================================
+      window.addEventListener('keydown', (e) => {
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+          if (e.key === 'Enter') {
+            document.getElementById('btnStartGame').click();
+          }
+          return;
+        }
+
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
+          Game.moveHorizontal(-1);
+        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+          e.preventDefault();
+          Game.moveHorizontal(1);
+        } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+          e.preventDefault();
+          Game.jump();
+        } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          Game.slide();
+        } else if (e.key === ' ' || e.key === 'f' || e.key === 'F') {
+          e.preventDefault();
+          Game.fireMegaFlame();
+        } else if (e.key === 'p' || e.key === 'P') {
+          Game.togglePause();
+        } else if (e.key === 'c' || e.key === 'C') {
+          Game.cycleCameraMode();
+        }
+      });
+
+      // Touch Swipe Gestures on Stage
+      let touchStartX = null;
+      let touchStartY = null;
+      let touchHandled = false;
+
+      canvas.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        SoundFX.init();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchHandled = false;
+      }, { passive: true });
+
+      canvas.addEventListener('touchmove', (e) => {
+        if (touchStartX === null || touchHandled || !e.touches || e.touches.length === 0) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        const threshold = 24;
+
+        if (Math.abs(dx) > threshold || Math.abs(dy) > threshold) {
+          if (Math.abs(dx) > Math.abs(dy)) {
+            Game.moveHorizontal(dx > 0 ? 1 : -1);
+          } else {
+            if (dy < 0) Game.jump();
+            else Game.slide();
+          }
+          touchHandled = true;
+        }
+      }, { passive: true });
+
+      canvas.addEventListener('touchend', () => {
+        touchStartX = null;
+        touchStartY = null;
+        touchHandled = false;
+      }, { passive: true });
+
+      // On-Screen Control Buttons
+      document.getElementById('btnCtrlLeft').addEventListener('click', () => Game.moveHorizontal(-1));
+      document.getElementById('btnCtrlRight').addEventListener('click', () => Game.moveHorizontal(1));
+      document.getElementById('btnCtrlUp').addEventListener('click', () => Game.jump());
+      document.getElementById('btnCtrlDown').addEventListener('click', () => Game.slide());
+      document.getElementById('btnMegaFlame').addEventListener('click', () => Game.fireMegaFlame());
+      document.getElementById('btnCameraMode').addEventListener('click', () => Game.cycleCameraMode());
+
+      // Start & Preset Name Buttons
+      document.querySelectorAll('.preset-name-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const nameInput = document.getElementById('playerNameInput');
+          nameInput.value = btn.getAttribute('data-preset-name') || '八神太一';
+          document.getElementById('nameErrorMsg').classList.add('hidden');
+        });
+      });
+
+      document.getElementById('btnStartGame').addEventListener('click', () => {
+        const nameInput = document.getElementById('playerNameInput');
+        const val = nameInput.value.trim();
+        if (!val) {
+          document.getElementById('nameErrorMsg').classList.remove('hidden');
+          nameInput.focus();
+          return;
+        }
+        document.getElementById('nameErrorMsg').classList.add('hidden');
+        Game.start(val);
+      });
+
+      document.getElementById('btnRestartGame').addEventListener('click', () => {
+        Game.start(Game.playerName);
+      });
+
+      document.getElementById('btnChangeName').addEventListener('click', () => {
+        document.getElementById('gameOverModal').classList.add('hidden');
+        document.getElementById('startModal').classList.remove('hidden');
+        document.getElementById('playerNameInput').focus();
+      });
+
+      // Leaderboard Clear Confirmation
+      document.getElementById('btnAskClearBoard').addEventListener('click', () => {
+        document.getElementById('clearConfirmBox').classList.remove('hidden');
+      });
+      document.getElementById('btnCancelClear').addEventListener('click', () => {
+        document.getElementById('clearConfirmBox').classList.add('hidden');
+      });
+      document.getElementById('btnConfirmClear').addEventListener('click', () => {
+        clearLeaderboard();
+        document.getElementById('clearConfirmBox').classList.add('hidden');
+      });
+
+      // Top Bar Controls: Mute, Pause, Guide
+      document.getElementById('btnMute').addEventListener('click', () => {
+        SoundFX.init();
+        SoundFX.muted = !SoundFX.muted;
+        document.getElementById('btnMute').textContent = SoundFX.muted ? '🔇' : '🔊';
+      });
+
+      document.getElementById('btnPause').addEventListener('click', () => {
+        Game.togglePause();
+      });
+
+      document.getElementById('btnOpenGuide').addEventListener('click', () => {
+        if (Game.running && !Game.paused) {
+          Game.togglePause();
+        }
+        document.getElementById('guideModal').classList.remove('hidden');
+      });
+
+      const closeGuide = () => {
+        document.getElementById('guideModal').classList.add('hidden');
+      };
+      document.getElementById('btnCloseGuide').addEventListener('click', closeGuide);
+      document.getElementById('btnResumeFromGuide').addEventListener('click', () => {
+        closeGuide();
+        if (Game.running && Game.paused) {
+          Game.togglePause();
+        }
+      });
+
+      // Initialize on Load & Resize
+      window.addEventListener('resize', () => Game.resize());
+      window.onload = () => {
+        renderLeaderboards();
+        Game.resetState();
+        Game.resize();
+      };
+    })();
+  </script>
+</body>
+</html>
