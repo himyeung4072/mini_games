@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>數碼暴龍 3D：亞古獸疾走大冒險 (Digimon Surfers 3D)</title>
+  <title>數碼暴龍 3D：疾走大冒險 (Digimon Surfers 3D)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,10 +41,10 @@
       font-variant-numeric: tabular-nums;
     }
     .btn-press {
-      transition: transform 140ms ease-out, background-color 140ms ease-out, border-color 140ms ease-out;
+      transition: transform 140ms ease-out, background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out;
     }
     .btn-press:active {
-      transform: scale(0.96);
+      transform: scale(0.95);
     }
     .btn-press:focus-visible {
       outline: 2px solid var(--accent-gold);
@@ -55,23 +55,7 @@
       50% { transform: scale(1.05); }
     }
     .animate-pulse-subtle {
-      animation: pulseScale 1.8s infinite ease-in-out;
-    }
-    @keyframes digiFlash {
-      0% { opacity: 0.9; transform: scale(0.92); }
-      50% { opacity: 1; transform: scale(1.04); }
-      100% { opacity: 0; transform: scale(1.12); }
-    }
-    .evo-banner-anim {
-      animation: digiFlash 1.6s ease-out forwards;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .animate-pulse-subtle, .evo-banner-anim {
-        animation: none;
-      }
-      .btn-press {
-        transition: none;
-      }
+      animation: pulseScale 1.6s infinite ease-in-out;
     }
     .custom-scroll::-webkit-scrollbar {
       width: 6px;
@@ -93,7 +77,7 @@
     <!-- Player & Zone Info with Detailed Anime SVG Portrait -->
     <div class="flex items-center gap-2.5 min-w-0">
       <div id="hudAvatarBadge" class="w-11 h-11 rounded-xl bg-amber-500/20 border-2 border-amber-400/70 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
-        <!-- SVG injected dynamically for Agumon / Greymon -->
+        <!-- SVG injected dynamically -->
       </div>
       <div class="min-w-0">
         <div class="flex items-center gap-1.5">
@@ -102,6 +86,7 @@
         </div>
         <div class="flex items-center gap-2 text-xs text-slate-400">
           <span id="hudZoneName" class="truncate">🌴 法易路島・創始村</span>
+          <span class="hidden sm:inline text-amber-300/90 font-semibold">♪ 未確認飛行船 (重啟之戰 OP)</span>
         </div>
       </div>
     </div>
@@ -132,7 +117,7 @@
         <span>📘</span>
         <span class="hidden sm:inline">圖鑑</span>
       </button>
-      <button id="btnMute" type="button" class="btn-press min-w-[44px] min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-base flex items-center justify-center" title="音效開關" aria-label="音效開關">
+      <button id="btnMute" type="button" class="btn-press min-w-[44px] min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-base flex items-center justify-center" title="主題曲音樂開關" aria-label="主題曲音樂開關">
         🔊
       </button>
       <button id="btnPause" type="button" class="btn-press min-w-[44px] min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-base flex items-center justify-center" title="暫停遊戲" aria-label="暫停遊戲">
@@ -145,12 +130,11 @@
   <main id="canvasContainer" class="relative flex-1 w-full overflow-hidden bg-slate-950">
     <!-- Three.js WebGL Canvas -->
     <canvas id="gameCanvas" class="block w-full h-full"></canvas>
-    <!-- Overlay Canvas (kept clean without floating obstacle text clutter) -->
+    <!-- Clean Overlay Canvas -->
     <canvas id="overlayCanvas" class="pointer-events-none absolute inset-0 block w-full h-full z-10"></canvas>
 
-    <!-- Evolution & Mega Flame Status Bar (Floating Top-Center inside stage) -->
+    <!-- Evolution & Special Skill Status Bar (Floating Top-Center inside stage) -->
     <div class="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 w-full max-w-md px-3">
-      <!-- Mega Flame Charges Pill -->
       <div id="flameHudBar" class="w-full bg-slate-900/90 border border-slate-700/90 rounded-2xl px-3.5 py-2 flex items-center justify-between shadow-lg">
         <div class="flex items-center gap-2">
           <span id="evoStatusBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
@@ -159,7 +143,7 @@
           <span id="activeBuffText" class="text-xs font-semibold text-cyan-300 hidden">🧲 友情磁鐵生效中</span>
         </div>
         <div class="flex items-center gap-1.5">
-          <span class="text-xs text-slate-300 font-semibold">超級火焰:</span>
+          <span id="skillNameLabel" class="text-xs text-slate-300 font-semibold">超級火焰:</span>
           <div id="flameSlots" class="flex items-center gap-1 text-base tabular-nums">
             <span class="opacity-25">🔥</span>
             <span class="opacity-25">🔥</span>
@@ -171,17 +155,17 @@
       <!-- Companion / Event Speech Toast -->
       <div id="companionToast" class="hidden bg-slate-900/95 border border-amber-500/60 rounded-xl px-3.5 py-1.5 text-xs sm:text-sm font-bold text-amber-200 shadow-lg flex items-center gap-2">
         <span id="companionIcon">🦋</span>
-        <span id="companionText">巴達獸：小心前面嘅黑色齒輪呀！跳起後喺空中都可以左右轉線！</span>
+        <span id="companionText">巴達獸：小心前面正對住你轉動嘅黑色齒輪呀！按「下」可以帥氣向下飛剷穿過激光閘！</span>
       </div>
     </div>
 
     <!-- Dramatic Digivolution Center Cut-in Banner -->
     <div id="evoCutInBanner" class="hidden pointer-events-none absolute inset-x-0 top-1/4 z-20 flex flex-col items-center justify-center">
-      <div class="bg-amber-500/95 border-2 border-yellow-200 text-slate-950 px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-3">
+      <div id="evoCutInBox" class="bg-amber-500/95 border-2 border-yellow-200 text-slate-950 px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-3">
         <div id="evoCutInSvg" class="w-12 h-12 shrink-0"></div>
         <div>
-          <div class="text-xs font-black tracking-wider uppercase text-amber-950">Digivolution • 勇氣徽章發動</div>
-          <div class="text-xl sm:text-2xl font-black">亞古獸 進化 —— 暴龍獸！</div>
+          <div id="evoCutInSub" class="text-xs font-black tracking-wider uppercase text-amber-950">Digivolution • 勇氣徽章發動</div>
+          <div id="evoCutInTitle" class="text-xl sm:text-2xl font-black">亞古獸 進化 —— 暴龍獸！</div>
         </div>
       </div>
     </div>
@@ -200,9 +184,9 @@
           <span class="text-sm">◀</span>
           <span class="text-[10px] text-slate-300">左移</span>
         </button>
-        <button id="btnCtrlDown" type="button" class="btn-press w-12 h-11 sm:w-13 sm:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-orange-500 border border-slate-600 text-white font-bold flex flex-col items-center justify-center leading-none" aria-label="向下剷">
+        <button id="btnCtrlDown" type="button" class="btn-press w-12 h-11 sm:w-13 sm:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-orange-500 border border-slate-600 text-white font-bold flex flex-col items-center justify-center leading-none" aria-label="向下飛剷">
           <span class="text-sm">▼</span>
-          <span class="text-[10px] text-slate-300">下剷</span>
+          <span class="text-[10px] text-slate-300">飛剷</span>
         </button>
         <button id="btnCtrlRight" type="button" class="btn-press w-12 h-11 sm:w-13 sm:h-12 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-orange-500 border border-slate-600 text-white font-bold flex flex-col items-center justify-center leading-none" aria-label="向右移">
           <span class="text-sm">▶</span>
@@ -212,14 +196,14 @@
 
       <!-- Center Keyboard Hint (Desktop) -->
       <div class="hidden lg:flex flex-col items-center bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl text-xs text-slate-300 shadow-lg">
-        <div><span class="text-amber-400 font-bold">方向鍵 / WASD</span>：上跳、下剷、左右轉線（<span class="text-cyan-300 font-semibold">跳起喺半空中亦可左右轉向</span>）</div>
-        <div><span class="text-orange-400 font-bold">空白鍵 Space / F</span>：進化暴龍獸後發射「超級火焰」擊破障礙物</div>
+        <div><span class="text-amber-400 font-bold">方向鍵 / WASD</span>：上跳、向下飛剷、左右轉線（<span class="text-cyan-300 font-semibold">跳起喺半空中亦可左右轉向</span>）</div>
+        <div><span class="text-orange-400 font-bold">空白鍵 Space / F</span>：成熟期破壞<span class="text-amber-300 font-bold">正前方單行</span>障礙；再食道具超進化完全體可<span class="text-red-400 font-bold">橫掃前面三行所有障礙</span>！</div>
       </div>
 
-      <!-- Right: Mega Flame Action Button -->
+      <!-- Right: Special Attack Action Button -->
       <div class="pointer-events-auto flex flex-col items-end gap-1.5">
-        <button id="btnMegaFlame" type="button" disabled class="btn-press min-w-[132px] sm:min-w-[156px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-slate-800/90 border-slate-700 text-slate-500 cursor-not-allowed">
-          <span class="text-xl">🔥</span>
+        <button id="btnMegaFlame" type="button" disabled class="btn-press min-w-[138px] sm:min-w-[164px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-slate-800/90 border-slate-700 text-slate-500 cursor-not-allowed">
+          <span id="btnFlameIcon" class="text-xl">🔥</span>
           <div class="text-left leading-tight">
             <div id="btnFlameTitle">超級火焰</div>
             <div id="btnFlameSub" class="text-[11px] font-semibold">需拾取進化道具</div>
@@ -228,115 +212,169 @@
       </div>
     </div>
 
-    <!-- START / LOGIN MODAL -->
-    <div id="startModal" class="absolute inset-0 z-30 bg-slate-950/90 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-      <div class="w-full max-w-2xl bg-slate-900 border border-slate-700/90 rounded-3xl p-4 sm:p-6 shadow-2xl my-auto max-h-[94dvh] overflow-y-auto custom-scroll">
-        <!-- Header Title with Symmetrical Front-Facing Anime Digimon Artworks -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
-          <div>
-            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/15 border border-orange-500/40 text-orange-300 text-xs font-bold mb-1.5">
-              <span>⚡ Three.js 3D 數碼世界跑酷</span>
-              <span>•</span>
-              <span>Digimon Surfers 3D</span>
-            </div>
-            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight text-balance">
-              數碼暴龍：亞古獸疾走大冒險
-            </h1>
+    <!-- Hidden YouTube Audio Player Container for BGM (https://www.youtube.com/watch?v=25F_EbCsfqs) -->
+    <div id="ytBgmWrapper" class="pointer-events-none fixed -top-96 -left-96 w-1 h-1 opacity-0 overflow-hidden" aria-hidden="true">
+      <div id="ytBgmPlayer"></div>
+    </div>
+
+    <!-- 1. CYBER HERO LANDING PAGE (首頁：正義 vs 邪惡數碼暴龍型格對決) -->
+    <div id="landingModal" class="absolute inset-0 z-40 bg-slate-950 flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+      <!-- Digital Cyber Grid & Neon Glow Background -->
+      <div class="pointer-events-none absolute inset-0 opacity-30" style="background-image: linear-gradient(to right, rgba(6,182,212,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(6,182,212,0.18) 1px, transparent 1px); background-size: 36px 36px;"></div>
+      <div class="pointer-events-none absolute -left-24 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-cyan-500/20 blur-3xl"></div>
+      <div class="pointer-events-none absolute -right-24 top-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-red-600/20 blur-3xl"></div>
+
+      <div class="relative z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 items-center gap-6">
+        <!-- Left Side: Righteous Digimon Faction (正義的數碼暴龍) -->
+        <div class="lg:col-span-4 flex flex-col items-center bg-slate-900/80 border-2 border-cyan-400/60 rounded-3xl p-5 shadow-[0_0_35px_rgba(6,182,212,0.25)]">
+          <div class="text-xs font-black tracking-widest uppercase px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 mb-3">
+            ⚡ 正義數碼暴龍陣營
           </div>
-          <!-- Detailed SVG Showcase of Agumon, Digivice & Greymon -->
-          <div class="flex items-center gap-2 self-start sm:self-center bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-2xl">
-            <div id="heroAgumonSvg" class="w-11 h-11" title="亞古獸"></div>
-            <span class="text-amber-400 font-black text-xs">➔</span>
-            <div id="heroDigiviceSvg" class="w-9 h-9" title="神聖計劃・勇氣徽章"></div>
-            <span class="text-amber-400 font-black text-xs">➔</span>
-            <div id="heroGreymonSvg" class="w-12 h-12" title="暴龍獸"></div>
+          <div class="grid grid-cols-2 gap-3 w-full max-w-[260px]">
+            <div class="bg-slate-950/80 border border-orange-500/50 rounded-2xl p-2.5 flex flex-col items-center">
+              <div id="landingMetalGreymonSvg" class="w-20 h-20 sm:w-24 sm:h-24"></div>
+              <span class="text-xs font-bold text-orange-300 mt-1">機械暴龍獸</span>
+            </div>
+            <div class="bg-slate-950/80 border border-cyan-400/50 rounded-2xl p-2.5 flex flex-col items-center">
+              <div id="landingWereGarurumonSvg" class="w-20 h-20 sm:w-24 sm:h-24"></div>
+              <span class="text-xs font-bold text-cyan-300 mt-1">獸人加魯魯</span>
+            </div>
+            <div class="bg-slate-950/80 border border-amber-400/40 rounded-2xl p-2 flex flex-col items-center">
+              <div id="landingAgumonSvg" class="w-14 h-14 sm:w-16 sm:h-16"></div>
+              <span class="text-[11px] font-bold text-amber-200 mt-0.5">亞古獸</span>
+            </div>
+            <div class="bg-slate-950/80 border border-sky-400/40 rounded-2xl p-2 flex flex-col items-center">
+              <div id="landingGabumonSvg" class="w-14 h-14 sm:w-16 sm:h-16"></div>
+              <span class="text-[11px] font-bold text-sky-200 mt-0.5">加布獸</span>
+            </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mt-4">
-          <!-- Left Column: Name Input & Start -->
-          <div class="md:col-span-7 flex flex-col justify-between space-y-4">
-            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 space-y-3">
-              <label for="playerNameInput" class="block text-sm font-bold text-amber-300">
-                1. 輸入被選中細路（玩家）名稱：
-              </label>
-              <div class="flex gap-2">
-                <input
-                  id="playerNameInput"
-                  type="text"
-                  maxlength="16"
-                  value="八神太一"
-                  placeholder="請輸入你的名字..."
-                  class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-600 text-white font-bold text-base focus:outline-none focus:border-orange-500"
-                />
-              </div>
-              <div id="nameErrorMsg" class="hidden text-xs font-semibold text-red-400">
-                ⚠️ 請輸入最少 1 個字元嘅玩家名稱！
-              </div>
-              <!-- Quick Preset Names -->
-              <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                <span class="text-xs text-slate-400">快速選擇：</span>
-                <button type="button" data-preset-name="八神太一" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">八神太一</button>
-                <button type="button" data-preset-name="石田大和" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">石田大和</button>
-                <button type="button" data-preset-name="泉光子郎" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">泉光子郎</button>
-                <button type="button" data-preset-name="八神光" class="preset-name-btn btn-press px-2.5 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-600 text-xs font-semibold text-slate-200">八神光</button>
-              </div>
+        <!-- Center: Grand Cyber Title & Enter Button (大標題與進入遊戲按鈕) -->
+        <div class="lg:col-span-4 flex flex-col items-center text-center space-y-6 px-2">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/50 text-amber-300 text-xs font-black tracking-widest uppercase">
+            <span>DIGIMON ADVENTURE: 3D</span>
+          </div>
+          <div class="space-y-2">
+            <h1 class="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_4px_24px_rgba(249,115,22,0.55)]">
+              數碼暴龍 3D
+            </h1>
+            <div class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-300 via-orange-400 to-cyan-300 bg-clip-text text-transparent">
+              疾走大冒險
             </div>
-
-            <!-- Feature Highlights -->
-            <div class="bg-slate-800/40 border border-slate-800 rounded-2xl p-3.5 space-y-2 text-xs sm:text-sm text-slate-200">
-              <div class="font-bold text-amber-400 text-sm">🎮 3D 數碼世界核心玩法與秘笈：</div>
-              <ul class="space-y-1.5 text-slate-300">
-                <li class="flex items-start gap-2">
-                  <span class="text-orange-400 font-bold">▲▼◀▶</span>
-                  <span><strong>全立體三線閃避</strong>：上跳越過「3D 黑色齒輪 / 鼻涕獸路障」、下剷穿過「惡魔獸激光閘」、左右閃避「3D 暴走列車獸」。</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="text-cyan-400 font-bold">🪽 空中轉向</span>
-                  <span><strong>空中自由變線</strong>：跳起喺半空中時，隨時按左右鍵或左右滑動即可改變方向落點！</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <span class="text-amber-400 font-bold">🔥 超級火焰</span>
-                  <span><strong>隨機降下「神聖計劃・勇氣徽章」</strong>：拾取後亞古獸進化成 <strong>3D 暴龍獸</strong>，可發射 <strong>3次超級火焰</strong>擊破前方障礙物！</span>
-                </li>
-              </ul>
-            </div>
-
-            <button id="btnStartGame" type="button" class="btn-press w-full min-h-[52px] py-3 px-6 rounded-2xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-lg shadow-lg flex items-center justify-center gap-2">
-              <span>🚀 進入數碼世界開始奔跑！</span>
-            </button>
           </div>
 
-          <!-- Right Column: Leaderboard -->
-          <div class="md:col-span-5 bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between mb-2.5">
-                <h2 class="text-sm font-bold text-amber-300 flex items-center gap-1.5">
-                  <span>🏆 數碼世界排行榜</span>
-                </h2>
-                <button id="btnAskClearBoard" type="button" class="btn-press text-xs text-slate-400 hover:text-red-400 px-2 py-1 rounded-lg">
-                  清除紀錄
-                </button>
-              </div>
-              <!-- Confirmation Box for Clearing Leaderboard -->
-              <div id="clearConfirmBox" class="hidden mb-2.5 p-2.5 rounded-xl bg-red-950/80 border border-red-500/50 text-xs text-red-200 space-y-2">
-                <div>確定要清空所有排行榜紀錄嗎？</div>
-                <div class="flex justify-end gap-2">
-                  <button id="btnCancelClear" type="button" class="btn-press px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-semibold">取消</button>
-                  <button id="btnConfirmClear" type="button" class="btn-press px-2.5 py-1 rounded-lg bg-red-600 text-white font-bold">確定清空</button>
+          <button id="btnEnterSetup" type="button" class="btn-press w-full max-w-xs min-h-[60px] py-4 px-8 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 hover:from-orange-400 hover:to-amber-300 text-slate-950 font-black text-xl shadow-[0_0_30px_rgba(249,115,22,0.6)] border-2 border-yellow-200 flex items-center justify-center gap-3">
+            <span>⚡ 進入遊戲</span>
+          </button>
+        </div>
+
+        <!-- Right Side: Evil Digimon Faction (邪惡的數碼暴龍) -->
+        <div class="lg:col-span-4 flex flex-col items-center bg-slate-900/80 border-2 border-red-500/60 rounded-3xl p-5 shadow-[0_0_35px_rgba(239,68,68,0.25)]">
+          <div class="text-xs font-black tracking-widest uppercase px-3 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 mb-3">
+            💀 黑暗邪惡數碼暴龍
+          </div>
+          <div class="grid grid-cols-2 gap-3 w-full max-w-[260px]">
+            <div class="bg-slate-950/80 border border-purple-500/50 rounded-2xl p-2.5 flex flex-col items-center">
+              <div id="landingDevimonSvg" class="w-20 h-20 sm:w-24 sm:h-24"></div>
+              <span class="text-xs font-bold text-purple-300 mt-1">惡魔獸</span>
+            </div>
+            <div class="bg-slate-950/80 border border-red-500/50 rounded-2xl p-2.5 flex flex-col items-center">
+              <div id="landingMachinedramonSvg" class="w-20 h-20 sm:w-24 sm:h-24"></div>
+              <span class="text-xs font-bold text-red-300 mt-1">機械邪龍獸</span>
+            </div>
+            <div class="bg-slate-950/80 border border-rose-500/40 rounded-2xl p-2 flex flex-col items-center">
+              <div id="landingDarkGearSvg" class="w-14 h-14 sm:w-16 sm:h-16"></div>
+              <span class="text-[11px] font-bold text-rose-300 mt-0.5">黑暗齒輪</span>
+            </div>
+            <div class="bg-slate-950/80 border border-indigo-500/40 rounded-2xl p-2 flex flex-col items-center">
+              <div id="landingDemiDevimonSvg" class="w-14 h-14 sm:w-16 sm:h-16"></div>
+              <span class="text-[11px] font-bold text-indigo-300 mt-0.5">小惡魔獸</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. MINIMALIST PLAYER SETUP MODAL (簡約設定頁：自行輸入名稱、拍檔選擇與排行榜) -->
+    <div id="startModal" class="hidden absolute inset-0 z-30 bg-slate-950/90 flex items-center justify-center p-4 overflow-y-auto">
+      <div class="w-full max-w-xl bg-slate-900 border border-slate-700/90 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-white">出戰設定</h2>
+          <button id="btnBackToLanding" type="button" class="btn-press px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300">
+            返回首頁
+          </button>
+        </div>
+
+        <!-- Step 1: Clean Manual Player Name Input Only -->
+        <div class="space-y-2">
+          <label for="playerNameInput" class="block text-sm font-bold text-amber-300">
+            玩家名稱
+          </label>
+          <input
+            id="playerNameInput"
+            type="text"
+            maxlength="16"
+            value=""
+            placeholder="請輸入玩家名稱..."
+            class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-600 text-white font-bold text-base focus:outline-none focus:border-orange-500"
+          />
+          <div id="nameErrorMsg" class="hidden text-xs font-semibold text-red-400">
+            ⚠️ 請輸入玩家名稱！
+          </div>
+        </div>
+
+        <!-- Step 2: Clean Character Selection Cards -->
+        <div class="space-y-2">
+          <div class="text-sm font-bold text-amber-300">選擇數碼暴龍拍檔</div>
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Agumon Option -->
+            <button type="button" id="selectCharAgumon" data-char-select="agumon" class="btn-press text-left p-3.5 rounded-2xl border-2 border-orange-500 bg-orange-500/15 flex items-center justify-between gap-2 transition-all">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div id="cardAgumonSvg" class="w-12 h-12 shrink-0 flex items-center justify-center"></div>
+                <div class="min-w-0">
+                  <div class="font-black text-white text-base truncate">亞古獸</div>
+                  <div class="text-xs text-orange-300 font-bold truncate">暴龍獸 ➔ 機械暴龍獸</div>
                 </div>
               </div>
-              <div id="startLeaderboardList" class="space-y-1.5 max-h-[220px] overflow-y-auto custom-scroll pr-1">
-                <!-- Populated by JS -->
-              </div>
-            </div>
+              <span id="badgeCharAgumon" class="px-2 py-0.5 text-[10px] font-black rounded-full bg-orange-500 text-slate-950 shrink-0">已選</span>
+            </button>
 
-            <div class="mt-3 pt-3 border-t border-slate-700/60 text-[11px] text-slate-400 flex items-center justify-between">
-              <span>Three.js WebGL 3D 引擎 • 支援鍵盤/觸控</span>
-              <span class="text-orange-300 font-semibold">60 FPS</span>
-            </div>
+            <!-- Gabumon Option -->
+            <button type="button" id="selectCharGabumon" data-char-select="gabumon" class="btn-press text-left p-3.5 rounded-2xl border-2 border-slate-700 bg-slate-800/80 hover:border-cyan-400/60 flex items-center justify-between gap-2 transition-all">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div id="cardGabumonSvg" class="w-12 h-12 shrink-0 flex items-center justify-center"></div>
+                <div class="min-w-0">
+                  <div class="font-black text-white text-base truncate">加布獸</div>
+                  <div class="text-xs text-cyan-300 font-bold truncate">加魯魯獸 ➔ 獸人加魯魯</div>
+                </div>
+              </div>
+              <span id="badgeCharGabumon" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-700 text-slate-300 shrink-0">選擇</span>
+            </button>
           </div>
         </div>
+
+        <!-- Compact Leaderboard -->
+        <div class="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-amber-300">🏆 排行榜</h3>
+            <button id="btnAskClearBoard" type="button" class="btn-press text-xs text-slate-400 hover:text-red-400 px-2 py-0.5 rounded-lg">
+              清除
+            </button>
+          </div>
+          <div id="clearConfirmBox" class="hidden mb-2 p-2.5 rounded-xl bg-red-950/80 border border-red-500/50 text-xs text-red-200 flex items-center justify-between">
+            <span>確定清空紀錄？</span>
+            <div class="flex gap-2">
+              <button id="btnCancelClear" type="button" class="btn-press px-2 py-1 rounded-lg bg-slate-800 text-slate-300">取消</button>
+              <button id="btnConfirmClear" type="button" class="btn-press px-2 py-1 rounded-lg bg-red-600 text-white font-bold">確定</button>
+            </div>
+          </div>
+          <div id="startLeaderboardList" class="space-y-1.5 max-h-[150px] overflow-y-auto custom-scroll pr-1"></div>
+        </div>
+
+        <button id="btnStartGame" type="button" class="btn-press w-full min-h-[52px] py-3 px-6 rounded-2xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-lg shadow-lg flex items-center justify-center gap-2">
+          <span>🚀 開始奔跑</span>
+        </button>
       </div>
     </div>
 
@@ -346,7 +384,7 @@
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div>
             <span class="text-xs font-bold uppercase px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">奔跑結束 • Run Complete</span>
-            <h2 class="text-2xl font-black text-white mt-1" id="goHeadline">亞古獸撞上障礙物了！</h2>
+            <h2 class="text-xl sm:text-2xl font-black text-white mt-1" id="goHeadline">亞古獸撞上障礙物了！</h2>
           </div>
           <div id="goAvatarArt" class="w-14 h-14 shrink-0"></div>
         </div>
@@ -366,7 +404,7 @@
             <div id="goCoins" class="text-xl font-black text-cyan-400 tabular-nums mt-0.5">0</div>
           </div>
           <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3 text-center">
-            <div class="text-xs text-slate-400">火焰擊破</div>
+            <div class="text-xs text-slate-400">必殺技擊破</div>
             <div id="goBlasted" class="text-xl font-black text-orange-400 tabular-nums mt-0.5">0</div>
           </div>
         </div>
@@ -379,11 +417,11 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-3 pt-1">
-          <button id="btnChangeName" type="button" class="btn-press sm:w-1/3 min-h-[48px] py-2.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-sm">
-            👤 更改玩家名稱
+          <button id="btnChangeName" type="button" class="btn-press sm:w-2/5 min-h-[48px] py-2.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-sm">
+            🏠 返回首頁 / 換角
           </button>
-          <button id="btnRestartGame" type="button" class="btn-press sm:w-2/3 min-h-[48px] py-2.5 px-6 rounded-2xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-base shadow-lg">
-            🔄 再次挑戰數碼世界！
+          <button id="btnRestartGame" type="button" class="btn-press sm:w-3/5 min-h-[48px] py-2.5 px-6 rounded-2xl bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-base shadow-lg">
+            🔄 立即重玩挑戰！
           </button>
         </div>
       </div>
@@ -393,61 +431,57 @@
     <div id="guideModal" class="hidden absolute inset-0 z-30 bg-slate-950/90 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
       <div class="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto max-h-[90dvh] overflow-y-auto custom-scroll space-y-4">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h2 class="text-xl font-black text-amber-300">📘 3D 數碼暴龍角色、道具與障礙物圖鑑</h2>
+          <h2 class="text-xl font-black text-amber-300">📘 3D 數碼暴龍二段超進化、必殺技與障礙物圖鑑</h2>
           <button id="btnCloseGuide" type="button" class="btn-press min-w-[44px] min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">✕</button>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
           <div class="bg-slate-800/70 border border-orange-500/40 rounded-2xl p-3.5 space-y-1.5">
-            <div class="font-bold text-orange-300 text-base">🦖 亞古獸 ➔ 暴龍獸 (3D 進化系統)</div>
+            <div class="font-bold text-orange-300 text-base">🦖 亞古獸 ➔ 暴龍獸 ➔ 機械暴龍獸</div>
             <p class="text-slate-300 leading-relaxed">
-              跑道上會隨機從天空降下<strong>「勇氣徽章・神聖計劃」</strong>道具！拾取後 3D 亞古獸即刻超進化為<strong>頭戴棕色三角頭盔、身披藍紋嘅暴龍獸 (Greymon)</strong>，並獲得 <strong>3發「超級火焰」</strong>！
-            </p>
-            <p class="text-amber-300 font-semibold">
-              💡 按空白鍵 / F 鍵 / 右下角火焰按鈕即可噴射 3D 巨型火球粉碎前方障礙物；若進化期間唔小心撞上障礙物，暴龍獸亦會自動噴出1發超級火焰幫你擋劫！3發用盡後退化回亞古獸。
+              • <strong>成熟期（暴龍獸）</strong>：發射<strong>「超級火焰」</strong>，只可精準破壞<strong>正前方單行</strong>障礙物。<br/>
+              • <strong>完全體（機械暴龍獸）</strong>：喺暴龍獸狀態下再食一粒道具即可超進化！胸口裝甲打開一次射出兩粒鯊魚型<strong>「究極破壞炮 (Giga Destroyer)」</strong>，橫掃<strong>前面三行所有障礙物</strong>！
             </p>
           </div>
 
           <div class="bg-slate-800/70 border border-cyan-500/40 rounded-2xl p-3.5 space-y-1.5">
-            <div class="font-bold text-cyan-300 text-base">🪽 空中變向與 3D 多視角切換</div>
+            <div class="font-bold text-cyan-300 text-base">🐺 加布獸 ➔ 加魯魯獸 ➔ 獸人加魯魯</div>
             <p class="text-slate-300 leading-relaxed">
-              除咗地面左右轉線、上跳、下剷之外，當亞古獸<strong>跳起喺半空中時</strong>，你可以隨時按<strong>左 / 右方向鍵（或左右滑動）</strong>進行「空中翻身轉向」！
-            </p>
-            <p class="text-cyan-200 font-semibold">
-              💡 點擊頂部「🎥 視角」按鈕，仲可以隨時切換「標準視角」、「動感近鏡」同埋「廣角遠景」！
+              • <strong>成熟期（加魯魯獸）</strong>：噴射蒼藍色<strong>「妖狐火焰」</strong>，只可破壞<strong>正前方單行</strong>障礙物。<br/>
+              • <strong>完全體（獸人加魯魯）</strong>：喺加魯魯獸狀態下再食一粒道具即可超進化為雙足格鬥狼人！雙手交叉斬出巨型十字爪痕<strong>「凱撒銳爪 (Kaiser Nail)」</strong>，瞬間擊破<strong>前面三行所有障礙物</strong>！
             </p>
           </div>
         </div>
 
         <div class="space-y-2">
-          <div class="font-bold text-sm text-white">🚧 3D 數碼世界障礙物與夥伴一覽：</div>
+          <div class="font-bold text-sm text-white">🚧 3D 數碼世界動作與障礙物一覽：</div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
             <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
               <span class="text-2xl">⚙️</span>
               <div>
-                <div class="font-bold text-amber-300">黑色齒輪 / 鼻涕獸路障（需上跳 ▲）</div>
-                <div class="text-slate-300">高速旋轉嘅立體黑色齒輪與綠色鼻涕獸病毒欄，向上跳起即可越過。</div>
+                <div class="font-bold text-amber-300">正面旋轉黑色齒輪 / 鼻涕獸欄（需上跳 ▲）</div>
+                <div class="text-slate-300">正對住螢幕高速轉動、帶紅光核心與金屬齒紋嘅立體黑色齒輪，向上跳起即可越過。</div>
               </div>
             </div>
             <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
-              <span class="text-2xl">🦇</span>
+              <span class="text-2xl">⚡</span>
               <div>
-                <div class="font-bold text-purple-300">惡魔獸激光閘 / 小惡魔獸群（需下剷 ▼）</div>
-                <div class="text-slate-300">半空攔截嘅紫色惡魔激光閘與拍翼小惡魔獸，必須向下剷穿過底部！</div>
+                <div class="font-bold text-purple-300">惡魔獸激光閘（需向下飛剷 ▼）</div>
+                <div class="text-slate-300">按下鍵或向下滑動時，角色會做出帥氣嘅<strong>動感前衝飛剷姿勢</strong>（唔會變扁！），貼地滑行穿過激光閘底部。</div>
               </div>
             </div>
             <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
               <span class="text-2xl">🚂</span>
               <div>
                 <div class="font-bold text-red-300">暴走列車獸 / 機械邪龍巨柱（需左右閃 ◀▶）</div>
-                <div class="text-slate-300">全高度迎面駛來嘅裝甲列車獸與機械邪龍炮塔，必須左右轉線或用超級火焰轟碎！</div>
+                <div class="text-slate-300">迎面駛來嘅全高度列車獸，必須左右轉線（跳起喺半空亦可左右變線）或用必殺技轟碎！</div>
               </div>
             </div>
             <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-start gap-2.5">
-              <span class="text-2xl">🦋</span>
+              <span class="text-2xl">🎵</span>
               <div>
-                <div class="font-bold text-emerald-300">數碼夥伴（巴達獸、比丘獸、加布獸、迪路獸）</div>
-                <div class="text-slate-300">3D 巴達獸與比丘獸喺空中伴飛，加布獸同迪路獸喺跑道兩側打氣支援！</div>
+                <div class="font-bold text-emerald-300">《Butter-Fly》主題曲與《Brave Heart》進化曲</div>
+                <div class="text-slate-300">使用多聲道合成器即時演奏《數碼暴龍》主題曲旋律，進化時更會響起激昂嘅進化音樂！</div>
               </div>
             </div>
           </div>
@@ -467,25 +501,25 @@
       'use strict';
 
       // ===================================================================
-      // 0. AUTHENTIC SYMMETRICAL ANIME SVG PORTRAITS FOR UI & HUD BADGES
+      // 0. HIGH-DETAIL ANIME SVG PORTRAITS (Agumon, Greymon, Gabumon, Garurumon, MetalGreymon, WereGarurumon)
+      //    - Uses unique SVG gradient IDs per instance so hidden/multiple cards NEVER render blank!
       // ===================================================================
+      let svgUidCounter = 0;
       const DigimonArt = {
         agumonSVG() {
+          const uid = ++svgUidCounter;
           return `
-            <svg viewBox="0 0 100 100" class="w-full h-full">
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
               <defs>
-                <linearGradient id="aguGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#ffaa33"/>
-                  <stop offset="70%" stop-color="#f97316"/>
-                  <stop offset="100%" stop-color="#ea580c"/>
+                <linearGradient id="aguGrad_${uid}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ffb03a"/>
+                  <stop offset="65%" stop-color="#f97316"/>
+                  <stop offset="100%" stop-color="#c2410c"/>
                 </linearGradient>
               </defs>
-              <!-- Shoulders & Cream Chest -->
-              <path d="M22,94 C22,74 34,68 50,68 C66,68 78,74 78,94 Z" fill="url(#aguGrad)" stroke="#7c2d12" stroke-width="3"/>
+              <path d="M22,94 C22,74 34,68 50,68 C66,68 78,74 78,94 Z" fill="url(#aguGrad_${uid})" stroke="#7c2d12" stroke-width="3"/>
               <path d="M36,94 C36,77 42,73 50,73 C58,73 64,77 64,94 Z" fill="#ffedd5"/>
-              <!-- Cranium & Brow Ridges -->
-              <path d="M24,42 C22,24 35,14 50,14 C65,14 78,24 76,42 C82,48 82,64 68,69 C58,73 42,73 32,69 C18,64 18,48 24,42 Z" fill="url(#aguGrad)" stroke="#7c2d12" stroke-width="3" stroke-linejoin="round"/>
-              <!-- Left & Right Anime Emerald Eyes (Two symmetrical eyes!) -->
+              <path d="M24,42 C22,24 35,14 50,14 C65,14 78,24 76,42 C82,48 82,64 68,69 C58,73 42,73 32,69 C18,64 18,48 24,42 Z" fill="url(#aguGrad_${uid})" stroke="#7c2d12" stroke-width="3" stroke-linejoin="round"/>
               <g>
                 <ellipse cx="35" cy="39" rx="7.5" ry="9.5" fill="#ffffff" stroke="#431407" stroke-width="2.2"/>
                 <ellipse cx="36" cy="40" rx="5" ry="6.8" fill="#16a34a"/>
@@ -498,11 +532,9 @@
                 <ellipse cx="64" cy="40" rx="2.2" ry="4.5" fill="#052e16"/>
                 <circle cx="61.5" cy="36.5" r="2.2" fill="#ffffff"/>
               </g>
-              <!-- Wide Snout & Two Nostrils -->
               <ellipse cx="50" cy="55" rx="22" ry="11" fill="#ff9f29" stroke="#7c2d12" stroke-width="2.2"/>
               <circle cx="42" cy="51" r="2.2" fill="#7c2d12"/>
               <circle cx="58" cy="51" r="2.2" fill="#7c2d12"/>
-              <!-- Happy Dino Mouth & Two Little Fangs -->
               <path d="M33,59 Q50,67 67,59" fill="none" stroke="#7c2d12" stroke-width="2.6" stroke-linecap="round"/>
               <polygon points="38,60 40,65 43,61" fill="#ffffff" stroke="#7c2d12" stroke-width="1"/>
               <polygon points="62,60 60,65 57,61" fill="#ffffff" stroke="#7c2d12" stroke-width="1"/>
@@ -511,68 +543,370 @@
         },
 
         greymonSVG() {
+          const uid = ++svgUidCounter;
           return `
-            <svg viewBox="0 0 100 100" class="w-full h-full">
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
               <defs>
-                <linearGradient id="helmGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#854d0e"/>
-                  <stop offset="50%" stop-color="#5c280e"/>
+                <linearGradient id="helmGrad_${uid}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#92400e"/>
+                  <stop offset="55%" stop-color="#5c280e"/>
                   <stop offset="100%" stop-color="#3b1704"/>
                 </linearGradient>
               </defs>
-              <!-- Left & Right Sweeping Antler Horns -->
               <path d="M26,38 L6,10 L18,46 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
               <path d="M74,38 L94,10 L82,46 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
-              <!-- Muscular Orange Shoulders with Blue Stripes -->
               <path d="M18,94 C20,72 34,66 50,66 C66,66 80,72 82,94 Z" fill="#f97316" stroke="#7c2d12" stroke-width="3"/>
               <path d="M25,78 L38,86 M75,78 L62,86" stroke="#1d4ed8" stroke-width="4.5" stroke-linecap="round"/>
-              <!-- Brown Carapace Skull Helmet -->
-              <path d="M22,52 C20,28 34,18 50,18 C66,18 80,28 78,52 L72,62 L50,58 L28,62 Z" fill="url(#helmGrad)" stroke="#2e1305" stroke-width="3" stroke-linejoin="round"/>
-              <!-- Two Fierce Crimson Eyes under Helmet Brow -->
+              <path d="M22,52 C20,28 34,18 50,18 C66,18 80,28 78,52 L72,62 L50,58 L28,62 Z" fill="url(#helmGrad_${uid})" stroke="#2e1305" stroke-width="3" stroke-linejoin="round"/>
               <polygon points="28,44 43,48 40,54 27,51" fill="#ef4444" stroke="#000" stroke-width="1.8"/>
               <circle cx="35" cy="49" r="2.2" fill="#fef08a"/>
               <polygon points="72,44 57,48 60,54 73,51" fill="#ef4444" stroke="#000" stroke-width="1.8"/>
               <circle cx="65" cy="49" r="2.2" fill="#fef08a"/>
-              <!-- Center Nose Horn -->
               <path d="M44,54 L50,24 L56,54 Z" fill="#fef3c7" stroke="#451a03" stroke-width="2.5" stroke-linejoin="round"/>
-              <!-- Orange Snout & Teeth -->
               <path d="M30,60 L70,60 L65,73 L35,73 Z" fill="#f97316" stroke="#7c2d12" stroke-width="2.5"/>
               <polygon points="36,61 40,67 44,61 50,68 56,61 60,67 64,61" fill="#ffffff"/>
             </svg>
           `;
         },
 
-        digiviceSVG() {
+        gabumonSVG() {
           return `
-            <svg viewBox="0 0 100 100" class="w-full h-full">
-              <circle cx="50" cy="50" r="44" fill="#facc15" opacity="0.25"/>
-              <rect x="18" y="22" width="64" height="56" rx="24" fill="#38bdf8" stroke="#0284c7" stroke-width="4"/>
-              <rect x="25" y="28" width="50" height="44" rx="18" fill="#0ea5e9" stroke="#bae6fd" stroke-width="2"/>
-              <rect x="33" y="34" width="34" height="32" rx="6" fill="#fef08a" stroke="#ca8a04" stroke-width="2.5"/>
-              <circle cx="50" cy="50" r="7" fill="#f97316"/>
-              <path d="M50,37 L50,41 M50,59 L50,63 M37,50 L41,50 M59,50 L63,50 M41,41 L44,44 M56,56 L59,59 M59,41 L56,44 M41,59 L44,56" stroke="#ea580c" stroke-width="2.2" stroke-linecap="round"/>
-              <rect x="12" y="38" width="8" height="24" rx="4" fill="#f97316" stroke="#9a3412" stroke-width="2"/>
-              <rect x="80" y="38" width="8" height="24" rx="4" fill="#f97316" stroke="#9a3412" stroke-width="2"/>
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <polygon points="20,38 14,12 34,26" fill="#e0f2fe" stroke="#1e3a8a" stroke-width="2.5" stroke-linejoin="round"/>
+              <polygon points="80,38 86,12 66,26" fill="#e0f2fe" stroke="#1e3a8a" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M22,94 C22,72 34,66 50,66 C66,66 78,72 78,94 Z" fill="#facc15" stroke="#1e3a8a" stroke-width="3"/>
+              <ellipse cx="50" cy="83" rx="14" ry="11" fill="#c084fc" stroke="#6b21a8" stroke-width="2"/>
+              <path d="M20,52 C18,26 32,16 50,16 C68,16 82,26 80,52 L74,64 L50,56 L26,64 Z" fill="#f0f9ff" stroke="#1e3a8a" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M25,34 L38,38 M75,34 L62,38 M23,44 L35,46 M77,44 L65,46" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round"/>
+              <polygon points="44,36 50,8 56,36" fill="#fde047" stroke="#a16207" stroke-width="2.5" stroke-linejoin="round"/>
+              <ellipse cx="50" cy="59" rx="19" ry="10" fill="#facc15" stroke="#a16207" stroke-width="2.2"/>
+              <ellipse cx="35" cy="48" rx="6.5" ry="7.5" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+              <circle cx="36" cy="48" r="4" fill="#dc2626"/>
+              <circle cx="34.5" cy="46" r="1.8" fill="#ffffff"/>
+              <ellipse cx="65" cy="48" rx="6.5" ry="7.5" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+              <circle cx="64" cy="48" r="4" fill="#dc2626"/>
+              <circle cx="62.5" cy="46" r="1.8" fill="#ffffff"/>
+              <polygon points="39,63 42,68 45,63" fill="#ffffff"/>
+              <polygon points="61,63 58,68 55,63" fill="#ffffff"/>
+            </svg>
+          `;
+        },
+
+        garurumonSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <polygon points="18,36 8,10 34,24" fill="#f8fafc" stroke="#1e3a8a" stroke-width="2.5"/>
+              <polygon points="82,36 92,10 66,24" fill="#f8fafc" stroke="#1e3a8a" stroke-width="2.5"/>
+              <path d="M12,94 C16,68 30,62 50,62 C70,62 84,68 88,94 Z" fill="#f1f5f9" stroke="#1e3a8a" stroke-width="3"/>
+              <path d="M18,52 L8,44 L22,30 C30,18 70,18 78,30 L92,44 L82,52 L72,66 L28,66 Z" fill="#f8fafc" stroke="#1e3a8a" stroke-width="2.8" stroke-linejoin="round"/>
+              <path d="M24,33 L42,39 M76,33 L58,39 M20,45 L36,48 M80,45 L64,48 M24,78 L40,84 M76,78 L60,84" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round"/>
+              <polygon points="27,41 43,46 39,52 25,48" fill="#fef08a" stroke="#dc2626" stroke-width="2"/>
+              <polygon points="73,41 57,46 61,52 75,48" fill="#fef08a" stroke="#dc2626" stroke-width="2"/>
+              <polygon points="32,54 68,54 60,72 40,72" fill="#1e40af" stroke="#0f172a" stroke-width="2.2"/>
+              <ellipse cx="50" cy="56" rx="6" ry="4" fill="#0f172a"/>
+              <polygon points="36,68 40,76 44,68 50,75 56,68 60,76 64,68" fill="#ffffff"/>
+            </svg>
+          `;
+        },
+
+        // High-Realism Anime MetalGreymon (機械暴龍獸) SVG Artwork
+        metalGreymonSVG() {
+          const uid = ++svgUidCounter;
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <defs>
+                <linearGradient id="mgChrome_${uid}" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#f8fafc"/>
+                  <stop offset="45%" stop-color="#94a3b8"/>
+                  <stop offset="80%" stop-color="#475569"/>
+                  <stop offset="100%" stop-color="#1e293b"/>
+                </linearGradient>
+                <linearGradient id="mgWing_${uid}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#a855f7"/>
+                  <stop offset="60%" stop-color="#6b21a8"/>
+                  <stop offset="100%" stop-color="#3b0764"/>
+                </linearGradient>
+                <linearGradient id="mgBody_${uid}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#fb923c"/>
+                  <stop offset="100%" stop-color="#c2410c"/>
+                </linearGradient>
+              </defs>
+              <!-- 6 Tattered Purple Cyborg Wings with Ribs -->
+              <path d="M2,16 L30,40 L26,52 L4,36 Z M2,38 L28,50 L24,62 L3,54 Z M6,60 L26,60 L16,78 Z" fill="url(#mgWing_${uid})" stroke="#2e1065" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M98,16 L70,40 L74,52 L96,36 Z M98,38 L72,50 L76,62 L97,54 Z M94,60 L74,60 L84,78 Z" fill="url(#mgWing_${uid})" stroke="#2e1065" stroke-width="1.8" stroke-linejoin="round"/>
+              <!-- Flaming Crimson Cyborg Hair Mane -->
+              <path d="M32,24 L40,3 L47,18 L50,2 L55,18 L62,4 L68,24 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="2" stroke-linejoin="round"/>
+              <!-- Curved Ivory Antler Horns with Battle Nicks -->
+              <path d="M24,40 L4,8 L18,22 L12,30 L20,48 Z" fill="#fef3c7" stroke="#334155" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M76,40 L96,8 L82,22 L88,30 L80,48 Z" fill="#fef3c7" stroke="#334155" stroke-width="2.2" stroke-linejoin="round"/>
+              <!-- Muscular Orange Body & Blue Stripes -->
+              <path d="M16,96 C18,68 32,62 50,62 C68,62 82,68 84,96 Z" fill="url(#mgBody_${uid})" stroke="#7c2d12" stroke-width="2.6"/>
+              <!-- Left Mechanical Trident Shoulder & Claw Preview -->
+              <path d="M10,72 L25,66 L26,94 L8,94 Z" fill="url(#mgChrome_${uid})" stroke="#0f172a" stroke-width="2"/>
+              <!-- Metallic Giga Destroyer Chest Armor & Twin Missile Silos -->
+              <polygon points="25,67 75,67 70,95 30,95" fill="url(#mgChrome_${uid})" stroke="#0f172a" stroke-width="2.4" stroke-linejoin="round"/>
+              <line x1="50" y1="67" x2="50" y2="95" stroke="#0f172a" stroke-width="2.2"/>
+              <circle cx="38" cy="81" r="6.8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+              <circle cx="38" cy="81" r="3" fill="#ef4444"/>
+              <circle cx="62" cy="81" r="6.8" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+              <circle cx="62" cy="81" r="3" fill="#ef4444"/>
+              <!-- Chrome Cyborg Skull Helmet with Rivets & Center Seam -->
+              <path d="M20,52 C18,26 33,16 50,16 C67,16 82,26 80,52 L74,63 L50,58 L26,63 Z" fill="url(#mgChrome_${uid})" stroke="#0f172a" stroke-width="2.8" stroke-linejoin="round"/>
+              <line x1="50" y1="16" x2="50" y2="57" stroke="#334155" stroke-width="2.4"/>
+              <circle cx="36" cy="28" r="1.8" fill="#334155"/>
+              <circle cx="64" cy="28" r="1.8" fill="#334155"/>
+              <circle cx="28" cy="36" r="1.8" fill="#334155"/>
+              <circle cx="72" cy="36" r="1.8" fill="#334155"/>
+              <!-- Fierce Glowing Eyes under Metal Visor -->
+              <polygon points="26,43 43,47 40,54 25,50" fill="#ef4444" stroke="#090d16" stroke-width="1.8"/>
+              <circle cx="34" cy="48" r="2" fill="#fef08a"/>
+              <polygon points="74,43 57,47 60,54 75,50" fill="#ef4444" stroke="#090d16" stroke-width="1.8"/>
+              <circle cx="66" cy="48" r="2" fill="#fef08a"/>
+              <!-- Lower Orange Snout & Fangs + Chrome Nose Blade Horn -->
+              <path d="M30,58 L70,58 L65,68 L35,68 Z" fill="#ea580c" stroke="#431407" stroke-width="2"/>
+              <polygon points="36,59 39,65 43,59 50,65 57,59 61,65 64,59" fill="#ffffff"/>
+              <polygon points="43,55 50,21 57,55" fill="url(#mgChrome_${uid})" stroke="#0f172a" stroke-width="2.4" stroke-linejoin="round"/>
+            </svg>
+          `;
+        },
+
+        // High-Realism Anime WereGarurumon (獸人加魯魯) SVG Artwork
+        wereGarurumonSVG() {
+          const uid = ++svgUidCounter;
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <defs>
+                <linearGradient id="wgFur_${uid}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="70%" stop-color="#e2e8f0"/>
+                  <stop offset="100%" stop-color="#94a3b8"/>
+                </linearGradient>
+                <linearGradient id="wgCobalt_${uid}" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#3b82f6"/>
+                  <stop offset="100%" stop-color="#1e3a8a"/>
+                </linearGradient>
+              </defs>
+              <!-- Spiky White-Blue Wolf Ears & Iconic Gold Hoop Rings on Left Ear -->
+              <polygon points="18,36 7,6 35,22" fill="url(#wgFur_${uid})" stroke="#1e3a8a" stroke-width="2.4" stroke-linejoin="round"/>
+              <polygon points="82,36 93,6 65,22" fill="url(#wgFur_${uid})" stroke="#1e3a8a" stroke-width="2.4" stroke-linejoin="round"/>
+              <circle cx="11" cy="21" r="4.2" fill="none" stroke="#facc15" stroke-width="2.4"/>
+              <circle cx="14" cy="28" r="3.6" fill="none" stroke="#facc15" stroke-width="2.2"/>
+              <!-- Wild Spiky Punk Wolf Hair Mane -->
+              <polygon points="32,20 42,4 48,16 53,3 59,17 68,6 66,22" fill="url(#wgCobalt_${uid})" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+              <!-- Muscular Biped Wolf Shoulders, Cobalt Stripes & Crossed Leather Chest Belts -->
+              <path d="M12,96 C15,66 30,60 50,60 C70,60 85,66 88,96 Z" fill="url(#wgFur_${uid})" stroke="#1e3a8a" stroke-width="2.6"/>
+              <path d="M16,74 L30,78 M84,74 L70,78 M14,84 L28,88 M86,84 L72,88" stroke="#1d4ed8" stroke-width="3.6" stroke-linecap="round"/>
+              <line x1="24" y1="64" x2="76" y2="94" stroke="#78350f" stroke-width="5.5"/>
+              <line x1="76" y1="64" x2="24" y2="94" stroke="#78350f" stroke-width="5.5"/>
+              <circle cx="50" cy="79" r="6" fill="#cbd5e1" stroke="#0f172a" stroke-width="2.2"/>
+              <circle cx="50" cy="79" r="2.5" fill="#dc2626"/>
+              <!-- Raised Spiked Knuckle Gloves & Kaiser Nail Claws at Sides -->
+              <circle cx="18" cy="86" r="8" fill="#991b1b" stroke="#450a0a" stroke-width="2"/>
+              <polygon points="12,78 14,68 17,78 M17,77 19,66 21,77 M22,78 24,69 25,79" fill="#e0f2fe" stroke="#0284c7" stroke-width="1"/>
+              <circle cx="82" cy="86" r="8" fill="#991b1b" stroke="#450a0a" stroke-width="2"/>
+              <polygon points="75,79 76,69 78,78 M79,77 81,66 83,77 M83,78 86,68 88,78" fill="#e0f2fe" stroke="#0284c7" stroke-width="1"/>
+              <!-- Fierce Werewolf Head, Cheek Tuft Spikes & Cobalt Tiger Stripes -->
+              <path d="M20,48 L8,42 L18,34 C22,20 35,16 50,16 C65,16 78,20 82,34 L92,42 L80,48 L86,55 L70,64 L30,64 L14,55 Z" fill="url(#wgFur_${uid})" stroke="#1e3a8a" stroke-width="2.6" stroke-linejoin="round"/>
+              <path d="M23,31 L40,37 M77,31 L60,37 M19,42 L35,46 M81,42 L65,46" stroke="#1d4ed8" stroke-width="3.8" stroke-linecap="round"/>
+              <!-- Glowing Amber-Crimson Eyes & Iconic Battle Scar over Right Eye -->
+              <line x1="63" y1="32" x2="68" y2="56" stroke="#dc2626" stroke-width="2.6" stroke-linecap="round"/>
+              <polygon points="27,40 43,45 39,51 25,47" fill="#fef08a" stroke="#dc2626" stroke-width="2"/>
+              <circle cx="35" cy="46" r="2" fill="#dc2626"/>
+              <polygon points="73,40 57,45 61,51 75,47" fill="#fef08a" stroke="#dc2626" stroke-width="2"/>
+              <circle cx="65" cy="46" r="2" fill="#dc2626"/>
+              <!-- Long Muscular Wolf Muzzle, Black Nose & Sharp Canine Fangs -->
+              <polygon points="33,50 67,50 61,67 39,67" fill="url(#wgCobalt_${uid})" stroke="#0f172a" stroke-width="2.2" stroke-linejoin="round"/>
+              <polygon points="44,51 56,51 50,58" fill="#0f172a"/>
+              <polygon points="37,61 40,68 44,61 50,66 56,61 60,68 63,61" fill="#ffffff" stroke="#1e293b" stroke-width="0.8"/>
+            </svg>
+          `;
+        },
+
+        devimonSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <polygon points="2,18 32,42 18,82 4,58" fill="#3b0764" stroke="#a855f7" stroke-width="2.2"/>
+              <polygon points="98,18 68,42 82,82 96,58" fill="#3b0764" stroke="#a855f7" stroke-width="2.2"/>
+              <polygon points="28,32 16,8 38,24" fill="#e2e8f0" stroke="#0f172a" stroke-width="2.2"/>
+              <polygon points="72,32 84,8 62,24" fill="#e2e8f0" stroke="#0f172a" stroke-width="2.2"/>
+              <path d="M22,94 C24,68 36,64 50,64 C64,64 76,68 78,94 Z" fill="#0f172a" stroke="#4c1d95" stroke-width="2.8"/>
+              <polygon points="42,72 50,86 58,72 50,76" fill="#dc2626"/>
+              <path d="M26,52 C24,26 36,18 50,18 C64,18 76,26 74,52 L64,66 L36,66 Z" fill="#1e1b4b" stroke="#7e22ce" stroke-width="2.5"/>
+              <polygon points="30,42 45,47 40,53 28,48" fill="#ef4444"/>
+              <polygon points="70,42 55,47 60,53 72,48" fill="#ef4444"/>
+              <path d="M38,58 L44,62 L50,58 L56,62 L62,58" fill="none" stroke="#f8fafc" stroke-width="2.2"/>
+            </svg>
+          `;
+        },
+
+        machinedramonSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <rect x="18" y="8" width="16" height="38" rx="4" fill="#475569" stroke="#94a3b8" stroke-width="2.2" transform="rotate(-14 26 26)"/>
+              <rect x="66" y="8" width="16" height="38" rx="4" fill="#475569" stroke="#94a3b8" stroke-width="2.2" transform="rotate(14 74 26)"/>
+              <polygon points="16,52 30,24 70,24 84,52 72,72 28,72" fill="#94a3b8" stroke="#1e293b" stroke-width="3"/>
+              <polygon points="46,24 50,10 54,24" fill="#ef4444"/>
+              <polygon points="26,44 45,48 42,55 24,51" fill="#ef4444"/>
+              <polygon points="74,44 55,48 58,55 76,51" fill="#ef4444"/>
+              <rect x="28" y="64" width="44" height="22" rx="4" fill="#334155" stroke="#0f172a" stroke-width="2.5"/>
+              <polygon points="32,66 37,76 42,66 50,76 58,66 63,76 68,66" fill="#e2e8f0"/>
+            </svg>
+          `;
+        },
+
+        darkGearSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <circle cx="50" cy="50" r="36" fill="#0f172a" stroke="#475569" stroke-width="6"/>
+              <circle cx="50" cy="50" r="22" fill="none" stroke="#ef4444" stroke-width="4" stroke-dasharray="8 5"/>
+              <circle cx="50" cy="50" r="10" fill="#facc15" stroke="#dc2626" stroke-width="3"/>
+              <g fill="#334155" stroke="#94a3b8" stroke-width="1.5">
+                <rect x="44" y="4" width="12" height="12" rx="2"/>
+                <rect x="44" y="84" width="12" height="12" rx="2"/>
+                <rect x="4" y="44" width="12" height="12" rx="2"/>
+                <rect x="84" y="44" width="12" height="12" rx="2"/>
+                <rect x="16" y="16" width="11" height="11" rx="2" transform="rotate(45 21 21)"/>
+                <rect x="73" y="16" width="11" height="11" rx="2" transform="rotate(45 78 21)"/>
+                <rect x="16" y="73" width="11" height="11" rx="2" transform="rotate(45 21 78)"/>
+                <rect x="73" y="73" width="11" height="11" rx="2" transform="rotate(45 78 78)"/>
+              </g>
+            </svg>
+          `;
+        },
+
+        demiDevimonSVG() {
+          return `
+            <svg viewBox="0 0 100 100" class="w-full h-full block">
+              <polygon points="4,36 32,44 20,68" fill="#312e81" stroke="#818cf8" stroke-width="2"/>
+              <polygon points="96,36 68,44 80,68" fill="#312e81" stroke="#818cf8" stroke-width="2"/>
+              <circle cx="50" cy="54" r="26" fill="#1e1b4b" stroke="#6366f1" stroke-width="2.8"/>
+              <polygon points="34,30 26,14 42,26" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+              <polygon points="66,30 74,14 58,26" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+              <ellipse cx="39" cy="50" rx="6" ry="7" fill="#ef4444"/>
+              <circle cx="38" cy="48" r="2" fill="#fef08a"/>
+              <ellipse cx="61" cy="50" rx="6" ry="7" fill="#ef4444"/>
+              <circle cx="60" cy="48" r="2" fill="#fef08a"/>
+              <polygon points="42,64 45,71 49,64" fill="#ffffff"/>
+              <polygon points="58,64 55,71 51,64" fill="#ffffff"/>
             </svg>
           `;
         }
       };
 
-      document.getElementById('hudAvatarBadge').innerHTML = DigimonArt.agumonSVG();
-      document.getElementById('heroAgumonSvg').innerHTML = DigimonArt.agumonSVG();
-      document.getElementById('heroDigiviceSvg').innerHTML = DigimonArt.digiviceSVG();
-      document.getElementById('heroGreymonSvg').innerHTML = DigimonArt.greymonSVG();
-      document.getElementById('evoCutInSvg').innerHTML = DigimonArt.greymonSVG();
-      document.getElementById('goAvatarArt').innerHTML = DigimonArt.agumonSVG();
+      // Populate initial SVG icons
+      const setHtmlIfPresent = (id, html) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+      };
+      setHtmlIfPresent('hudAvatarBadge', DigimonArt.agumonSVG());
+      setHtmlIfPresent('landingMetalGreymonSvg', DigimonArt.metalGreymonSVG());
+      setHtmlIfPresent('landingWereGarurumonSvg', DigimonArt.wereGarurumonSVG());
+      setHtmlIfPresent('landingAgumonSvg', DigimonArt.agumonSVG());
+      setHtmlIfPresent('landingGabumonSvg', DigimonArt.gabumonSVG());
+      setHtmlIfPresent('landingDevimonSvg', DigimonArt.devimonSVG());
+      setHtmlIfPresent('landingMachinedramonSvg', DigimonArt.machinedramonSVG());
+      setHtmlIfPresent('landingDarkGearSvg', DigimonArt.darkGearSVG());
+      setHtmlIfPresent('landingDemiDevimonSvg', DigimonArt.demiDevimonSVG());
+      setHtmlIfPresent('cardAgumonSvg', DigimonArt.agumonSVG());
+      setHtmlIfPresent('cardGabumonSvg', DigimonArt.gabumonSVG());
+      setHtmlIfPresent('evoCutInSvg', DigimonArt.greymonSVG());
+      setHtmlIfPresent('goAvatarArt', DigimonArt.agumonSVG());
 
-      // ==========================================
-      // 1. WEB AUDIO SYNTHESIZER (No external files)
-      // ==========================================
+      // =========================================================================================
+      // 1. YOUTUBE BGM STREAMER (Video ID: 25F_EbCsfqs) + PIANO COVER SYNTH FALLBACK
+      //    - Embeds https://www.youtube.com/watch?v=25F_EbCsfqs via YouTube IFrame Player API
+      //    - Automatically syncs Play / Pause / Mute with game state
+      // =========================================================================================
       const SoundFX = {
         ctx: null,
         muted: false,
         bgmTimer: null,
-        bgmStep: 0,
+        stepIdx: 0,
+        ytPlayer: null,
+        ytReady: false,
+        ytPlaying: false,
+        wantBGM: false,
+
+        // Exact Piano Cover Arrangement of "Mikakunin Hikousen" (matching YouTube 25F_EbCsfqs)
+        rebootOpChorusSequence: [
+          { m: 987.77, b: 164.81, d: 3 }, { m: 880.00, b: 164.81, d: 1 },
+          { m: 783.99, b: 164.81, d: 2 }, { m: 880.00, b: 164.81, d: 2 },
+          { m: 987.77, b: 130.81, d: 3 }, { m: 880.00, b: 130.81, d: 1 },
+          { m: 783.99, b: 130.81, d: 2 }, { m: 659.25, b: 130.81, d: 2 },
+          { m: 783.99, b: 196.00, d: 3 }, { m: 739.99, b: 196.00, d: 1 },
+          { m: 659.25, b: 196.00, d: 2 }, { m: 587.33, b: 146.83, d: 2 },
+          { m: 659.25, b: 146.83, d: 3 }, { m: 739.99, b: 146.83, d: 3 },
+
+          { m: 783.99, b: 164.81, d: 2 }, { m: 880.00, b: 164.81, d: 2 },
+          { m: 987.77, b: 164.81, d: 3 }, { m: 1174.66, b: 130.81, d: 3 },
+          { m: 987.77, b: 130.81, d: 2 }, { m: 880.00, b: 196.00, d: 2 },
+          { m: 783.99, b: 196.00, d: 2 }, { m: 880.00, b: 146.83, d: 2 },
+          { m: 987.77, b: 146.83, d: 4 }, { m: 1174.66, b: 246.94, d: 2 },
+
+          { m: 1318.51, b: 130.81, d: 3 }, { m: 1174.66, b: 130.81, d: 2 },
+          { m: 987.77, b: 146.83, d: 2 }, { m: 880.00, b: 146.83, d: 2 },
+          { m: 987.77, b: 196.00, d: 3 }, { m: 880.00, b: 196.00, d: 2 },
+          { m: 783.99, b: 246.94, d: 2 }, { m: 739.99, b: 246.94, d: 2 },
+          { m: 659.25, b: 164.81, d: 5 }, { m: 783.99, b: 164.81, d: 2 },
+          { m: 880.00, b: 146.83, d: 2 }, { m: 987.77, b: 164.81, d: 4 }
+        ],
+
+        initYouTubeBGM() {
+          if (window.YT && window.YT.Player && !this.ytPlayer) {
+            this.createYTPlayer();
+            return;
+          }
+          if (document.getElementById('yt-iframe-api-script')) return;
+          const tag = document.createElement('script');
+          tag.id = 'yt-iframe-api-script';
+          tag.src = 'https://www.youtube.com/iframe_api';
+          document.head.appendChild(tag);
+
+          window.onYouTubeIframeAPIReady = () => {
+            this.createYTPlayer();
+          };
+        },
+
+        createYTPlayer() {
+          if (this.ytPlayer || !window.YT || !window.YT.Player) return;
+          try {
+            this.ytPlayer = new window.YT.Player('ytBgmPlayer', {
+              height: '64',
+              width: '64',
+              videoId: '25F_EbCsfqs',
+              playerVars: {
+                autoplay: 0,
+                controls: 0,
+                loop: 1,
+                playlist: '25F_EbCsfqs',
+                playsinline: 1,
+                rel: 0,
+                modestbranding: 1
+              },
+              events: {
+                onReady: (ev) => {
+                  this.ytReady = true;
+                  ev.target.setVolume(80);
+                  if (this.muted) ev.target.mute();
+                  if (this.wantBGM && !this.muted) {
+                    ev.target.playVideo();
+                  }
+                },
+                onStateChange: (ev) => {
+                  // YT.PlayerState.PLAYING === 1, ENDED === 0
+                  this.ytPlaying = (ev.data === 1);
+                  if (ev.data === 0 && this.wantBGM && !this.muted) {
+                    ev.target.seekTo(0);
+                    ev.target.playVideo();
+                  }
+                },
+                onError: () => {
+                  this.ytPlaying = false;
+                }
+              }
+            });
+          } catch (e) {}
+        },
 
         init() {
           if (!this.ctx) {
@@ -584,10 +918,28 @@
           if (this.ctx && this.ctx.state === 'suspended') {
             this.ctx.resume().catch(() => {});
           }
+          this.initYouTubeBGM();
+        },
+
+        setMuted(muteFlag) {
+          this.muted = muteFlag;
+          if (this.ytReady && this.ytPlayer) {
+            try {
+              if (this.muted) {
+                this.ytPlayer.mute();
+              } else {
+                this.ytPlayer.unMute();
+                this.ytPlayer.setVolume(80);
+                if (this.wantBGM && Game.running && !Game.paused && !Game.dying) {
+                  this.ytPlayer.playVideo();
+                }
+              }
+            } catch (e) {}
+          }
         },
 
         playTone(freq, type, duration, vol = 0.12, slideFreq = null) {
-          if (this.muted || !this.ctx) return;
+          if (this.muted || !this.ctx || freq <= 0) return;
           try {
             const now = this.ctx.currentTime;
             const osc = this.ctx.createOscillator();
@@ -607,82 +959,140 @@
         },
 
         jump() {
-          this.playTone(290, 'sine', 0.18, 0.14, 650);
+          this.playTone(310, 'sine', 0.18, 0.14, 680);
         },
 
         airShift() {
-          this.playTone(440, 'triangle', 0.12, 0.12, 820);
+          this.playTone(460, 'triangle', 0.12, 0.12, 860);
         },
 
         slide() {
-          this.playTone(320, 'sawtooth', 0.16, 0.08, 120);
+          this.playTone(420, 'sawtooth', 0.22, 0.09, 130);
         },
 
         coin() {
-          this.playTone(920, 'sine', 0.09, 0.1, 1380);
+          this.playTone(987.77, 'sine', 0.09, 0.1, 1480);
         },
 
-        evolve() {
-          const notes = [392, 493.88, 587.33, 659.25, 783.99, 987.77, 1174.66];
+        evolve(stage = 1) {
+          const notes = stage === 2
+            ? [329.63, 440.00, 523.25, 659.25, 783.99, 880.00, 1046.50, 1318.51]
+            : [329.63, 392.00, 440.00, 493.88, 587.33, 659.25, 783.99, 987.77];
           notes.forEach((n, idx) => {
             setTimeout(() => {
-              this.playTone(n, 'triangle', 0.24, 0.15, n * 1.05);
-            }, idx * 70);
+              this.playTone(n, 'sawtooth', 0.24, 0.14, n * 1.04);
+              this.playTone(n * 0.5, 'triangle', 0.24, 0.11);
+            }, idx * 60);
           });
         },
 
         megaFlame() {
-          this.playTone(170, 'sawtooth', 0.42, 0.22, 50);
-          setTimeout(() => this.playTone(460, 'square', 0.28, 0.15, 110), 55);
+          this.playTone(190, 'sawtooth', 0.42, 0.22, 52);
+          setTimeout(() => this.playTone(520, 'square', 0.28, 0.14, 120), 50);
+        },
+
+        gigaDestroyer() {
+          this.playTone(140, 'sawtooth', 0.55, 0.26, 38);
+          setTimeout(() => this.playTone(620, 'sawtooth', 0.32, 0.18, 150), 45);
+          setTimeout(() => this.playTone(480, 'square', 0.36, 0.18, 95), 110);
+        },
+
+        kaiserNail() {
+          this.playTone(1280, 'sawtooth', 0.16, 0.20, 260);
+          setTimeout(() => this.playTone(1560, 'sawtooth', 0.22, 0.22, 180), 65);
+          setTimeout(() => this.playTone(220, 'triangle', 0.35, 0.16, 65), 90);
         },
 
         crash() {
-          this.playTone(150, 'sawtooth', 0.45, 0.22, 42);
+          this.playTone(150, 'sawtooth', 0.55, 0.25, 36);
+          setTimeout(() => this.playTone(98, 'square', 0.48, 0.20, 30), 120);
         },
 
         startBGM() {
           this.stopBGM();
-          const scale = [220, 261.63, 293.66, 329.63, 392, 329.63, 293.66, 246.94];
+          this.wantBGM = true;
+          this.stepIdx = 0;
+
+          // Trigger YouTube track (https://www.youtube.com/watch?v=25F_EbCsfqs)
+          if (this.ytReady && this.ytPlayer && !this.muted) {
+            try {
+              this.ytPlayer.unMute();
+              this.ytPlayer.setVolume(80);
+              this.ytPlayer.playVideo();
+            } catch (e) {}
+          }
+
+          // Piano synthesizer backup plays ONLY while YouTube stream is loading or if blocked
           this.bgmTimer = setInterval(() => {
-            if (this.muted || !Game.running || Game.paused) return;
-            const note = scale[this.bgmStep % scale.length];
-            this.playTone(note, 'triangle', 0.14, 0.032);
-            this.bgmStep++;
-          }, 210);
+            if (this.muted || !Game.running || Game.paused || Game.dying) return;
+            if (this.ytPlaying) return; // Let the YouTube track play cleanly without overlap!
+
+            const step = this.rebootOpChorusSequence[this.stepIdx % this.rebootOpChorusSequence.length];
+            if (step.m > 0) {
+              this.playTone(step.m, 'triangle', step.d * 0.13, 0.075);
+              this.playTone(step.m * 2, 'sine', step.d * 0.08, 0.025);
+            }
+            if (step.b > 0) {
+              this.playTone(step.b * 2, 'triangle', 0.20, 0.065);
+            }
+            this.stepIdx++;
+          }, 115);
         },
 
         stopBGM() {
+          this.wantBGM = false;
           if (this.bgmTimer) {
             clearInterval(this.bgmTimer);
             this.bgmTimer = null;
           }
+          if (this.ytReady && this.ytPlayer) {
+            try {
+              this.ytPlayer.pauseVideo();
+            } catch (e) {}
+          }
         }
       };
 
+      // Pre-load YouTube IFrame API early so it is ready when the user starts the game
+      SoundFX.initYouTubeBGM();
+
       // ==========================================
-      // 2. IN-MEMORY LEADERBOARD MANAGER
+      // 2. LEADERBOARD & STORAGE MANAGER
       // ==========================================
+      const STORAGE_KEY = 'digimon_surfers_leaderboard_v2';
       const DEFAULT_BOARD = [
-        { name: '八神太一', score: 4850, distance: 620, blasted: 6 },
-        { name: '石田大和', score: 3920, distance: 510, blasted: 4 },
-        { name: '泉光子郎', score: 3180, distance: 430, blasted: 3 },
-        { name: '武之內空', score: 2450, distance: 340, blasted: 2 }
+        { name: '八神太一', char: 'agumon', score: 4850, distance: 620, blasted: 6 },
+        { name: '石田大和', char: 'gabumon', score: 4320, distance: 560, blasted: 5 },
+        { name: '泉光子郎', char: 'agumon', score: 3180, distance: 430, blasted: 3 },
+        { name: '武之內空', char: 'gabumon', score: 2450, distance: 340, blasted: 2 }
       ];
-      let sessionBoard = [...DEFAULT_BOARD];
 
       function loadLeaderboard() {
-        return sessionBoard.length > 0 ? [...sessionBoard] : [...DEFAULT_BOARD];
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return [...DEFAULT_BOARD];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...DEFAULT_BOARD];
+        } catch (e) {
+          return [...DEFAULT_BOARD];
+        }
       }
 
       function saveScoreToLeaderboard(entry) {
-        sessionBoard.push(entry);
-        sessionBoard.sort((a, b) => b.score - a.score);
-        sessionBoard = sessionBoard.slice(0, 8);
-        return sessionBoard;
+        const board = loadLeaderboard();
+        board.push(entry);
+        board.sort((a, b) => b.score - a.score);
+        const top = board.slice(0, 8);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(top));
+        } catch (e) {}
+        return top;
       }
 
       function clearLeaderboard() {
-        sessionBoard = [...DEFAULT_BOARD];
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (e) {}
         renderLeaderboards();
       }
 
@@ -704,15 +1114,17 @@
         const buildHTML = (items, limit) =>
           items.slice(0, limit).map((item, idx) => {
             const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+            const charTag = item.char === 'gabumon' ? '🐺' : '🦖';
             return `
               <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-xs">
                 <div class="flex items-center gap-2 min-w-0">
                   <span class="font-bold text-amber-400 w-5">${rankBadge}</span>
-                  <span class="font-bold text-white truncate max-w-[110px]">${escapeHTML(item.name)}</span>
+                  <span>${charTag}</span>
+                  <span class="font-bold text-white truncate max-w-[105px]">${escapeHTML(item.name)}</span>
                 </div>
                 <div class="flex items-center gap-3 tabular-nums shrink-0">
                   <span class="text-emerald-400 font-semibold">${item.distance}m</span>
-                  <span class="text-orange-300 font-semibold">🔥${item.blasted || 0}</span>
+                  <span class="text-orange-300 font-semibold">💥${item.blasted || 0}</span>
                   <span class="font-black text-amber-300 text-sm">${item.score}</span>
                 </div>
               </div>
@@ -758,23 +1170,25 @@
       ];
 
       const COMPANION_MESSAGES = [
-        { icon: '🦋', text: '巴達獸：跳起喺半空時，按左右鍵可以隨時空中轉向㗎！' },
-        { icon: '🐺', text: '加布獸：見到神聖計劃進化道具記得去執，可以進化成暴龍獸！' },
-        { icon: '🐞', text: '甲蟲獸：惡魔獸激光閘好高，記得按「下」向下剷滑過去！' },
-        { icon: '🐱', text: '迪路獸：進化成暴龍獸後有 3 次超級火焰，按空白鍵或右下掣即刻轟碎障礙！' },
-        { icon: '🌺', text: '巴魯獸：小心迎面駛嚟嘅 3D 暴走列車獸，快啲左右跳閃開！' }
+        { icon: '🦋', text: '巴達獸：聽住《Butter-Fly》向前衝呀！跳起喺半空時按左右鍵可以隨時空中轉向！' },
+        { icon: '🐺', text: '加布獸：見到稀有嘅神聖計劃記得去執，可以超進化發射 3 次必殺技！' },
+        { icon: '🐞', text: '甲蟲獸：惡魔獸激光閘好高，記得按「下」使出帥氣嘅向下飛剷滑過去！' },
+        { icon: '🐱', text: '迪路獸：小心前面正對住你高速轉動嘅黑色齒輪，快啲向上跳越過佢！' },
+        { icon: '🌺', text: '巴魯獸：迎面駛嚟嘅 3D 暴走列車獸好快，快啲左右跳閃開！' }
       ];
 
-      // =========================================================================
-      // 4. THREE.JS 3D DIGIMON & WORLD BUILDER (Proper Forward Orientation & Compact Scale)
-      // =========================================================================
+      // ================================================================================
+      // 4. THREE.JS HIGH-REALISM 3D DIGIMON & OBSTACLE BUILDER
+      //    - Agumon, Greymon, Gabumon, Garurumon with multi-joint articulated limbs
+      //    - Front-facing Dark Gear (黑色齒輪) facing the screen so teeth & rotation pop!
+      // ================================================================================
       const Digi3DBuilder = {
         textures: {},
 
         getTextures() {
           if (this.textures.initialized) return this.textures;
 
-          // Polka-Dot Digi-Egg Texture (Primary Village Scenery)
+          // Polka-Dot Digi-Egg Texture
           const eggCanvas = document.createElement('canvas');
           eggCanvas.width = 128;
           eggCanvas.height = 128;
@@ -788,133 +1202,177 @@
             ectx.fill();
           });
           this.textures.digiEgg = new THREE.CanvasTexture(eggCanvas);
+
+          // Metallic Dark Gear Face Texture (High-contrast industrial gear markings)
+          const gearCanvas = document.createElement('canvas');
+          gearCanvas.width = 256;
+          gearCanvas.height = 256;
+          const gctx = gearCanvas.getContext('2d');
+          gctx.fillStyle = '#0f172a';
+          gctx.fillRect(0, 0, 256, 256);
+          // Concentric metallic rings
+          gctx.strokeStyle = '#475569';
+          gctx.lineWidth = 10;
+          gctx.beginPath();
+          gctx.arc(128, 128, 102, 0, Math.PI * 2);
+          gctx.stroke();
+
+          gctx.strokeStyle = '#ef4444';
+          gctx.lineWidth = 6;
+          gctx.beginPath();
+          gctx.arc(128, 128, 56, 0, Math.PI * 2);
+          gctx.stroke();
+
+          // Industrial rivets & spokes
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * Math.PI * 2;
+            gctx.strokeStyle = '#64748b';
+            gctx.lineWidth = 8;
+            gctx.beginPath();
+            gctx.moveTo(128 + Math.cos(a) * 34, 128 + Math.sin(a) * 34);
+            gctx.lineTo(128 + Math.cos(a) * 95, 128 + Math.sin(a) * 95);
+            gctx.stroke();
+
+            gctx.fillStyle = '#f8fafc';
+            gctx.beginPath();
+            gctx.arc(128 + Math.cos(a + 0.39) * 80, 128 + Math.sin(a + 0.39) * 80, 6, 0, Math.PI * 2);
+            gctx.fill();
+          }
+          this.textures.darkGearFace = new THREE.CanvasTexture(gearCanvas);
+
           this.textures.initialized = true;
           return this.textures;
         },
 
-        // BUILD 3D AGUMON (亞古獸) - Strictly faces forward (-Z) down the track!
+        // =====================================================================
+        // 4A. BUILD 3D AGUMON (亞古獸) - Realistic Sculpt & Articulated Knees
+        // =====================================================================
         createAgumonMesh() {
           const root = new THREE.Group();
           const model = new THREE.Group();
 
-          const orangeMat = new THREE.MeshStandardMaterial({ color: 0xff9419, roughness: 0.42, metalness: 0.05 });
-          const darkOrangeMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.5 });
-          const bellyMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.55 });
-          const clawMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-          const eyeGreenMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.2 });
+          const orangeMat = new THREE.MeshStandardMaterial({ color: 0xff8c1a, roughness: 0.36, metalness: 0.08 });
+          const darkOrangeMat = new THREE.MeshStandardMaterial({ color: 0xd9530f, roughness: 0.45 });
+          const bellyMat = new THREE.MeshStandardMaterial({ color: 0xfff3e0, roughness: 0.48 });
+          const clawMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.22, metalness: 0.15 });
+          const eyeGreenMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.15 });
           const pupilMat = new THREE.MeshBasicMaterial({ color: 0x052e16 });
 
-          // 1. Pear-shaped Dinosaur Torso & Short Neck
-          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.95, 20, 18), orangeMat);
-          torso.scale.set(0.92, 1.12, 0.88);
-          torso.position.set(0, 1.65, 0);
+          // Torso & Chest
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.94, 24, 20), orangeMat);
+          torso.scale.set(0.92, 1.15, 0.90);
+          torso.position.set(0, 1.68, 0);
           model.add(torso);
 
-          // Cream front belly (facing -Z forward)
-          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.76, 16, 14), bellyMat);
-          belly.scale.set(0.82, 0.98, 0.45);
-          belly.position.set(0, 1.62, -0.58);
+          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.76, 18, 16), bellyMat);
+          belly.scale.set(0.82, 1.0, 0.48);
+          belly.position.set(0, 1.64, -0.58);
           model.add(belly);
 
-          // Subtle dorsal spine bumps along the back (+Z)
-          [2.15, 1.72, 1.32].forEach((by, idx) => {
-            const ridge = new THREE.Mesh(new THREE.ConeGeometry(0.14 - idx * 0.02, 0.26, 8), darkOrangeMat);
+          // Sculpted pectoral & back muscle definition
+          [2.18, 1.75, 1.34].forEach((by, idx) => {
+            const ridge = new THREE.Mesh(new THREE.ConeGeometry(0.15 - idx * 0.02, 0.28, 10), darkOrangeMat);
             ridge.rotation.x = Math.PI * 0.45;
             ridge.position.set(0, by, 0.78);
             model.add(ridge);
           });
 
-          // 2. Sculpted Agumon Head (Snout & 2 Eyes face forward -Z!)
+          // Head Group (Snout & Eyes strictly facing -Z forward)
           const headGroup = new THREE.Group();
-          headGroup.position.set(0, 2.95, -0.12);
+          headGroup.position.set(0, 2.96, -0.14);
 
-          const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.92, 22, 20), orangeMat);
-          cranium.scale.set(1.02, 0.94, 1.0);
+          const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.92, 24, 22), orangeMat);
+          cranium.scale.set(1.02, 0.94, 1.02);
           headGroup.add(cranium);
 
-          // Prominent Brow Ridges on front-left & front-right (-Z)
           [-0.46, 0.46].forEach((bx) => {
-            const brow = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), orangeMat);
-            brow.scale.set(1.1, 0.65, 1.2);
+            const brow = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 12), orangeMat);
+            brow.scale.set(1.12, 0.65, 1.22);
             brow.position.set(bx, 0.34, -0.56);
             headGroup.add(brow);
           });
 
-          // Wide Rounded Dinosaur Snout projecting strictly forward (-Z)
-          const snoutUpper = new THREE.Mesh(new THREE.SphereGeometry(0.74, 18, 16), orangeMat);
-          snoutUpper.scale.set(1.05, 0.68, 1.25);
-          snoutUpper.position.set(0, -0.06, -0.82);
+          const snoutUpper = new THREE.Mesh(new THREE.SphereGeometry(0.75, 20, 18), orangeMat);
+          snoutUpper.scale.set(1.06, 0.68, 1.26);
+          snoutUpper.position.set(0, -0.06, -0.84);
           headGroup.add(snoutUpper);
 
-          const jawLower = new THREE.Mesh(new THREE.SphereGeometry(0.64, 16, 14), orangeMat);
-          jawLower.scale.set(0.96, 0.45, 1.15);
+          const jawLower = new THREE.Mesh(new THREE.SphereGeometry(0.65, 18, 16), orangeMat);
+          jawLower.scale.set(0.96, 0.45, 1.16);
           jawLower.position.set(0, -0.34, -0.76);
           headGroup.add(jawLower);
 
-          // Two Nostril Bumps on the front tip of the snout (-Z)
           [-0.24, 0.24].forEach((nx) => {
-            const nostril = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), darkOrangeMat);
-            nostril.position.set(nx, 0.16, -1.52);
+            const nostril = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), darkOrangeMat);
+            nostril.position.set(nx, 0.16, -1.54);
             headGroup.add(nostril);
           });
 
-          // Two Forward-Facing Emerald Eyes
           [-0.56, 0.56].forEach((ex) => {
-            const eyeSclera = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), clawMat);
+            const eyeSclera = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 14), clawMat);
             eyeSclera.scale.set(0.65, 1.1, 0.85);
             eyeSclera.position.set(ex, 0.14, -0.62);
             eyeSclera.rotation.y = ex < 0 ? 0.35 : -0.35;
 
-            const iris = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), eyeGreenMat);
+            const iris = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 12), eyeGreenMat);
             iris.scale.set(0.65, 1.1, 0.85);
             iris.position.set(ex * 1.04, 0.14, -0.72);
 
-            const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
+            const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), pupilMat);
             pupil.position.set(ex * 1.06, 0.14, -0.80);
 
             headGroup.add(eyeSclera, iris, pupil);
           });
-
           model.add(headGroup);
 
-          // 3. Articulated Left & Right Legs with 3 Forward-Pointing White Claws (-Z)
+          // Articulated 2-Stage Legs (Thigh + Knee/Shin + Clawed Foot) for natural running
           const createLeg = (isLeft) => {
-            const legGroup = new THREE.Group();
-            legGroup.position.set(isLeft ? -0.58 : 0.58, 1.05, 0);
+            const hipGroup = new THREE.Group();
+            hipGroup.position.set(isLeft ? -0.58 : 0.58, 1.08, 0);
 
-            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 12), orangeMat);
-            thigh.scale.set(0.9, 1.25, 1.0);
-            thigh.position.set(0, -0.32, 0);
-            legGroup.add(thigh);
+            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 14), orangeMat);
+            thigh.scale.set(0.92, 1.22, 1.02);
+            thigh.position.set(0, -0.28, 0);
+            hipGroup.add(thigh);
 
-            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.32, 0.88), orangeMat);
-            foot.position.set(0, -0.82, -0.15);
-            legGroup.add(foot);
+            const shinGroup = new THREE.Group();
+            shinGroup.position.set(0, -0.52, 0.04);
+
+            const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.42, 12), orangeMat);
+            shin.position.set(0, -0.16, 0);
+            shinGroup.add(shin);
+
+            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.28, 0.88), orangeMat);
+            foot.position.set(0, -0.34, -0.18);
+            shinGroup.add(foot);
 
             [-0.19, 0, 0.19].forEach((cx) => {
-              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.32, 8), clawMat);
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.32, 10), clawMat);
               claw.rotation.x = -Math.PI / 2;
-              claw.position.set(cx, -0.86, -0.68);
-              legGroup.add(claw);
+              claw.position.set(cx, -0.38, -0.70);
+              shinGroup.add(claw);
             });
-            return legGroup;
+
+            hipGroup.add(shinGroup);
+            hipGroup.userData = { shinGroup };
+            return hipGroup;
           };
 
           const leftLeg = createLeg(true);
           const rightLeg = createLeg(false);
           model.add(leftLeg, rightLeg);
 
-          // 4. Articulated Left & Right Arms with 3 Claws
+          // Articulated Arms
           const createArm = (isLeft) => {
             const armGroup = new THREE.Group();
-            armGroup.position.set(isLeft ? -0.92 : 0.92, 2.1, -0.08);
+            armGroup.position.set(isLeft ? -0.92 : 0.92, 2.12, -0.08);
 
-            const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), orangeMat);
+            const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.27, 14, 12), orangeMat);
             armGroup.add(shoulder);
 
             const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.18, 0.68, 12), orangeMat);
-            forearm.rotation.z = isLeft ? 0.32 : -0.32;
-            forearm.rotation.x = 0.35;
+            forearm.rotation.z = isLeft ? 0.28 : -0.28;
+            forearm.rotation.x = 0.42;
             forearm.position.set(isLeft ? -0.14 : 0.14, -0.26, -0.18);
             armGroup.add(forearm);
 
@@ -931,39 +1389,49 @@
           const rightArm = createArm(false);
           model.add(leftArm, rightArm);
 
-          // 5. Smooth Multi-Segment Wagging Dinosaur Tail extending backward (+Z)
+          // Wagging Tail
           const tailGroup = new THREE.Group();
-          tailGroup.position.set(0, 1.22, 0.62);
-
-          const tailSeg1 = new THREE.Mesh(new THREE.SphereGeometry(0.48, 14, 12), orangeMat);
+          tailGroup.position.set(0, 1.24, 0.62);
+          const tailSeg1 = new THREE.Mesh(new THREE.SphereGeometry(0.48, 16, 14), orangeMat);
           tailSeg1.scale.set(0.85, 0.85, 1.35);
           tailSeg1.position.set(0, 0.04, 0.38);
           tailGroup.add(tailSeg1);
 
-          const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.35, 14), orangeMat);
+          const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.35, 16), orangeMat);
           tailTip.rotation.x = Math.PI * 0.42;
           tailTip.position.set(0, 0.22, 1.12);
           tailGroup.add(tailTip);
-
           model.add(tailGroup);
 
           model.scale.setScalar(0.50);
           root.add(model);
 
-          root.userData = { headGroup, leftLeg, rightLeg, leftArm, rightArm, tailGroup, innerModel: model };
+          root.userData = {
+            isQuadruped: false,
+            baseHeadY: 2.96,
+            headGroup,
+            leftLeg,
+            rightLeg,
+            leftArm,
+            rightArm,
+            tailGroup,
+            innerModel: model
+          };
           return root;
         },
 
-        // BUILD 3D GREYMON (暴龍獸 - Evolved Form)
+        // =====================================================================
+        // 4B. BUILD 3D GREYMON (暴龍獸 - Agumon Evolved)
+        // =====================================================================
         createGreymonMesh() {
           const root = new THREE.Group();
           const model = new THREE.Group();
 
-          const orangeMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
-          const blueStripeMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.42 });
-          const helmMat = new THREE.MeshStandardMaterial({ color: 0x5c280e, roughness: 0.35, metalness: 0.18 });
-          const helmRidgeMat = new THREE.MeshStandardMaterial({ color: 0x3b1704, roughness: 0.4 });
-          const hornMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.25 });
+          const orangeMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.35, metalness: 0.08 });
+          const blueStripeMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.38 });
+          const helmMat = new THREE.MeshStandardMaterial({ color: 0x5c280e, roughness: 0.28, metalness: 0.25 });
+          const helmRidgeMat = new THREE.MeshStandardMaterial({ color: 0x3b1704, roughness: 0.35 });
+          const hornMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.22, metalness: 0.15 });
           const eyeRedMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
           const auraRingMat = new THREE.MeshBasicMaterial({
             color: 0xf97316,
@@ -972,8 +1440,7 @@
             side: THREE.DoubleSide
           });
 
-          // 1. Muscular Forward-Leaning Dinosaur Torso + Blue Stripes on Back
-          const torso = new THREE.Mesh(new THREE.SphereGeometry(1.25, 22, 18), orangeMat);
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(1.25, 24, 20), orangeMat);
           torso.scale.set(1.02, 1.18, 1.05);
           torso.position.set(0, 2.15, 0);
           torso.rotation.x = 0.18;
@@ -985,16 +1452,15 @@
             model.add(stripe);
           });
 
-          const auraMesh = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.85, 24), auraRingMat);
+          const auraMesh = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.85, 28), auraRingMat);
           auraMesh.rotation.x = -Math.PI / 2;
           auraMesh.position.set(0, 0.08, 0);
           model.add(auraMesh);
 
-          // 2. Greymon Head with Iconic Brown Carapace Helmet & 3 Curved Ivory Horns
           const headGroup = new THREE.Group();
           headGroup.position.set(0, 3.65, -0.35);
 
-          const skullDome = new THREE.Mesh(new THREE.SphereGeometry(1.12, 20, 18), helmMat);
+          const skullDome = new THREE.Mesh(new THREE.SphereGeometry(1.12, 22, 20), helmMat);
           skullDome.scale.set(1.06, 0.92, 1.25);
           headGroup.add(skullDome);
 
@@ -1039,40 +1505,43 @@
           noseHorn.position.set(0, 0.52, -1.42);
           noseHorn.rotation.x = -0.58;
           headGroup.add(noseHorn);
-
           model.add(headGroup);
 
-          // 3. Powerful Striped Legs
           const createLeg = (isLeft) => {
-            const legGroup = new THREE.Group();
-            legGroup.position.set(isLeft ? -0.78 : 0.78, 1.32, 0);
+            const hipGroup = new THREE.Group();
+            hipGroup.position.set(isLeft ? -0.78 : 0.78, 1.32, 0);
 
-            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.52, 14, 12), orangeMat);
-            thigh.scale.set(0.95, 1.3, 1.05);
-            thigh.position.set(0, -0.38, 0);
-            legGroup.add(thigh);
+            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.52, 16, 14), orangeMat);
+            thigh.scale.set(0.95, 1.25, 1.05);
+            thigh.position.set(0, -0.32, 0);
+            hipGroup.add(thigh);
 
             const legStripe = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.58), blueStripeMat);
-            legStripe.position.set(0, -0.35, 0.25);
-            legGroup.add(legStripe);
+            legStripe.position.set(0, -0.32, 0.25);
+            hipGroup.add(legStripe);
+
+            const shinGroup = new THREE.Group();
+            shinGroup.position.set(0, -0.64, 0.05);
 
             const foot = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.38, 1.08), orangeMat);
-            foot.position.set(0, -1.02, -0.18);
-            legGroup.add(foot);
+            foot.position.set(0, -0.40, -0.18);
+            shinGroup.add(foot);
 
             [-0.24, 0, 0.24].forEach((cx) => {
               const claw = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.38, 8), hornMat);
               claw.rotation.x = -Math.PI / 2;
-              claw.position.set(cx, -1.06, -0.82);
-              legGroup.add(claw);
+              claw.position.set(cx, -0.44, -0.82);
+              shinGroup.add(claw);
             });
-            return legGroup;
+
+            hipGroup.add(shinGroup);
+            hipGroup.userData = { shinGroup };
+            return hipGroup;
           };
           const leftLeg = createLeg(true);
           const rightLeg = createLeg(false);
           model.add(leftLeg, rightLeg);
 
-          // 4. Muscular Arms
           const createArm = (isLeft) => {
             const armGroup = new THREE.Group();
             armGroup.position.set(isLeft ? -1.22 : 1.22, 2.55, -0.18);
@@ -1086,7 +1555,6 @@
           const rightArm = createArm(false);
           model.add(leftArm, rightArm);
 
-          // 5. Long Striped Greymon Tail
           const tailGroup = new THREE.Group();
           tailGroup.position.set(0, 1.55, 0.82);
           const tailCone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 2.6, 16), orangeMat);
@@ -1102,11 +1570,747 @@
           model.scale.setScalar(0.54);
           root.add(model);
 
-          root.userData = { headGroup, leftLeg, rightLeg, leftArm, rightArm, tailGroup, auraMesh, innerModel: model };
+          root.userData = {
+            isQuadruped: false,
+            baseHeadY: 3.65,
+            headGroup,
+            leftLeg,
+            rightLeg,
+            leftArm,
+            rightArm,
+            tailGroup,
+            auraMesh,
+            innerModel: model
+          };
           return root;
         },
 
-        // Build 3D Flying Patamon (巴達獸) Companion
+        // =====================================================================
+        // 4C. BUILD 3D GABUMON (加布獸)
+        //     - Wearing iconic Blue-White Garurumon Fur Pelt Hood with Navy Stripes,
+        //       Yellow Reptile Belly & Legs, Purple Stomach Markings, Center Horn!
+        // =====================================================================
+        createGabumonMesh() {
+          const root = new THREE.Group();
+          const model = new THREE.Group();
+
+          const yellowSkinMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.40 });
+          const furPeltMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, roughness: 0.45 });
+          const cobaltStripeMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.40 });
+          const bellyPurpleMat = new THREE.MeshStandardMaterial({ color: 0xc084fc, roughness: 0.45 });
+          const hornGoldMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.25, metalness: 0.2 });
+          const clawPurpleMat = new THREE.MeshStandardMaterial({ color: 0x7e22ce, roughness: 0.3 });
+          const eyeRedMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+
+          // 1. Torso: Yellow Reptile Front + Blue-White Fur Pelt Cape on Back (+Z)
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.92, 22, 18), yellowSkinMat);
+          torso.scale.set(0.92, 1.12, 0.88);
+          torso.position.set(0, 1.65, 0);
+          model.add(torso);
+
+          // Fur Pelt Back Cloak covering shoulders and back (+Z)
+          const peltCape = new THREE.Mesh(new THREE.SphereGeometry(0.96, 20, 18), furPeltMat);
+          peltCape.scale.set(0.98, 1.14, 0.68);
+          peltCape.position.set(0, 1.72, 0.25);
+          model.add(peltCape);
+
+          // Cobalt Blue Tiger Stripes on Back of Fur Pelt
+          [2.22, 1.82, 1.42].forEach((sy, idx) => {
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.38 - idx * 0.14, 0.14, 0.28), cobaltStripeMat);
+            stripe.position.set(0, sy, 0.78);
+            model.add(stripe);
+          });
+
+          // Pink-Purple Belly Patch (-Z)
+          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.72, 16, 14), bellyPurpleMat);
+          belly.scale.set(0.78, 0.92, 0.42);
+          belly.position.set(0, 1.60, -0.58);
+          model.add(belly);
+
+          // 2. Gabumon Head with Fur Hood, Perky Wolf Ears, and Center Yellow Horn (-Z)
+          const headGroup = new THREE.Group();
+          headGroup.position.set(0, 2.94, -0.12);
+
+          // Fur Hood Cranium
+          const hoodDome = new THREE.Mesh(new THREE.SphereGeometry(0.94, 22, 20), furPeltMat);
+          hoodDome.scale.set(1.04, 0.95, 1.04);
+          headGroup.add(hoodDome);
+
+          // Cobalt Blue Stripes across Back & Top of Hood
+          [-0.45, 0.45].forEach((sx) => {
+            const hStripe = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.95), cobaltStripeMat);
+            hStripe.position.set(sx, 0.45, 0.12);
+            hStripe.rotation.z = sx < 0 ? 0.35 : -0.35;
+            headGroup.add(hStripe);
+          });
+
+          // Perky Left & Right Fur Ears on Top of Head
+          [-0.58, 0.58].forEach((ex) => {
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.72, 10), furPeltMat);
+            ear.position.set(ex, 0.92, 0.05);
+            ear.rotation.z = ex < 0 ? 0.28 : -0.28;
+            headGroup.add(ear);
+          });
+
+          // Iconic Center Striated Horn pointing forward & up (-Z)
+          const centerHorn = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.18, 12), hornGoldMat);
+          centerHorn.position.set(0, 0.72, -0.88);
+          centerHorn.rotation.x = -0.68;
+          headGroup.add(centerHorn);
+
+          // Yellow Reptile Lower Snout & Jaw projecting forward (-Z)
+          const snout = new THREE.Mesh(new THREE.SphereGeometry(0.68, 18, 16), yellowSkinMat);
+          snout.scale.set(1.0, 0.62, 1.22);
+          snout.position.set(0, -0.16, -0.78);
+          headGroup.add(snout);
+
+          // Forward-facing Crimson Eyes
+          [-0.52, 0.52].forEach((ex) => {
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), eyeRedMat);
+            eye.position.set(ex, 0.08, -0.68);
+            headGroup.add(eye);
+          });
+
+          model.add(headGroup);
+
+          // 3. Articulated Yellow Reptile Legs with Purple Claws
+          const createLeg = (isLeft) => {
+            const hipGroup = new THREE.Group();
+            hipGroup.position.set(isLeft ? -0.56 : 0.56, 1.06, 0);
+
+            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.40, 14, 12), yellowSkinMat);
+            thigh.scale.set(0.9, 1.2, 1.0);
+            thigh.position.set(0, -0.28, 0);
+            hipGroup.add(thigh);
+
+            const shinGroup = new THREE.Group();
+            shinGroup.position.set(0, -0.52, 0.04);
+
+            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.30, 0.84), yellowSkinMat);
+            foot.position.set(0, -0.32, -0.16);
+            shinGroup.add(foot);
+
+            [-0.18, 0, 0.18].forEach((cx) => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.30, 8), clawPurpleMat);
+              claw.rotation.x = -Math.PI / 2;
+              claw.position.set(cx, -0.36, -0.66);
+              shinGroup.add(claw);
+            });
+
+            hipGroup.add(shinGroup);
+            hipGroup.userData = { shinGroup };
+            return hipGroup;
+          };
+          const leftLeg = createLeg(true);
+          const rightLeg = createLeg(false);
+          model.add(leftLeg, rightLeg);
+
+          // 4. Fur-Sleeved Arms with Purple Claws
+          const createArm = (isLeft) => {
+            const armGroup = new THREE.Group();
+            armGroup.position.set(isLeft ? -0.90 : 0.90, 2.08, -0.06);
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.19, 0.68, 12), furPeltMat);
+            arm.rotation.z = isLeft ? 0.30 : -0.30;
+            arm.rotation.x = 0.38;
+            arm.position.set(isLeft ? -0.12 : 0.12, -0.24, -0.16);
+            armGroup.add(arm);
+            return armGroup;
+          };
+          const leftArm = createArm(true);
+          const rightArm = createArm(false);
+          model.add(leftArm, rightArm);
+
+          // 5. Bushy Blue-White Fur Tail (+Z)
+          const tailGroup = new THREE.Group();
+          tailGroup.position.set(0, 1.20, 0.60);
+          const tailCone = new THREE.Mesh(new THREE.ConeGeometry(0.44, 1.38, 14), furPeltMat);
+          tailCone.rotation.x = Math.PI * 0.42;
+          tailCone.position.set(0, 0.20, 0.85);
+          tailGroup.add(tailCone);
+          model.add(tailGroup);
+
+          model.scale.setScalar(0.50);
+          root.add(model);
+
+          root.userData = {
+            isQuadruped: false,
+            baseHeadY: 2.94,
+            headGroup,
+            leftLeg,
+            rightLeg,
+            leftArm,
+            rightArm,
+            tailGroup,
+            innerModel: model
+          };
+          return root;
+        },
+
+        // =====================================================================
+        // 4D. BUILD 3D GARURUMON (加魯魯獸 - Gabumon Evolved Wolf Form)
+        //     - Quadruped wolf galloping posture, Silver-White Fur, Cobalt Blue
+        //       Stripes, Sharp Shoulder Blades, Flowing Wolf Tail, Cyan Aura!
+        // =====================================================================
+        createGarurumonMesh() {
+          const root = new THREE.Group();
+          const model = new THREE.Group();
+
+          const whiteFurMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.35, metalness: 0.1 });
+          const blueFurMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.38 });
+          const darkBlueMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.42 });
+          const clawRedMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.25 });
+          const bladeGoldMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.22, metalness: 0.3 });
+          const eyeGlowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+          const auraRingMat = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.48,
+            side: THREE.DoubleSide
+          });
+
+          // 1. Sleek Muscular Wolf Body (Horizontal along Z axis)
+          const ribcage = new THREE.Mesh(new THREE.SphereGeometry(1.05, 22, 18), whiteFurMat);
+          ribcage.scale.set(0.92, 0.96, 1.48);
+          ribcage.position.set(0, 1.95, -0.35);
+          model.add(ribcage);
+
+          const haunches = new THREE.Mesh(new THREE.SphereGeometry(0.92, 20, 16), blueFurMat);
+          haunches.scale.set(0.88, 0.92, 1.25);
+          haunches.position.set(0, 1.88, 0.85);
+          model.add(haunches);
+
+          // Iconic Garurumon Shoulder Wing-Blades & Blue Tiger Stripes
+          [-0.85, 0.85].forEach((sx) => {
+            const blade = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.45, 10), bladeGoldMat);
+            blade.position.set(sx, 2.55, -0.25);
+            blade.rotation.z = sx < 0 ? 0.55 : -0.55;
+            blade.rotation.x = 0.42;
+            model.add(blade);
+
+            const sideStripe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 1.65), blueFurMat);
+            sideStripe.position.set(sx * 0.96, 2.05, 0.15);
+            model.add(sideStripe);
+          });
+
+          // Cyan Fox-Fire Ground Aura Ring
+          const auraMesh = new THREE.Mesh(new THREE.RingGeometry(1.38, 1.90, 28), auraRingMat);
+          auraMesh.rotation.x = -Math.PI / 2;
+          auraMesh.position.set(0, 0.08, 0);
+          model.add(auraMesh);
+
+          // 2. Fierce Wolf Head & Spiky Silver Mane facing forward (-Z)
+          const headGroup = new THREE.Group();
+          headGroup.position.set(0, 2.68, -1.55);
+
+          const wolfSkull = new THREE.Mesh(new THREE.SphereGeometry(0.86, 20, 18), whiteFurMat);
+          wolfSkull.scale.set(1.04, 0.92, 1.18);
+          headGroup.add(wolfSkull);
+
+          // Wolf Snout projecting forward (-Z)
+          const wolfSnout = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.55, 1.25), darkBlueMat);
+          wolfSnout.position.set(0, -0.14, -0.88);
+          headGroup.add(wolfSnout);
+
+          // Pointed Wolf Ears
+          [-0.55, 0.55].forEach((ex) => {
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.85, 10), whiteFurMat);
+            ear.position.set(ex, 0.78, 0.12);
+            ear.rotation.z = ex < 0 ? 0.32 : -0.32;
+            ear.rotation.x = -0.18;
+            headGroup.add(ear);
+
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), eyeGlowMat);
+            eye.position.set(ex * 0.92, 0.10, -0.76);
+            headGroup.add(eye);
+          });
+
+          model.add(headGroup);
+
+          // 3. Quadruped Front Legs (mapped to leftArm / rightArm for bounding gallop) & Hind Legs (leftLeg / rightLeg)
+          const createWolfLimb = (xPos, zPos) => {
+            const limbGroup = new THREE.Group();
+            limbGroup.position.set(xPos, 1.45, zPos);
+
+            const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.85, 12), whiteFurMat);
+            upper.position.set(0, -0.35, 0);
+            limbGroup.add(upper);
+
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.34), blueFurMat);
+            stripe.position.set(0, -0.30, 0);
+            limbGroup.add(stripe);
+
+            const shinGroup = new THREE.Group();
+            shinGroup.position.set(0, -0.72, 0);
+
+            const paw = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.32, 0.72), whiteFurMat);
+            paw.position.set(0, -0.52, -0.12);
+            shinGroup.add(paw);
+
+            [-0.14, 0, 0.14].forEach((cx) => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.28, 8), clawRedMat);
+              claw.rotation.x = -Math.PI / 2;
+              claw.position.set(cx, -0.56, -0.55);
+              shinGroup.add(claw);
+            });
+
+            limbGroup.add(shinGroup);
+            limbGroup.userData = { shinGroup };
+            return limbGroup;
+          };
+
+          // Front pair & Hind pair
+          const leftArm = createWolfLimb(-0.68, -0.92);
+          const rightArm = createWolfLimb(0.68, -0.92);
+          const leftLeg = createWolfLimb(-0.68, 0.88);
+          const rightLeg = createWolfLimb(0.68, 0.88);
+          model.add(leftArm, rightArm, leftLeg, rightLeg);
+
+          // 4. Bushy Flowing Wolf Tail (+Z)
+          const tailGroup = new THREE.Group();
+          tailGroup.position.set(0, 2.02, 1.48);
+          const tailCone = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.25, 16), whiteFurMat);
+          tailCone.rotation.x = Math.PI * 0.40;
+          tailCone.position.set(0, 0.28, 0.95);
+          tailGroup.add(tailCone);
+
+          const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.95, 12), blueFurMat);
+          tailTip.rotation.x = Math.PI * 0.40;
+          tailTip.position.set(0, 0.42, 1.55);
+          tailGroup.add(tailTip);
+          model.add(tailGroup);
+
+          model.scale.setScalar(0.54);
+          root.add(model);
+
+          root.userData = {
+            isQuadruped: true,
+            baseHeadY: 2.68,
+            headGroup,
+            leftLeg,
+            rightLeg,
+            leftArm,
+            rightArm,
+            tailGroup,
+            auraMesh,
+            innerModel: model
+          };
+          return root;
+        },
+
+        // =====================================================================
+        // 4E. BUILD 3D METALGREYMON (機械暴龍獸 - Agumon Stage 2 Ultimate Form)
+        //     - Silver Chrome Cyborg Helmet, Crimson Hair Mane, 6 Purple Tattered
+        //       Wings, Trident Claw Left Arm, Mechanical Giga Destroyer Chest Hatch!
+        // =====================================================================
+        createMetalGreymonMesh() {
+          const root = new THREE.Group();
+          const model = new THREE.Group();
+
+          const orangeMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.34, metalness: 0.1 });
+          const blueStripeMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.38 });
+          const chromeMetalMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.18, metalness: 0.88 });
+          const darkSteelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.28, metalness: 0.80 });
+          const wingPurpleMat = new THREE.MeshStandardMaterial({ color: 0x7e22ce, roughness: 0.38, side: THREE.DoubleSide });
+          const redManeMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 });
+          const hornMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.22, metalness: 0.2 });
+          const eyeGlowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+          const auraRingMat = new THREE.MeshBasicMaterial({
+            color: 0xef4444,
+            transparent: true,
+            opacity: 0.55,
+            side: THREE.DoubleSide
+          });
+
+          // 1. Muscular Cyborg Torso + Metallic Giga Destroyer Chest Hatch (-Z)
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(1.30, 24, 20), orangeMat);
+          torso.scale.set(1.06, 1.20, 1.06);
+          torso.position.set(0, 2.22, 0);
+          torso.rotation.x = 0.16;
+          model.add(torso);
+
+          // Metallic Chest Armor & Twin Giga Destroyer Silo Doors facing forward (-Z)
+          const chestArmor = new THREE.Mesh(new THREE.BoxGeometry(1.68, 1.28, 0.65), chromeMetalMat);
+          chestArmor.position.set(0, 2.28, -0.92);
+          model.add(chestArmor);
+
+          [-0.44, 0.44].forEach((sx) => {
+            const hatchDoor = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.96, 0.20), darkSteelMat);
+            hatchDoor.position.set(sx, 2.28, -1.22);
+            model.add(hatchDoor);
+
+            const missilePort = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.26, 14), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
+            missilePort.rotation.x = Math.PI / 2;
+            missilePort.position.set(sx, 2.28, -1.25);
+            model.add(missilePort);
+          });
+
+          // 2. Iconic 6 Tattered Purple Cyborg Wings on Back (+Z)
+          const leftWingGroup = new THREE.Group();
+          leftWingGroup.position.set(-0.65, 2.65, 0.72);
+          const rightWingGroup = new THREE.Group();
+          rightWingGroup.position.set(0.65, 2.65, 0.72);
+
+          for (let w = 0; w < 3; w++) {
+            const featherL = new THREE.Mesh(new THREE.ConeGeometry(0.46 - w * 0.05, 2.85 - w * 0.28, 5), wingPurpleMat);
+            featherL.rotation.z = 1.05 + w * 0.25;
+            featherL.rotation.x = 0.28;
+            featherL.position.set(-0.92 - w * 0.24, 0.50 - w * 0.34, 0.18);
+            leftWingGroup.add(featherL);
+
+            const featherR = new THREE.Mesh(new THREE.ConeGeometry(0.46 - w * 0.05, 2.85 - w * 0.28, 5), wingPurpleMat);
+            featherR.rotation.z = -(1.05 + w * 0.25);
+            featherR.rotation.x = 0.28;
+            featherR.position.set(0.92 + w * 0.24, 0.50 - w * 0.34, 0.18);
+            rightWingGroup.add(featherR);
+          }
+
+          // Mechanical Wing Hinge Pack on Back
+          const wingPack = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.85, 0.48), darkSteelMat);
+          wingPack.position.set(0, 2.62, 0.92);
+          model.add(wingPack, leftWingGroup, rightWingGroup);
+
+          // Blue Tiger Stripes on Back & Haunches
+          [2.15, 1.72].forEach((sy, idx) => {
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.85 - idx * 0.18, 0.16, 0.34), blueStripeMat);
+            stripe.position.set(0, sy, 0.98 - idx * 0.06);
+            model.add(stripe);
+          });
+
+          const auraMesh = new THREE.Mesh(new THREE.RingGeometry(1.45, 2.10, 32), auraRingMat);
+          auraMesh.rotation.x = -Math.PI / 2;
+          auraMesh.position.set(0, 0.08, 0);
+          model.add(auraMesh);
+
+          // 3. Silver Chrome Metal Helmet, Red Hair Mane & 3 Horns
+          const headGroup = new THREE.Group();
+          headGroup.position.set(0, 3.78, -0.38);
+
+          const metalHelmet = new THREE.Mesh(new THREE.SphereGeometry(1.16, 24, 20), chromeMetalMat);
+          metalHelmet.scale.set(1.08, 0.94, 1.26);
+          headGroup.add(metalHelmet);
+
+          // Metallic Ridge Crest & Bolts on Helmet Dome
+          const helmSeam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.55, 2.2), darkSteelMat);
+          helmSeam.position.set(0, 0.68, 0);
+          headGroup.add(helmSeam);
+
+          // Multi-layered Flaming Crimson Hair Mane flowing from back of helmet (+Z)
+          [-0.42, -0.20, 0, 0.20, 0.42].forEach((mx, idx) => {
+            const maneSpike = new THREE.Mesh(new THREE.ConeGeometry(0.26, 1.55 - Math.abs(mx) * 0.5, 8), redManeMat);
+            maneSpike.rotation.x = Math.PI * 0.58;
+            maneSpike.rotation.z = -mx * 0.4;
+            maneSpike.position.set(mx, 0.24 - (idx % 2) * 0.08, 1.28);
+            headGroup.add(maneSpike);
+          });
+
+          const snoutMetal = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.70, 1.38), chromeMetalMat);
+          snoutMetal.position.set(0, -0.10, -0.98);
+          headGroup.add(snoutMetal);
+
+          const lowerJaw = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.46, 1.28), orangeMat);
+          lowerJaw.position.set(0, -0.52, -0.90);
+          headGroup.add(lowerJaw);
+
+          [-0.60, 0.60].forEach((ex) => {
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 10), eyeGlowMat);
+            eye.position.set(ex, 0.06, -0.84);
+            headGroup.add(eye);
+          });
+
+          [-0.88, 0.88].forEach((hx) => {
+            const antler = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.82, 12), hornMat);
+            antler.position.set(hx, 0.82, 0.05);
+            antler.rotation.z = hx < 0 ? 0.68 : -0.68;
+            antler.rotation.x = -0.22;
+            headGroup.add(antler);
+          });
+
+          const noseBlade = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.55, 12), chromeMetalMat);
+          noseBlade.position.set(0, 0.55, -1.48);
+          noseBlade.rotation.x = -0.58;
+          headGroup.add(noseBlade);
+          model.add(headGroup);
+
+          // 4. Articulated Legs
+          const createLeg = (isLeft) => {
+            const hipGroup = new THREE.Group();
+            hipGroup.position.set(isLeft ? -0.82 : 0.82, 1.35, 0);
+
+            const thigh = new THREE.Mesh(new THREE.SphereGeometry(0.54, 16, 14), orangeMat);
+            thigh.scale.set(0.96, 1.26, 1.06);
+            thigh.position.set(0, -0.32, 0);
+            hipGroup.add(thigh);
+
+            const legStripe = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.16, 0.60), blueStripeMat);
+            legStripe.position.set(0, -0.32, 0.26);
+            hipGroup.add(legStripe);
+
+            const shinGroup = new THREE.Group();
+            shinGroup.position.set(0, -0.66, 0.05);
+
+            const foot = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.38, 1.10), orangeMat);
+            foot.position.set(0, -0.40, -0.18);
+            shinGroup.add(foot);
+
+            [-0.25, 0, 0.25].forEach((cx) => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.40, 8), hornMat);
+              claw.rotation.x = -Math.PI / 2;
+              claw.position.set(cx, -0.44, -0.84);
+              shinGroup.add(claw);
+            });
+
+            hipGroup.add(shinGroup);
+            hipGroup.userData = { shinGroup };
+            return hipGroup;
+          };
+          const leftLeg = createLeg(true);
+          const rightLeg = createLeg(false);
+          model.add(leftLeg, rightLeg);
+
+          // 5. Left Robotic Trident Arm & Right Bio-Muscular Arm
+          const leftArm = new THREE.Group();
+          leftArm.position.set(-1.38, 2.58, -0.18);
+          const shoulderArmor = new THREE.Mesh(new THREE.SphereGeometry(0.46, 14, 12), darkSteelMat);
+          leftArm.add(shoulderArmor);
+          const mechForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 1.05, 14), chromeMetalMat);
+          mechForearm.rotation.z = 0.35;
+          mechForearm.rotation.x = 0.45;
+          mechForearm.position.set(-0.22, -0.38, -0.28);
+          leftArm.add(mechForearm);
+          [-0.18, 0, 0.18].forEach((cx) => {
+            const tClaw = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.52, 8), chromeMetalMat);
+            tClaw.rotation.x = -Math.PI / 2;
+            tClaw.position.set(-0.32 + cx, -0.68, -0.82);
+            leftArm.add(tClaw);
+          });
+
+          const rightArm = new THREE.Group();
+          rightArm.position.set(1.32, 2.58, -0.18);
+          const bioArm = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.96, 12), orangeMat);
+          bioArm.rotation.z = -0.36;
+          bioArm.rotation.x = 0.38;
+          rightArm.add(bioArm);
+
+          model.add(leftArm, rightArm);
+
+          // 6. Tail with Mechanical Tip
+          const tailGroup = new THREE.Group();
+          tailGroup.position.set(0, 1.58, 0.86);
+          const tailCone = new THREE.Mesh(new THREE.ConeGeometry(0.64, 2.7, 16), orangeMat);
+          tailCone.rotation.x = Math.PI * 0.42;
+          tailCone.position.set(0, 0.22, 1.08);
+          tailGroup.add(tailCone);
+          const tailMetalRing = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.30, 0.55, 12), chromeMetalMat);
+          tailMetalRing.rotation.x = Math.PI * 0.42;
+          tailMetalRing.position.set(0, 0.26, 1.65);
+          tailGroup.add(tailMetalRing);
+          model.add(tailGroup);
+
+          model.scale.setScalar(0.55);
+          root.add(model);
+
+          root.userData = {
+            isQuadruped: false,
+            baseHeadY: 3.78,
+            headGroup,
+            leftLeg,
+            rightLeg,
+            leftArm,
+            rightArm,
+            tailGroup,
+            leftWingGroup,
+            rightWingGroup,
+            auraMesh,
+            innerModel: model
+          };
+          return root;
+        },
+
+        // =====================================================================
+        // 4F. BUILD 3D WEREGARURUMON (獸人加魯魯 - Gabumon Stage 2 Ultimate Form)
+        //     - Agile Biped Martial-Arts Werewolf, Spiky White-Blue Fur, Crossed
+        //       Brown Leather Chest Belts, Camo/Denim Jeans, Spiked Knuckle Gloves!
+        // =====================================================================
+        createWereGarurumonMesh() {
+          const root = new THREE.Group();
+          const model = new THREE.Group();
+
+          const whiteFurMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.34, metalness: 0.08 });
+          const cobaltFurMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.36 });
+          const jeansMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.55 });
+          const leatherBeltMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.48 });
+          const goldMetalMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.22, metalness: 0.85 });
+          const gloveMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.38 });
+          const clawCyanMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+          const auraRingMat = new THREE.MeshBasicMaterial({
+            color: 0x818cf8,
+            transparent: true,
+            opacity: 0.52,
+            side: THREE.DoubleSide
+          });
+
+          // 1. Muscular V-Taper Biped Werewolf Torso + Crossed Leather Chest Straps
+          const chest = new THREE.Mesh(new THREE.SphereGeometry(1.08, 22, 18), whiteFurMat);
+          chest.scale.set(1.12, 1.16, 0.90);
+          chest.position.set(0, 2.34, 0);
+          model.add(chest);
+
+          // Crossed X Leather Harness across chest & back + Silver Center Medallion
+          [-0.58, 0.58].forEach((rz) => {
+            const strap = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.22, 1.68), leatherBeltMat);
+            strap.position.set(0, 2.34, 0);
+            strap.rotation.z = rz;
+            model.add(strap);
+          });
+          const chestBuckle = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.74, 14), goldMetalMat);
+          chestBuckle.rotation.x = Math.PI / 2;
+          chestBuckle.position.set(0, 2.34, 0);
+          model.add(chestBuckle);
+
+          // Cobalt Blue Fur Shoulder Stripes & Spikes
+          [-0.98, 0.98].forEach((sx) => {
+            const shPad = new THREE.Mesh(new THREE.SphereGeometry(0.46, 14, 12), cobaltFurMat);
+            shPad.position.set(sx, 2.78, 0);
+            model.add(shPad);
+          });
+
+          const waistBelt = new THREE.Mesh(new THREE.CylinderGeometry(0.84, 0.88, 0.28, 18), leatherBeltMat);
+          waistBelt.position.set(0, 1.48, 0);
+          model.add(waistBelt);
+
+          const auraMesh = new THREE.Mesh(new THREE.RingGeometry(1.38, 1.95, 28), auraRingMat);
+          auraMesh.rotation.x = -Math.PI / 2;
+          auraMesh.position.set(0, 0.08, 0);
+          model.add(auraMesh);
+
+          // 2. Fierce Biped Wolf Head, Spiky Mane & Gold Earring (-Z)
+          const headGroup = new THREE.Group();
+          headGroup.position.set(0, 3.55, -0.18);
+
+          const wolfSkull = new THREE.Mesh(new THREE.SphereGeometry(0.86, 20, 18), whiteFurMat);
+          wolfSkull.scale.set(1.04, 0.96, 1.12);
+          headGroup.add(wolfSkull);
+
+          // Spiky Back Hair Mane (+Z)
+          [-0.28, 0, 0.28].forEach((mx) => {
+            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.92, 8), cobaltFurMat);
+            spike.rotation.x = Math.PI * 0.55;
+            spike.position.set(mx, 0.15, 0.88);
+            headGroup.add(spike);
+          });
+
+          // Pointed Wolf Ears + Gold Earring on Left Ear
+          [-0.54, 0.54].forEach((ex) => {
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.88, 10), whiteFurMat);
+            ear.position.set(ex, 0.82, 0.08);
+            ear.rotation.z = ex < 0 ? 0.28 : -0.28;
+            headGroup.add(ear);
+          });
+
+          const earring = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.04, 8, 14), goldMetalMat);
+          earring.position.set(-0.74, 0.72, 0.08);
+          headGroup.add(earring);
+
+          const snout = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.50, 1.15), cobaltFurMat);
+          snout.position.set(0, -0.14, -0.82);
+          headGroup.add(snout);
+
+          [-0.48, 0.48].forEach((ex) => {
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+            eye.position.set(ex, 0.10, -0.74);
+            headGroup.add(eye);
+          });
+
+          model.add(headGroup);
+
+          // 3. Biped Tactical Denim Jeans Legs + Knee Armor Pads
+          const createLeg = (isLeft) => {
+            const hipGroup = new THREE.Group();
+            hipGroup.position.set(isLeft ? -0.62 : 0.62, 1.32, 0);
+
+            const jeanThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.34, 0.82, 14), jeansMat);
+            jeanThigh.position.set(0, -0.35, 0);
+            hipGroup.add(jeanThigh);
+
+            const kneeSkullPad = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), goldMetalMat);
+            kneeSkullPad.position.set(0, -0.65, -0.26);
+            hipGroup.add(kneeSkullPad);
+
+            const shinGroup = new THREE.Group();
+            shinGroup.position.set(0, -0.68, 0.04);
+
+            const shinWrap = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.26, 0.56, 12), jeansMat);
+            shinWrap.position.set(0, -0.22, 0);
+            shinGroup.add(shinWrap);
+
+            const wolfFoot = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.30, 0.88), whiteFurMat);
+            wolfFoot.position.set(0, -0.46, -0.18);
+            shinGroup.add(wolfFoot);
+
+            [-0.16, 0, 0.16].forEach((cx) => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.30, 8), clawCyanMat);
+              claw.rotation.x = -Math.PI / 2;
+              claw.position.set(cx, -0.50, -0.70);
+              shinGroup.add(claw);
+            });
+
+            hipGroup.add(shinGroup);
+            hipGroup.userData = { shinGroup };
+            return hipGroup;
+          };
+          const leftLeg = createLeg(true);
+          const rightLeg = createLeg(false);
+          model.add(leftLeg, rightLeg);
+
+          // 4. Muscular Biped Arms with Crimson Battle Gloves & Kaiser Nail Claws!
+          const createArm = (isLeft) => {
+            const armGroup = new THREE.Group();
+            armGroup.position.set(isLeft ? -1.16 : 1.16, 2.52, -0.12);
+
+            const bicep = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.25, 0.78, 12), whiteFurMat);
+            bicep.rotation.z = isLeft ? 0.26 : -0.26;
+            bicep.rotation.x = 0.36;
+            bicep.position.set(isLeft ? -0.14 : 0.14, -0.28, -0.14);
+            armGroup.add(bicep);
+
+            const glove = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), gloveMat);
+            glove.position.set(isLeft ? -0.26 : 0.26, -0.62, -0.34);
+            armGroup.add(glove);
+
+            [-0.12, 0, 0.12].forEach((cx) => {
+              const kClaw = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.44, 8), clawCyanMat);
+              kClaw.rotation.x = -Math.PI / 2;
+              kClaw.position.set((isLeft ? -0.26 : 0.26) + cx, -0.66, -0.72);
+              armGroup.add(kClaw);
+            });
+            return armGroup;
+          };
+          const leftArm = createArm(true);
+          const rightArm = createArm(false);
+          model.add(leftArm, rightArm);
+
+          const tailGroup = new THREE.Group();
+          tailGroup.position.set(0, 1.45, 0.55);
+
+          model.scale.setScalar(0.54);
+          root.add(model);
+
+          root.userData = {
+            isQuadruped: false,
+            baseHeadY: 3.55,
+            headGroup,
+            leftLeg,
+            rightLeg,
+            leftArm,
+            rightArm,
+            tailGroup,
+            auraMesh,
+            innerModel: model
+          };
+          return root;
+        },
+
+        // Build 3D Flying Patamon & Biyomon Companions
         createPatamonMesh() {
           const group = new THREE.Group();
           const bodyMat = new THREE.MeshStandardMaterial({ color: 0xfb923c, roughness: 0.4 });
@@ -1132,7 +2336,6 @@
           return group;
         },
 
-        // Build 3D Flying Biyomon (比丘獸) Companion
         createBiyomonMesh() {
           const group = new THREE.Group();
           const pinkMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.4 });
@@ -1161,33 +2364,68 @@
           return group;
         },
 
-        // Build 3D Obstacle Mesh by Type
+        // =====================================================================
+        // 4E. BUILD 3D OBSTACLES
+        //     - Dark Gear (`dark_gear`) now faces directly toward the screen (+Z)
+        //       so all 12 cogs, glowing crimson inner ring, and metallic face
+        //       are 100% visible and rotate clockwise in front of the player!
+        // =====================================================================
         createObstacleMesh(kind) {
+          const tex = this.getTextures();
           const group = new THREE.Group();
 
           if (kind === 'dark_gear') {
             const gearGroup = new THREE.Group();
-            gearGroup.position.set(0, 0.95, 0);
-            const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.25 });
-            const redGlowMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+            gearGroup.position.set(0, 1.15, 0);
 
-            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.34, 20), darkMat);
-            wheel.rotation.z = Math.PI / 2;
+            const darkMetalMat = new THREE.MeshStandardMaterial({
+              color: 0x1e293b,
+              metalness: 0.85,
+              roughness: 0.22
+            });
+            const faceMat = new THREE.MeshStandardMaterial({
+              map: tex.darkGearFace,
+              metalness: 0.65,
+              roughness: 0.28
+            });
+            const toothEdgeMat = new THREE.MeshStandardMaterial({
+              color: 0x475569,
+              metalness: 0.8,
+              roughness: 0.2
+            });
+            const redGlowMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+            const hubGlowMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+            // Main Gear Disc facing the screen (Cylinder rotated X = PI/2 so flat circular faces point along +Z / -Z)
+            const wheel = new THREE.Mesh(
+              new THREE.CylinderGeometry(1.05, 1.05, 0.36, 28),
+              [darkMetalMat, faceMat, faceMat]
+            );
+            wheel.rotation.x = Math.PI / 2;
             gearGroup.add(wheel);
 
-            const coreRing = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.38, 16), redGlowMat);
-            coreRing.rotation.z = Math.PI / 2;
-            gearGroup.add(coreRing);
+            // Glowing Crimson Energy Ring on the front & back face
+            const frontRing = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.065, 12, 24), redGlowMat);
+            frontRing.position.set(0, 0, 0.19);
+            gearGroup.add(frontRing);
 
-            for (let i = 0; i < 10; i++) {
-              const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.28, 0.32), darkMat);
-              const angle = (i / 10) * Math.PI * 2;
-              tooth.position.set(0, Math.cos(angle) * 1.04, Math.sin(angle) * 1.04);
-              tooth.rotation.x = -angle;
+            // Glowing Axle Hub in center
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.44, 16), hubGlowMat);
+            hub.rotation.x = Math.PI / 2;
+            gearGroup.add(hub);
+
+            // 12 Prominent Gear Teeth around the X-Y perimeter facing the player!
+            for (let i = 0; i < 12; i++) {
+              const angle = (i / 12) * Math.PI * 2;
+              const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.34, 0.38), toothEdgeMat);
+              tooth.position.set(Math.cos(angle) * 1.14, Math.sin(angle) * 1.14, 0);
+              tooth.rotation.z = angle - Math.PI / 2;
               gearGroup.add(tooth);
             }
+
             group.add(gearGroup);
             group.userData.spinPart = gearGroup;
+            group.userData.spinAxis = 'z';
           } else if (kind === 'numemon_wall') {
             const barMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 });
             const stripeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
@@ -1394,10 +2632,45 @@
         { name: '廣角遠景', y: 9.2, z: 15.8, lookY: 1.2, lookZ: -24, fov: 50 }
       ];
 
+      const CHAR_CONFIG = {
+        agumon: {
+          baseName: '亞古獸',
+          evoName: '暴龍獸',
+          ultName: '機械暴龍獸',
+          skillName: '超級火焰',
+          ultSkillName: '究極破壞炮',
+          crestName: '勇氣徽章',
+          icon: '🔥',
+          ultIcon: '🚀',
+          fireColorCore: 0xfef08a,
+          fireColorOuter: 0xf97316,
+          ultColorCore: 0xfef08a,
+          ultColorOuter: 0xef4444
+        },
+        gabumon: {
+          baseName: '加布獸',
+          evoName: '加魯魯獸',
+          ultName: '獸人加魯魯',
+          skillName: '妖狐火焰',
+          ultSkillName: '凱撒銳爪',
+          crestName: '友情徽章',
+          icon: '💙',
+          ultIcon: '⚔️',
+          fireColorCore: 0xe0f2fe,
+          fireColorOuter: 0x38bdf8,
+          ultColorCore: 0xffffff,
+          ultColorOuter: 0x818cf8
+        }
+      };
+
       const Game = {
         running: false,
         paused: false,
+        dying: false,
+        deathTimer: 0,
+        deathObstacleName: '',
         playerName: '八神太一',
+        selectedChar: 'agumon', // 'agumon' or 'gabumon'
         score: 0,
         coins: 0,
         distance: 0,
@@ -1418,11 +2691,14 @@
           isJumping: false,
           isSliding: false,
           slideTimer: 0,
+          slideSparkTimer: 0,
           airShiftsCount: 0,
           airShiftFlash: 0,
           evolved: false,
+          evoStage: 0, // 0: Rookie, 1: Champion (Greymon/Garurumon), 2: Ultimate (MetalGreymon/WereGarurumon)
           flameCharges: 0,
           evoAnimTimer: 0,
+          attackAnimTimer: 0, // Used for WereGarurumon's X-arm cross slash & MetalGreymon chest hatch recoil
           magnetTimer: 0,
           invincibleTimer: 0,
           runCycle: 0
@@ -1434,7 +2710,7 @@
         particles3D: [],
         sceneryObjects: [],
         spawnTimer: 0,
-        evoDropCooldown: 3.5,
+        evoDropCooldown: 12.0,
         toastTimer: 0,
 
         scene: null,
@@ -1442,6 +2718,10 @@
         renderer: null,
         agumonMesh: null,
         greymonMesh: null,
+        metalGreymonMesh: null,
+        gabumonMesh: null,
+        garurumonMesh: null,
+        wereGarurumonMesh: null,
         patamonMesh: null,
         biyomonMesh: null,
         playerLight: null,
@@ -1469,7 +2749,7 @@
           hemiLight.position.set(0, 50, 0);
           this.scene.add(hemiLight);
 
-          const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+          const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.18);
           dirLight.position.set(18, 38, 24);
           this.scene.add(dirLight);
 
@@ -1523,12 +2803,26 @@
             this.sceneryObjects.push(sObj);
           }
 
-          // Create Compact Forward-Facing Agumon & Greymon 3D Player Models
+          // Create All 6 Playable Digimon 3D Models (Rookie, Champion, Ultimate)
           this.agumonMesh = Digi3DBuilder.createAgumonMesh();
           this.greymonMesh = Digi3DBuilder.createGreymonMesh();
+          this.metalGreymonMesh = Digi3DBuilder.createMetalGreymonMesh();
+          this.gabumonMesh = Digi3DBuilder.createGabumonMesh();
+          this.garurumonMesh = Digi3DBuilder.createGarurumonMesh();
+          this.wereGarurumonMesh = Digi3DBuilder.createWereGarurumonMesh();
+
           this.greymonMesh.visible = false;
+          this.metalGreymonMesh.visible = false;
+          this.gabumonMesh.visible = false;
+          this.garurumonMesh.visible = false;
+          this.wereGarurumonMesh.visible = false;
+
           this.scene.add(this.agumonMesh);
           this.scene.add(this.greymonMesh);
+          this.scene.add(this.metalGreymonMesh);
+          this.scene.add(this.gabumonMesh);
+          this.scene.add(this.garurumonMesh);
+          this.scene.add(this.wereGarurumonMesh);
 
           // Create 3D Flying Companions (Patamon & Biyomon)
           this.patamonMesh = Digi3DBuilder.createPatamonMesh();
@@ -1538,6 +2832,50 @@
           this.biyomonMesh = Digi3DBuilder.createBiyomonMesh();
           this.biyomonMesh.position.set(5.4, 4.8, -14);
           this.scene.add(this.biyomonMesh);
+        },
+
+        getActivePlayerMesh() {
+          if (this.selectedChar === 'gabumon') {
+            if (this.player.evoStage === 2) return this.wereGarurumonMesh;
+            if (this.player.evoStage === 1) return this.garurumonMesh;
+            return this.gabumonMesh;
+          }
+          if (this.player.evoStage === 2) return this.metalGreymonMesh;
+          if (this.player.evoStage === 1) return this.greymonMesh;
+          return this.agumonMesh;
+        },
+
+        setCharacter(charKey) {
+          if (charKey !== 'agumon' && charKey !== 'gabumon') return;
+          this.selectedChar = charKey;
+
+          const btnAgu = document.getElementById('selectCharAgumon');
+          const btnGabu = document.getElementById('selectCharGabumon');
+          const badgeAgu = document.getElementById('badgeCharAgumon');
+          const badgeGabu = document.getElementById('badgeCharGabumon');
+
+          // Ensure both character portrait SVGs stay rendered with high-contrast backgrounds
+          setHtmlIfPresent('cardAgumonSvg', DigimonArt.agumonSVG());
+          setHtmlIfPresent('cardGabumonSvg', DigimonArt.gabumonSVG());
+
+          if (charKey === 'agumon') {
+            btnAgu.className = 'btn-press text-left p-3.5 rounded-2xl border-2 border-orange-500 bg-orange-500/15 flex items-center justify-between gap-2 transition-all';
+            btnGabu.className = 'btn-press text-left p-3.5 rounded-2xl border-2 border-slate-700 bg-slate-800/80 hover:border-cyan-400/60 flex items-center justify-between gap-2 transition-all';
+            badgeAgu.textContent = '已選';
+            badgeAgu.className = 'px-2 py-0.5 text-[10px] font-black rounded-full bg-orange-500 text-slate-950 shrink-0';
+            badgeGabu.textContent = '選擇';
+            badgeGabu.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-700 text-slate-300 shrink-0';
+          } else {
+            btnGabu.className = 'btn-press text-left p-3.5 rounded-2xl border-2 border-cyan-400 bg-cyan-500/15 flex items-center justify-between gap-2 transition-all';
+            btnAgu.className = 'btn-press text-left p-3.5 rounded-2xl border-2 border-slate-700 bg-slate-800/80 hover:border-orange-400/60 flex items-center justify-between gap-2 transition-all';
+            badgeGabu.textContent = '已選';
+            badgeGabu.className = 'px-2 py-0.5 text-[10px] font-black rounded-full bg-cyan-400 text-slate-950 shrink-0';
+            badgeAgu.textContent = '選擇';
+            badgeAgu.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-700 text-slate-300 shrink-0';
+          }
+
+          this.updateEvolutionUI();
+          if (!this.running) this.render();
         },
 
         resize() {
@@ -1587,6 +2925,9 @@
           this.initThree();
           this.clearDynamicMeshes();
 
+          this.dying = false;
+          this.deathTimer = 0;
+          this.deathObstacleName = '';
           this.score = 0;
           this.coins = 0;
           this.distance = 0;
@@ -1602,17 +2943,20 @@
           this.player.isJumping = false;
           this.player.isSliding = false;
           this.player.slideTimer = 0;
+          this.player.slideSparkTimer = 0;
           this.player.airShiftsCount = 0;
           this.player.airShiftFlash = 0;
           this.player.evolved = false;
+          this.player.evoStage = 0;
           this.player.flameCharges = 0;
           this.player.evoAnimTimer = 0;
+          this.player.attackAnimTimer = 0;
           this.player.magnetTimer = 0;
           this.player.invincibleTimer = 0;
           this.player.runCycle = 0;
 
           this.spawnTimer = 0.5;
-          this.evoDropCooldown = 3.2;
+          this.evoDropCooldown = 9.5;
 
           this.applyZoneTheme(0);
           this.updateHUD();
@@ -1639,6 +2983,7 @@
             this.playerName = name.trim();
           }
           document.getElementById('hudPlayerName').textContent = this.playerName;
+          document.getElementById('landingModal').classList.add('hidden');
           document.getElementById('startModal').classList.add('hidden');
           document.getElementById('gameOverModal').classList.add('hidden');
           document.getElementById('guideModal').classList.add('hidden');
@@ -1648,7 +2993,10 @@
           this.running = true;
           this.paused = false;
           document.getElementById('btnPause').textContent = '⏸️';
-          this.showCompanionToast('🦖', `亞古獸：${this.playerName}，3D 數碼世界冒險開始！跳起喺空中都可以左右變向㗎！`);
+
+          const cfg = CHAR_CONFIG[this.selectedChar];
+          const icon = this.selectedChar === 'gabumon' ? '🐺' : '🦖';
+          this.showCompanionToast(icon, `${cfg.baseName}：${this.playerName}，奏起《重啟之戰》OP 出發！成熟期再食道具可超進化完全體！`);
           SoundFX.startBGM();
 
           if (this.animId) cancelAnimationFrame(this.animId);
@@ -1668,9 +3016,15 @@
         },
 
         togglePause() {
-          if (!this.running) return;
+          if (!this.running || this.dying) return;
           this.paused = !this.paused;
           document.getElementById('btnPause').textContent = this.paused ? '▶️' : '⏸️';
+          if (SoundFX.ytReady && SoundFX.ytPlayer) {
+            try {
+              if (this.paused) SoundFX.ytPlayer.pauseVideo();
+              else if (!SoundFX.muted) SoundFX.ytPlayer.playVideo();
+            } catch (e) {}
+          }
           if (!this.paused) {
             this.lastTime = performance.now();
           }
@@ -1688,7 +3042,7 @@
         },
 
         moveHorizontal(dir) {
-          if (!this.running || this.paused) return;
+          if (!this.running || this.paused || this.dying) return;
           const prevLane = this.player.lane;
           const nextLane = Math.max(-1, Math.min(1, this.player.lane + dir));
           if (nextLane !== prevLane) {
@@ -1705,7 +3059,7 @@
         },
 
         jump() {
-          if (!this.running || this.paused) return;
+          if (!this.running || this.paused || this.dying) return;
           if (this.player.y <= 2) {
             this.player.isSliding = false;
             this.player.slideTimer = 0;
@@ -1717,115 +3071,338 @@
         },
 
         slide() {
-          if (!this.running || this.paused) return;
+          if (!this.running || this.paused || this.dying) return;
           if (this.player.y > 5) {
             this.player.vy = -1080;
           }
           this.player.isSliding = true;
           this.player.slideTimer = 0.68;
           SoundFX.slide();
+          const sparkColor = this.selectedChar === 'gabumon' ? 0x38bdf8 : 0xfacc15;
+          this.spawnBurst3D(this.player.x * LANE_WIDTH, 0.35, 0.5, sparkColor, 10);
         },
 
         fireMegaFlame() {
-          if (!this.running || this.paused) return;
-          if (!this.player.evolved || this.player.flameCharges <= 0) return;
+          if (!this.running || this.paused || this.dying) return;
+          if (this.player.evoStage <= 0 || this.player.flameCharges <= 0) return;
 
+          const cfg = CHAR_CONFIG[this.selectedChar];
+          const isUltimate = this.player.evoStage === 2;
           this.player.flameCharges--;
-          SoundFX.megaFlame();
+          this.player.attackAnimTimer = 0.55; // Trigger arm cross slash / chest hatch animation
 
           const fbGroup = new THREE.Group();
-          const core = new THREE.Mesh(
-            new THREE.SphereGeometry(0.75, 16, 16),
-            new THREE.MeshBasicMaterial({ color: 0xfef08a })
-          );
-          const outer = new THREE.Mesh(
-            new THREE.SphereGeometry(1.18, 16, 16),
-            new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.72 })
-          );
-          const fbLight = new THREE.PointLight(0xf97316, 2.0, 22);
-          fbGroup.add(core, outer, fbLight);
-
           const startZ = 130;
-          fbGroup.position.set(this.player.x * LANE_WIDTH, 1.6, -(startZ - 110) * Z_SCALE);
-          this.scene.add(fbGroup);
 
-          this.fireballs.push({
-            lane: this.player.lane,
-            x: this.player.x,
-            z: startZ,
-            mesh: fbGroup
-          });
+          if (isUltimate) {
+            if (this.selectedChar === 'agumon') {
+              // ===============================================================
+              // METALGREYMON: GIGA DESTROYER (究極破壞炮)
+              // Fires TWO shark-nosed organic-cybernetic missiles side-by-side
+              // with wide shockwave rings that obliterate ALL 3 LANES!
+              // ===============================================================
+              SoundFX.gigaDestroyer();
+              [-1.35, 1.35].forEach((offsetX) => {
+                const missile = new THREE.Group();
+                missile.position.set(offsetX, 0, 0);
 
-          this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.6, -1.5, 0xf97316, 16);
+                const warhead = new THREE.Mesh(
+                  new THREE.ConeGeometry(0.62, 1.85, 14),
+                  new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.2 })
+                );
+                warhead.rotation.x = -Math.PI / 2;
+                missile.add(warhead);
+
+                const noseTip = new THREE.Mesh(
+                  new THREE.ConeGeometry(0.42, 0.75, 12),
+                  new THREE.MeshBasicMaterial({ color: 0xef4444 })
+                );
+                noseTip.rotation.x = -Math.PI / 2;
+                noseTip.position.set(0, 0, -0.75);
+                missile.add(noseTip);
+
+                const thruster = new THREE.Mesh(
+                  new THREE.SphereGeometry(0.68, 12, 12),
+                  new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                );
+                thruster.position.set(0, 0, 0.95);
+                missile.add(thruster);
+
+                fbGroup.add(missile);
+              });
+
+              // Wide 3-lane energy shockwave ring connecting the twin missiles
+              const shockwave = new THREE.Mesh(
+                new THREE.TorusGeometry(2.9, 0.16, 12, 32),
+                new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.78 })
+              );
+              fbGroup.add(shockwave);
+              fbGroup.add(new THREE.PointLight(0xef4444, 3.0, 28));
+            } else {
+              // ===============================================================
+              // WEREGARURUMON: KAISER NAIL (凱撒銳爪)
+              // Crosses both arms and unleashes a giant glowing X-shaped
+              // 3-clawed crescent slash wave spanning ALL 3 LANES!
+              // ===============================================================
+              SoundFX.kaiserNail();
+              const xSlashGroup = new THREE.Group();
+
+              [-0.68, 0.68].forEach((diagAngle) => {
+                const armSlash = new THREE.Group();
+                armSlash.rotation.z = diagAngle;
+
+                [-0.55, 0, 0.55].forEach((offsetY) => {
+                  const clawBeam = new THREE.Mesh(
+                    new THREE.BoxGeometry(7.8, 0.18, 0.45),
+                    new THREE.MeshBasicMaterial({ color: 0xe0f2fe })
+                  );
+                  clawBeam.position.set(0, offsetY, 0);
+                  armSlash.add(clawBeam);
+
+                  const clawAura = new THREE.Mesh(
+                    new THREE.BoxGeometry(8.2, 0.34, 0.75),
+                    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 })
+                  );
+                  clawAura.position.set(0, offsetY, 0.15);
+                  armSlash.add(clawAura);
+                });
+
+                xSlashGroup.add(armSlash);
+              });
+
+              fbGroup.add(xSlashGroup);
+              fbGroup.add(new THREE.PointLight(0x38bdf8, 3.0, 28));
+            }
+
+            // Center ultimate projectile at X=0 so it sweeps across all 3 lanes (-1, 0, +1)
+            fbGroup.position.set(0, 1.75, -(startZ - 110) * Z_SCALE);
+            this.scene.add(fbGroup);
+
+            this.fireballs.push({
+              lane: this.player.lane,
+              x: 0,
+              z: startZ,
+              allLanes: true, // Breaks obstacles across all 3 lanes!
+              noSpin: true,
+              colorHex: cfg.ultColorOuter,
+              mesh: fbGroup
+            });
+
+            this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.8, -1.5, cfg.ultColorOuter, 24);
+          } else {
+            // ===============================================================
+            // STAGE 1 CHAMPION (Greymon Mega Flame / Garurumon Fox Fire)
+            // Strictly destroys ONLY obstacles in the exact front lane!
+            // ===============================================================
+            SoundFX.megaFlame();
+            const core = new THREE.Mesh(
+              new THREE.SphereGeometry(0.72, 16, 16),
+              new THREE.MeshBasicMaterial({ color: cfg.fireColorCore })
+            );
+            const outer = new THREE.Mesh(
+              new THREE.SphereGeometry(1.12, 16, 16),
+              new THREE.MeshBasicMaterial({ color: cfg.fireColorOuter, transparent: true, opacity: 0.75 })
+            );
+            if (this.selectedChar === 'gabumon') {
+              const foxTail = new THREE.Mesh(
+                new THREE.ConeGeometry(0.82, 2.5, 12),
+                new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 })
+              );
+              foxTail.rotation.x = Math.PI / 2;
+              foxTail.position.set(0, 0, 1.3);
+              fbGroup.add(foxTail);
+            }
+
+            const fbLight = new THREE.PointLight(cfg.fireColorOuter, 2.2, 20);
+            fbGroup.add(core, outer, fbLight);
+
+            fbGroup.position.set(this.player.x * LANE_WIDTH, 1.5, -(startZ - 110) * Z_SCALE);
+            this.scene.add(fbGroup);
+
+            this.fireballs.push({
+              lane: this.player.lane,
+              x: this.player.x,
+              z: startZ,
+              allLanes: false, // Strictly single-lane directly in front!
+              noSpin: false,
+              colorHex: cfg.fireColorOuter,
+              mesh: fbGroup
+            });
+
+            this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.5, -1.5, cfg.fireColorOuter, 16);
+          }
 
           if (this.player.flameCharges <= 0) {
             setTimeout(() => {
-              if (this.player.flameCharges <= 0 && this.player.evolved) {
+              if (this.player.flameCharges <= 0 && this.player.evoStage > 0) {
+                const usedSkill = this.player.evoStage === 2 ? cfg.ultSkillName : cfg.skillName;
                 this.player.evolved = false;
+                this.player.evoStage = 0;
                 this.player.invincibleTimer = 1.2;
                 this.updateEvolutionUI();
-                this.showCompanionToast('🦖', '亞古獸：3次超級火焰用完退化喇！繼續執神聖計劃再次進化啦！');
+                this.showCompanionToast(
+                  this.selectedChar === 'gabumon' ? '🐺' : '🦖',
+                  `${cfg.baseName}：3次「${usedSkill}」用完退化喇！繼續奔跑尋找神聖計劃再次進化啦！`
+                );
               }
-            }, 340);
+            }, 360);
           }
           this.updateEvolutionUI();
         },
 
         triggerEvolution() {
+          const cfg = CHAR_CONFIG[this.selectedChar];
+          // If Rookie (0) -> Champion (1); if Champion (1) -> Ultimate (2); if Ultimate (2) -> refresh 3 charges
+          const nextStage = Math.min(2, this.player.evoStage + 1);
+          this.player.evoStage = nextStage;
           this.player.evolved = true;
           this.player.flameCharges = 3;
-          this.player.evoAnimTimer = 1.6;
-          this.player.invincibleTimer = 1.8;
-          this.score += 250;
-          SoundFX.evolve();
+          this.player.evoAnimTimer = 1.7;
+          this.player.invincibleTimer = 2.0;
+          this.score += nextStage === 2 ? 500 : 250;
+          SoundFX.evolve(nextStage);
 
           const banner = document.getElementById('evoCutInBanner');
-          banner.classList.remove('hidden');
-          setTimeout(() => banner.classList.add('hidden'), 1650);
+          const box = document.getElementById('evoCutInBox');
+          const cutSvg = document.getElementById('evoCutInSvg');
+          const cutSub = document.getElementById('evoCutInSub');
+          const cutTitle = document.getElementById('evoCutInTitle');
 
-          this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.6, 0, 0xfacc15, 26);
+          if (this.selectedChar === 'gabumon') {
+            if (nextStage === 2) {
+              box.className = 'bg-indigo-500/95 border-2 border-cyan-200 text-white px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-3';
+              cutSvg.innerHTML = DigimonArt.wereGarurumonSVG();
+              cutSub.textContent = `Ultimate Digivolution • ${cfg.crestName}完全體發動`;
+              cutSub.className = 'text-xs font-black tracking-wider uppercase text-cyan-200';
+              cutTitle.textContent = '加魯魯獸 超進化 —— 獸人加魯魯！';
+            } else {
+              box.className = 'bg-cyan-400/95 border-2 border-sky-100 text-slate-950 px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-3';
+              cutSvg.innerHTML = DigimonArt.garurumonSVG();
+              cutSub.textContent = `Digivolution • ${cfg.crestName}發動`;
+              cutSub.className = 'text-xs font-black tracking-wider uppercase text-sky-950';
+              cutTitle.textContent = '加布獸 進化 —— 加魯魯獸！';
+            }
+          } else {
+            if (nextStage === 2) {
+              box.className = 'bg-red-600/95 border-2 border-amber-200 text-white px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-3';
+              cutSvg.innerHTML = DigimonArt.metalGreymonSVG();
+              cutSub.textContent = `Ultimate Digivolution • ${cfg.crestName}完全體發動`;
+              cutSub.className = 'text-xs font-black tracking-wider uppercase text-amber-200';
+              cutTitle.textContent = '暴龍獸 超進化 —— 機械暴龍獸！';
+            } else {
+              box.className = 'bg-amber-500/95 border-2 border-yellow-200 text-slate-950 px-6 py-3 rounded-3xl shadow-2xl flex items-center gap-3';
+              cutSvg.innerHTML = DigimonArt.greymonSVG();
+              cutSub.textContent = `Digivolution • ${cfg.crestName}發動`;
+              cutSub.className = 'text-xs font-black tracking-wider uppercase text-amber-950';
+              cutTitle.textContent = '亞古獸 進化 —— 暴龍獸！';
+            }
+          }
+
+          banner.classList.remove('hidden');
+          setTimeout(() => banner.classList.add('hidden'), 1850);
+
+          const burstColor = nextStage === 2 ? cfg.ultColorOuter : cfg.fireColorOuter;
+          this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.8, 0, burstColor, 32);
           this.updateEvolutionUI();
-          this.showCompanionToast('🔥', '亞古獸超進化——暴龍獸！獲得 3 次「超級火焰」擊破前方障礙物！');
+
+          if (nextStage === 2) {
+            this.showCompanionToast(
+              cfg.ultIcon,
+              `完全體超進化——${cfg.ultName}！發動「${cfg.ultSkillName}」可一次橫掃前面三行所有障礙物！`
+            );
+          } else {
+            this.showCompanionToast(
+              cfg.icon,
+              `${cfg.baseName}進化——${cfg.evoName}！「${cfg.skillName}」可擊破正前方障礙；再食一粒道具即可超進化完全體！`
+            );
+          }
         },
 
         updateEvolutionUI() {
+          const cfg = CHAR_CONFIG[this.selectedChar];
+          const stage = this.player.evoStage;
+          const activeSkillName = stage === 2 ? cfg.ultSkillName : cfg.skillName;
+          const activeIcon = stage === 2 ? cfg.ultIcon : cfg.icon;
+
           const formBadge = document.getElementById('hudDigimonForm');
           const avatarBadge = document.getElementById('hudAvatarBadge');
           const evoStatus = document.getElementById('evoStatusBadge');
+          const skillNameLabel = document.getElementById('skillNameLabel');
           const flameSlots = document.getElementById('flameSlots');
           const btnFlame = document.getElementById('btnMegaFlame');
+          const btnIcon = document.getElementById('btnFlameIcon');
           const btnTitle = document.getElementById('btnFlameTitle');
           const btnSub = document.getElementById('btnFlameSub');
+
+          if (skillNameLabel) skillNameLabel.textContent = `${activeSkillName}:`;
+          if (btnIcon) btnIcon.textContent = activeIcon;
 
           const charges = this.player.flameCharges;
           let slotsHTML = '';
           for (let i = 0; i < 3; i++) {
-            slotsHTML += `<span class="${i < charges ? 'opacity-100 scale-110' : 'opacity-20'} transition-transform">🔥</span>`;
+            slotsHTML += `<span class="${i < charges ? 'opacity-100 scale-110' : 'opacity-20'} transition-transform">${activeIcon}</span>`;
           }
           if (flameSlots) flameSlots.innerHTML = slotsHTML;
 
-          if (this.player.evolved && charges > 0) {
-            formBadge.textContent = '暴龍獸 (成熟期)';
-            formBadge.className = 'px-2 py-0.5 text-xs font-bold rounded-md bg-amber-500/30 text-amber-200 border border-amber-400';
-            avatarBadge.innerHTML = DigimonArt.greymonSVG();
-            evoStatus.textContent = `⚡ 暴龍獸進化中 (${charges}/3)`;
-            evoStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-orange-500 text-slate-950';
+          if (stage === 2 && charges > 0) {
+            formBadge.textContent = `${cfg.ultName} (完全體)`;
+            formBadge.className = this.selectedChar === 'gabumon'
+              ? 'px-2 py-0.5 text-xs font-bold rounded-md bg-indigo-500/35 text-indigo-200 border border-indigo-400'
+              : 'px-2 py-0.5 text-xs font-bold rounded-md bg-red-500/35 text-amber-200 border border-red-400';
+
+            avatarBadge.innerHTML = this.selectedChar === 'gabumon'
+              ? DigimonArt.wereGarurumonSVG()
+              : DigimonArt.metalGreymonSVG();
+
+            evoStatus.textContent = `🌟 完全體：${cfg.ultName} (${charges}/3)`;
+            evoStatus.className = this.selectedChar === 'gabumon'
+              ? 'text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-400 text-slate-950'
+              : 'text-xs font-bold px-2 py-0.5 rounded-md bg-red-500 text-white';
 
             btnFlame.disabled = false;
-            btnFlame.className = 'btn-press animate-pulse-subtle min-w-[132px] sm:min-w-[156px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-orange-500 hover:bg-orange-400 border-amber-300 text-slate-950 cursor-pointer';
-            btnTitle.textContent = `超級火焰 (${charges}/3)`;
-            btnSub.textContent = '按 Space / 點擊發射';
+            btnFlame.className = this.selectedChar === 'gabumon'
+              ? 'btn-press animate-pulse-subtle min-w-[144px] sm:min-w-[172px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-indigo-500 hover:bg-indigo-400 border-cyan-200 text-white cursor-pointer'
+              : 'btn-press animate-pulse-subtle min-w-[144px] sm:min-w-[172px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-red-600 hover:bg-red-500 border-amber-200 text-white cursor-pointer';
+            btnTitle.textContent = `${cfg.ultSkillName} (${charges}/3)`;
+            btnSub.textContent = '破晒三行 (Space/點擊)';
+          } else if (stage === 1 && charges > 0) {
+            formBadge.textContent = `${cfg.evoName} (成熟期)`;
+            formBadge.className = this.selectedChar === 'gabumon'
+              ? 'px-2 py-0.5 text-xs font-bold rounded-md bg-cyan-500/30 text-cyan-200 border border-cyan-400'
+              : 'px-2 py-0.5 text-xs font-bold rounded-md bg-amber-500/30 text-amber-200 border border-amber-400';
+
+            avatarBadge.innerHTML = this.selectedChar === 'gabumon'
+              ? DigimonArt.garurumonSVG()
+              : DigimonArt.greymonSVG();
+
+            evoStatus.textContent = `⚡ ${cfg.evoName} (${charges}/3) • 再食超進化`;
+            evoStatus.className = this.selectedChar === 'gabumon'
+              ? 'text-xs font-bold px-2 py-0.5 rounded-md bg-cyan-400 text-slate-950'
+              : 'text-xs font-bold px-2 py-0.5 rounded-md bg-orange-500 text-slate-950';
+
+            btnFlame.disabled = false;
+            btnFlame.className = this.selectedChar === 'gabumon'
+              ? 'btn-press animate-pulse-subtle min-w-[144px] sm:min-w-[172px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-cyan-400 hover:bg-cyan-300 border-sky-200 text-slate-950 cursor-pointer'
+              : 'btn-press animate-pulse-subtle min-w-[144px] sm:min-w-[172px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-orange-500 hover:bg-orange-400 border-amber-300 text-slate-950 cursor-pointer';
+            btnTitle.textContent = `${cfg.skillName} (${charges}/3)`;
+            btnSub.textContent = '破正前方 (Space/點擊)';
           } else {
-            formBadge.textContent = '亞古獸';
-            formBadge.className = 'px-2 py-0.5 text-xs font-bold rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/40';
-            avatarBadge.innerHTML = DigimonArt.agumonSVG();
-            evoStatus.textContent = '成長期：亞古獸';
+            formBadge.textContent = cfg.baseName;
+            formBadge.className = this.selectedChar === 'gabumon'
+              ? 'px-2 py-0.5 text-xs font-bold rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+              : 'px-2 py-0.5 text-xs font-bold rounded-md bg-orange-500/20 text-orange-300 border border-orange-500/40';
+
+            avatarBadge.innerHTML = this.selectedChar === 'gabumon'
+              ? DigimonArt.gabumonSVG()
+              : DigimonArt.agumonSVG();
+
+            evoStatus.textContent = `成長期：${cfg.baseName}`;
             evoStatus.className = 'text-xs font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700';
 
             btnFlame.disabled = true;
-            btnFlame.className = 'btn-press min-w-[132px] sm:min-w-[156px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-slate-800/90 border-slate-700 text-slate-500 cursor-not-allowed';
-            btnTitle.textContent = '超級火焰 (0/3)';
-            btnSub.textContent = '執進化道具變暴龍獸';
+            btnFlame.className = 'btn-press min-w-[144px] sm:min-w-[172px] min-h-[56px] px-4 py-2.5 rounded-2xl font-black text-sm sm:text-base border-2 flex items-center justify-center gap-2 shadow-xl bg-slate-800/90 border-slate-700 text-slate-500 cursor-not-allowed';
+            btnTitle.textContent = `${cfg.skillName} (0/3)`;
+            btnSub.textContent = `執進化道具變${cfg.evoName}`;
           }
         },
 
@@ -1841,20 +3418,20 @@
         },
 
         spawnBurst3D(x, y, z, hexColor, count = 14) {
-          const geo = new THREE.BoxGeometry(0.24, 0.24, 0.24);
+          const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
           const mat = new THREE.MeshBasicMaterial({ color: hexColor });
           for (let i = 0; i < count; i++) {
             const m = new THREE.Mesh(geo, mat);
             m.position.set(x, y, z);
             const angle = Math.random() * Math.PI * 2;
-            const spd = 3.5 + Math.random() * 9.5;
+            const spd = 3.2 + Math.random() * 9.0;
             this.scene.add(m);
             this.particles3D.push({
               mesh: m,
               vx: Math.cos(angle) * spd,
-              vy: 1.8 + Math.random() * 7.5,
+              vy: 1.5 + Math.random() * 7.2,
               vz: Math.sin(angle) * spd,
-              life: 0.42 + Math.random() * 0.25
+              life: 0.40 + Math.random() * 0.25
             });
           }
         },
@@ -1900,7 +3477,7 @@
             });
           }
 
-          // Spawn Coins (Digi-Bytes)
+          // Spawn Data Coins (數碼資料幣) along free lane
           const coinLane = shuffled[count % 3];
           const isArc = Math.random() < 0.5;
           for (let c = 0; c < 4; c++) {
@@ -1909,37 +3486,44 @@
               : coinLane;
             const cZ = zStart - 90 + c * 65;
             const cY = isArc ? Math.sin((c / 3) * Math.PI) * 95 : 22;
-            const mesh = Digi3DBuilder.createItemMesh('coin');
-            mesh.position.set(targetLane * LANE_WIDTH, 0.8 + cY * 0.032, -(cZ - 110) * Z_SCALE);
-            this.scene.add(mesh);
+            const cMesh = Digi3DBuilder.createItemMesh('coin');
+            cMesh.position.set(targetLane * LANE_WIDTH, 0.8 + cY * 0.032, -(cZ - 110) * Z_SCALE);
+            this.scene.add(cMesh);
 
             this.items.push({
               type: 'coin',
               lane: targetLane,
               z: cZ,
               y: cY,
-              mesh
+              mesh: cMesh
             });
           }
 
-          // Randomly Drop Evolution Item (Crest of Courage Digivice) or Friendship Magnet
-          if (this.evoDropCooldown <= 0 && (!this.player.evolved || this.player.flameCharges <= 1)) {
-            const dropLane = shuffled[2];
-            const dZ = zStart + 160;
-            const mesh = Digi3DBuilder.createItemMesh('digivice_crest');
-            mesh.position.set(dropLane * LANE_WIDTH, 6.8, -(dZ - 110) * Z_SCALE);
-            this.scene.add(mesh);
+          // Evolution Item Drop Logic:
+          // Allows dropping when player is Rookie (evoStage === 0) OR Champion (evoStage === 1)
+          // so Champion can eat a second Digivice item to Super-Digivolve into Ultimate!
+          const hasExistingCrest = this.items.some((it) => it.type === 'digivice_crest');
+          if (this.player.evoStage < 2 && !hasExistingCrest && this.evoDropCooldown <= 0) {
+            if (Math.random() < 0.55) {
+              const dropLane = shuffled[2];
+              const dZ = zStart + 160;
+              const mesh = Digi3DBuilder.createItemMesh('digivice_crest');
+              mesh.position.set(dropLane * LANE_WIDTH, 6.8, -(dZ - 110) * Z_SCALE);
+              this.scene.add(mesh);
 
-            this.items.push({
-              type: 'digivice_crest',
-              lane: dropLane,
-              z: dZ,
-              y: 185,
-              vy: -135,
-              mesh
-            });
-            this.evoDropCooldown = 8.0 + Math.random() * 4.5;
-          } else if (Math.random() < 0.16 && this.player.magnetTimer <= 0) {
+              this.items.push({
+                type: 'digivice_crest',
+                lane: dropLane,
+                z: dZ,
+                y: 185,
+                vy: -135,
+                mesh
+              });
+              this.evoDropCooldown = 12.0 + Math.random() * 4.5;
+            } else {
+              this.evoDropCooldown = 3.5;
+            }
+          } else if (Math.random() < 0.12 && this.player.magnetTimer <= 0) {
             const mLane = shuffled[2];
             const mZ = zStart + 140;
             const mesh = Digi3DBuilder.createItemMesh('friendship_magnet');
@@ -1958,6 +3542,29 @@
 
         update(dt) {
           if (!Number.isFinite(dt) || dt <= 0) return;
+
+          // If in Game Over Crash Animation sequence, play dramatic 3D knockback & particle physics before showing modal
+          if (this.dying) {
+            this.deathTimer -= dt;
+            for (let i = this.particles3D.length - 1; i >= 0; i--) {
+              const pt = this.particles3D[i];
+              pt.mesh.position.x += pt.vx * dt;
+              pt.mesh.position.y += pt.vy * dt;
+              pt.mesh.position.z += pt.vz * dt;
+              pt.vy -= 18 * dt;
+              pt.life -= dt;
+              pt.mesh.scale.setScalar(Math.max(0.1, pt.life * 1.8));
+              if (pt.life <= 0) {
+                this.scene.remove(pt.mesh);
+                this.particles3D.splice(i, 1);
+              }
+            }
+            if (this.deathTimer <= 0) {
+              this.finalizeGameOver();
+            }
+            return;
+          }
+
           this.speed = Math.min(this.maxSpeed, this.speed + dt * 9.5);
           const moveDist = this.speed * dt;
           this.worldZ += moveDist;
@@ -1970,7 +3577,7 @@
             this.zoneIndex = newZoneIndex;
             this.applyZoneTheme(this.zoneIndex);
             const msgIdx = ((this.zoneIndex % COMPANION_MESSAGES.length) + COMPANION_MESSAGES.length) % COMPANION_MESSAGES.length;
-            const msg = COMPANION_MESSAGES[msgIdx] || COMPANION_MESSAGES[0] || { icon: '🦋', text: '繼續向前衝呀！' };
+            const msg = COMPANION_MESSAGES[msgIdx] || COMPANION_MESSAGES[0];
             const zoneInfo = ZONES[this.zoneIndex] || ZONES[0];
             this.showCompanionToast(msg.icon, `進入新區域【${zoneInfo.name}】！${msg.text}`);
           }
@@ -2001,15 +3608,22 @@
             }
           }
 
-          // Slide Timer
+          // Slide (Dive-Tackle) Timer & Ground Spark Trail
           if (this.player.isSliding) {
             this.player.slideTimer -= dt;
+            this.player.slideSparkTimer -= dt;
+            if (this.player.slideSparkTimer <= 0 && this.player.y <= 4) {
+              this.player.slideSparkTimer = 0.08;
+              const sparkHex = this.selectedChar === 'gabumon' ? 0x38bdf8 : 0xf97316;
+              this.spawnBurst3D(this.player.x * LANE_WIDTH, 0.2, 0.7, sparkHex, 3);
+            }
             if (this.player.slideTimer <= 0) {
               this.player.isSliding = false;
             }
           }
 
           if (this.player.evoAnimTimer > 0) this.player.evoAnimTimer -= dt;
+          if (this.player.attackAnimTimer > 0) this.player.attackAnimTimer -= dt;
           if (this.player.invincibleTimer > 0) this.player.invincibleTimer -= dt;
           if (this.player.magnetTimer > 0) {
             this.player.magnetTimer -= dt;
@@ -2019,7 +3633,9 @@
           }
 
           this.player.runCycle += dt * (this.speed * 0.028);
-          this.evoDropCooldown -= dt;
+          if (this.player.evoStage < 2) {
+            this.evoDropCooldown -= dt;
+          }
 
           // Move Track Sleepers & Scenery Objects in 3D
           const zDelta3D = moveDist * Z_SCALE;
@@ -2047,28 +3663,33 @@
             this.biyomonMesh.userData.rightWing.rotation.z = -Math.sin(tNow * 4.8) * 0.5;
           }
 
-          // Spawn Waves
+          // Spawn Waves (Obstacles, Coins & Digivice Evolution Items)
           this.spawnTimer -= dt;
           if (this.spawnTimer <= 0) {
             this.spawnWave();
-            this.spawnTimer = Math.max(0.68, 1.45 - (this.speed - 450) / 900);
+            this.spawnTimer = Math.max(0.68, 1.42 - (this.speed - 450) / 900);
           }
 
-          // Update Mega Flame Fireballs in 3D
+          // Update Special Attack Projectiles (Single-Lane Mega Flame/Fox Fire vs 3-Lane Giga Destroyer/Kaiser Nail)
           for (let i = this.fireballs.length - 1; i >= 0; i--) {
             const fb = this.fireballs[i];
-            fb.z += 1250 * dt;
+            fb.z += 1280 * dt;
             fb.mesh.position.z = -(fb.z - 110) * Z_SCALE;
-            fb.mesh.rotation.z += dt * 10;
+            if (!fb.noSpin) {
+              fb.mesh.rotation.z += dt * 10;
+            }
 
             for (let j = this.obstacles.length - 1; j >= 0; j--) {
               const ob = this.obstacles[j];
-              if (Math.abs(ob.z - fb.z) < 95 && Math.abs(ob.lane - fb.lane) <= 1) {
-                this.spawnBurst3D(ob.lane * LANE_WIDTH, 1.6, ob.mesh.position.z, 0xf97316, 22);
+              const zMatch = Math.abs(ob.z - fb.z) < 105;
+              // Stage 2 Ultimate (allLanes: true) destroys all 3 lanes; Stage 1 Champion ONLY destroys exact front lane!
+              const laneMatch = fb.allLanes ? true : (ob.lane === fb.lane);
+              if (zMatch && laneMatch) {
+                this.spawnBurst3D(ob.lane * LANE_WIDTH, 1.6, ob.mesh.position.z, fb.colorHex || 0xf97316, 24);
                 this.scene.remove(ob.mesh);
                 this.obstacles.splice(j, 1);
                 this.blastedCount++;
-                this.score += 150;
+                this.score += fb.allLanes ? 200 : 150;
                 SoundFX.playTone(220, 'square', 0.15, 0.12, 90);
               }
             }
@@ -2113,7 +3734,7 @@
                   this.player.magnetTimer = 8.0;
                   this.score += 100;
                   SoundFX.evolve();
-                  this.showCompanionToast('🐺', '加布獸友情支援！8秒內自動吸取所有路線嘅數碼資料幣！');
+                  this.showCompanionToast('🧲', '友情磁鐵生效！8秒內自動吸取所有路線嘅數碼資料幣！');
                 }
                 this.scene.remove(it.mesh);
                 this.items.splice(i, 1);
@@ -2128,6 +3749,7 @@
           }
 
           // Update Obstacles & Check Collisions
+          const cfg = CHAR_CONFIG[this.selectedChar];
           for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const ob = this.obstacles[i];
             ob.z -= moveDist;
@@ -2137,7 +3759,12 @@
 
             ob.mesh.position.z = -(ob.z - 110) * Z_SCALE;
             if (ob.mesh.userData.spinPart) {
-              ob.mesh.userData.spinPart.rotation.x -= dt * 7;
+              // Spin Dark Gear directly on its front-facing Z-axis so the teeth visibly rotate toward the screen!
+              if (ob.mesh.userData.spinAxis === 'z') {
+                ob.mesh.userData.spinPart.rotation.z -= dt * 6.5;
+              } else {
+                ob.mesh.userData.spinPart.rotation.x -= dt * 7;
+              }
             }
 
             if (ob.z < 142 && ob.z > 78 && Math.abs(ob.lane - this.player.x) < 0.46) {
@@ -2151,24 +3778,49 @@
               }
 
               if (hit && this.player.invincibleTimer <= 0) {
-                if (this.player.evolved && this.player.flameCharges > 0) {
+                if (this.player.evoStage > 0 && this.player.flameCharges > 0) {
+                  const isUlt = this.player.evoStage === 2;
+                  const activeCharName = isUlt ? cfg.ultName : cfg.evoName;
+                  const activeMoveName = isUlt ? cfg.ultSkillName : cfg.skillName;
                   this.player.flameCharges--;
+                  this.player.attackAnimTimer = 0.5;
                   this.blastedCount++;
-                  this.score += 150;
-                  SoundFX.megaFlame();
-                  this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.6, 0, 0xf97316, 24);
-                  this.scene.remove(ob.mesh);
-                  this.obstacles.splice(i, 1);
+                  this.score += isUlt ? 200 : 150;
+
+                  if (isUlt) {
+                    if (this.selectedChar === 'agumon') SoundFX.gigaDestroyer();
+                    else SoundFX.kaiserNail();
+                    // Ultimate auto-guard clears all 3 lanes in front!
+                    for (let k = this.obstacles.length - 1; k >= 0; k--) {
+                      if (this.obstacles[k].z > 60 && this.obstacles[k].z < 260) {
+                        this.spawnBurst3D(this.obstacles[k].lane * LANE_WIDTH, 1.6, this.obstacles[k].mesh.position.z, cfg.ultColorOuter, 22);
+                        this.scene.remove(this.obstacles[k].mesh);
+                        this.obstacles.splice(k, 1);
+                      }
+                    }
+                  } else {
+                    SoundFX.megaFlame();
+                    this.spawnBurst3D(this.player.x * LANE_WIDTH, 1.6, 0, cfg.fireColorOuter, 24);
+                    this.scene.remove(ob.mesh);
+                    this.obstacles.splice(i, 1);
+                  }
 
                   if (this.player.flameCharges <= 0) {
                     this.player.evolved = false;
+                    this.player.evoStage = 0;
                     this.player.invincibleTimer = 1.2;
-                    this.showCompanionToast('🦖', `暴龍獸用最後一發超級火焰轟碎咗【${ob.label}】，退化回亞古獸！`);
+                    this.showCompanionToast(
+                      this.selectedChar === 'gabumon' ? '🐺' : '🦖',
+                      `${activeCharName}用最後一發「${activeMoveName}」轟碎咗【${ob.label}】，退化回${cfg.baseName}！`
+                    );
                   } else {
-                    this.showCompanionToast('🔥', `暴龍獸噴射超級火焰粉碎咗【${ob.label}】！（剩餘 ${this.player.flameCharges}/3 發）`);
+                    this.showCompanionToast(
+                      isUlt ? cfg.ultIcon : cfg.icon,
+                      `${activeCharName}發動「${activeMoveName}」粉碎咗【${ob.label}】！（剩餘 ${this.player.flameCharges}/3 發）`
+                    );
                   }
                   this.updateEvolutionUI();
-                  continue;
+                  break;
                 } else {
                   this.handleGameOver(ob.label);
                   return;
@@ -2207,19 +3859,41 @@
         },
 
         handleGameOver(obstacleName) {
-          this.running = false;
+          if (this.dying) return;
+          this.dying = true;
+          this.deathTimer = 1.45; // Play 1.45s dramatic Game Over animation before showing summary modal
+          this.deathObstacleName = obstacleName;
           SoundFX.stopBGM();
           SoundFX.crash();
 
+          const playerWorldX = this.player.x * LANE_WIDTH;
+          const playerWorldY = Math.max(0.5, this.player.y * 0.032 + 1.0);
+          // Spawn dramatic digital data-fragment scatter burst
+          this.spawnBurst3D(playerWorldX, playerWorldY, 0, 0xef4444, 26);
+          this.spawnBurst3D(playerWorldX, playerWorldY + 0.5, 0, 0x38bdf8, 22);
+
+          const cfg = CHAR_CONFIG[this.selectedChar];
+          this.showCompanionToast('💥', `糟糕！${cfg.baseName}撞上咗【${obstacleName}】！數據受損倒下中...`);
+        },
+
+        finalizeGameOver() {
+          this.dying = false;
+          this.running = false;
+
+          const cfg = CHAR_CONFIG[this.selectedChar];
           saveScoreToLeaderboard({
             name: this.playerName,
+            char: this.selectedChar,
             score: this.score,
             distance: this.distance,
             blasted: this.blastedCount
           });
           renderLeaderboards();
 
-          document.getElementById('goHeadline').textContent = `${this.playerName} 嘅亞古獸撞上「${obstacleName}」了！`;
+          document.getElementById('goAvatarArt').innerHTML = this.selectedChar === 'gabumon'
+            ? DigimonArt.gabumonSVG()
+            : DigimonArt.agumonSVG();
+          document.getElementById('goHeadline').textContent = `${this.playerName} 嘅${cfg.baseName}撞上「${this.deathObstacleName}」了！`;
           document.getElementById('goScore').textContent = this.score;
           document.getElementById('goDistance').textContent = `${this.distance}m`;
           document.getElementById('goCoins').textContent = this.coins;
@@ -2227,68 +3901,189 @@
           document.getElementById('gameOverModal').classList.remove('hidden');
         },
 
-        // ====================================================
+        // =========================================================================
         // 6. RENDER THREE.JS 3D SCENE
-        // ====================================================
+        //    - Silky-smooth multi-joint running gait, wing flaps & X-Claw slash pose
+        //    - Dramatic 3D Game Over knockback & data-ring animation
+        // =========================================================================
         render() {
           if (!this.scene || !this.renderer) return;
 
           const playerWorldX = this.player.x * LANE_WIDTH;
           const playerWorldY = this.player.y * 0.032;
 
-          // Toggle active 3D mesh between Agumon and Greymon
-          const activeMesh = this.player.evolved ? this.greymonMesh : this.agumonMesh;
-          this.agumonMesh.visible = !this.player.evolved;
-          this.greymonMesh.visible = this.player.evolved;
+          // Hide all 6 player meshes, then show only the active one
+          this.agumonMesh.visible = false;
+          this.greymonMesh.visible = false;
+          this.metalGreymonMesh.visible = false;
+          this.gabumonMesh.visible = false;
+          this.garurumonMesh.visible = false;
+          this.wereGarurumonMesh.visible = false;
 
-          activeMesh.position.set(playerWorldX, playerWorldY, 0);
+          const activeMesh = this.getActivePlayerMesh();
+          activeMesh.visible = true;
+          activeMesh.scale.set(1, 1, 1);
 
-          // Smooth banking & forward-looking turn angle when changing lanes
           const laneDiff = this.player.lane - this.player.x;
-          activeMesh.rotation.z = laneDiff * -0.32;
-          activeMesh.rotation.y = laneDiff * -0.35;
-
-          // Slide crouch vs normal running posture
-          if (this.player.isSliding) {
-            activeMesh.scale.set(1.12, 0.50, 1.18);
-            activeMesh.rotation.x = -0.38;
-          } else {
-            activeMesh.scale.set(1, 1, 1);
-            activeMesh.rotation.x = this.player.y > 5 ? 0.14 : 0;
-          }
-
-          // Animate articulated limbs
-          const swing = Math.sin(this.player.runCycle * 1.35) * 0.65;
           const parts = activeMesh.userData;
-          if (parts) {
-            parts.leftLeg.rotation.x = swing;
-            parts.rightLeg.rotation.x = -swing;
-            parts.leftArm.rotation.x = -swing * 0.7;
-            parts.rightArm.rotation.x = swing * 0.7;
-            parts.tailGroup.rotation.y = Math.cos(this.player.runCycle * 1.35) * 0.30;
-            parts.headGroup.position.y = (this.player.evolved ? 3.65 : 2.95) + Math.abs(Math.sin(this.player.runCycle * 1.35)) * 0.10;
-            if (parts.auraMesh) {
-              parts.auraMesh.rotation.z += 0.04;
+          const phase = this.player.runCycle * 1.45;
+
+          if (this.dying) {
+            // ==============================================================
+            // DRAMATIC 3D GAME OVER KNOCKBACK & TOPPLE ANIMATION
+            // ==============================================================
+            const prog = Math.min(1, (1.45 - this.deathTimer) / 1.15);
+            const knockArcY = Math.sin(prog * Math.PI) * 1.85;
+            activeMesh.position.set(playerWorldX, Math.max(0.2, playerWorldY * (1 - prog)) + knockArcY, prog * 2.8);
+            activeMesh.rotation.x = prog * 1.48; // Topple backward onto ground
+            activeMesh.rotation.y = prog * Math.PI * 1.6; // Dramatic spin
+            activeMesh.rotation.z = prog * 0.45;
+          } else if (this.player.isSliding) {
+            // ==============================================================
+            // DYNAMIC FORWARD DIVE-TACKLE / BASEBALL SLIDE (向下飛剷)
+            // ==============================================================
+            activeMesh.position.set(playerWorldX, Math.max(0.05, playerWorldY * 0.5) + 0.12, -0.25);
+            activeMesh.rotation.x = parts.isQuadruped ? -0.45 : -1.08;
+            activeMesh.rotation.z = laneDiff * -0.35 - 0.16;
+            activeMesh.rotation.y = laneDiff * -0.30 + 0.12;
+
+            if (parts) {
+              parts.leftLeg.rotation.x = -0.85;
+              parts.rightLeg.rotation.x = 0.95;
+              if (parts.leftLeg.userData && parts.leftLeg.userData.shinGroup) {
+                parts.leftLeg.userData.shinGroup.rotation.x = 0.1;
+                parts.rightLeg.userData.shinGroup.rotation.x = 0.75;
+              }
+              parts.leftArm.rotation.x = 0.95;
+              parts.rightArm.rotation.x = -0.75;
+              parts.leftArm.rotation.z = 0;
+              parts.rightArm.rotation.z = 0;
+              parts.headGroup.rotation.x = parts.isQuadruped ? 0.35 : 0.72;
+              parts.tailGroup.rotation.y = Math.sin(phase * 3.0) * 0.45;
+            }
+          } else {
+            // ==============================================================
+            // NATURAL BIOMECHANICAL RUNNING GAIT + ULTIMATE ATTACK POSES
+            // ==============================================================
+            const strideBounce = this.player.y > 5 ? 0 : Math.abs(Math.sin(phase)) * 0.18;
+            activeMesh.position.set(playerWorldX, playerWorldY + strideBounce, 0);
+
+            activeMesh.rotation.z = laneDiff * -0.32;
+            activeMesh.rotation.y = laneDiff * -0.35 + (parts.isQuadruped ? 0 : Math.sin(phase) * 0.08);
+            activeMesh.rotation.x = this.player.y > 5 ? 0.16 : 0.08;
+
+            if (parts) {
+              parts.headGroup.rotation.x = 0;
+              if (parts.isQuadruped) {
+                const frontSwing = Math.sin(phase * 1.15) * 0.75;
+                const hindSwing = -Math.sin(phase * 1.15 - 0.35) * 0.78;
+                parts.leftArm.rotation.x = frontSwing;
+                parts.rightArm.rotation.x = frontSwing * 0.82;
+                parts.leftLeg.rotation.x = hindSwing;
+                parts.rightLeg.rotation.x = hindSwing * 0.82;
+                if (parts.leftLeg.userData && parts.leftLeg.userData.shinGroup) {
+                  parts.leftLeg.userData.shinGroup.rotation.x = Math.max(0, Math.cos(phase * 1.15)) * 0.55;
+                  parts.rightLeg.userData.shinGroup.rotation.x = Math.max(0, Math.cos(phase * 1.15 + 0.4)) * 0.55;
+                }
+              } else {
+                const legSwing = Math.sin(phase) * 0.78;
+                parts.leftLeg.rotation.x = legSwing;
+                parts.rightLeg.rotation.x = -legSwing;
+
+                if (parts.leftLeg.userData && parts.leftLeg.userData.shinGroup) {
+                  parts.leftLeg.userData.shinGroup.rotation.x = Math.max(0, -Math.cos(phase)) * 0.68;
+                  parts.rightLeg.userData.shinGroup.rotation.x = Math.max(0, Math.cos(phase)) * 0.68;
+                }
+
+                // Special Attack Pose: WereGarurumon crosses arms into an X then slashes outward!
+                if (this.player.attackAnimTimer > 0 && this.player.evoStage === 2) {
+                  const slashProg = 1 - (this.player.attackAnimTimer / 0.55);
+                  if (this.selectedChar === 'gabumon') {
+                    // Cross arms at chest then slash wide
+                    const crossAngle = slashProg < 0.4 ? -0.95 : 0.85;
+                    parts.leftArm.rotation.x = -1.25;
+                    parts.rightArm.rotation.x = -1.25;
+                    parts.leftArm.rotation.z = crossAngle;
+                    parts.rightArm.rotation.z = -crossAngle;
+                  } else {
+                    // MetalGreymon braces arms back while firing chest Giga Destroyer missiles
+                    parts.leftArm.rotation.x = 0.65;
+                    parts.rightArm.rotation.x = 0.65;
+                    parts.leftArm.rotation.z = 0.35;
+                    parts.rightArm.rotation.z = -0.35;
+                  }
+                } else {
+                  parts.leftArm.rotation.x = -legSwing * 0.75;
+                  parts.rightArm.rotation.x = legSwing * 0.75;
+                  parts.leftArm.rotation.z = 0;
+                  parts.rightArm.rotation.z = 0;
+                }
+              }
+
+              // Animate MetalGreymon's Purple Cyborg Wings smoothly
+              if (parts.leftWingGroup && parts.rightWingGroup) {
+                const wingFlap = Math.sin(phase * 0.9) * 0.28;
+                parts.leftWingGroup.rotation.y = wingFlap;
+                parts.rightWingGroup.rotation.y = -wingFlap;
+              }
+
+              parts.tailGroup.rotation.y = Math.cos(phase) * 0.34;
+              parts.headGroup.position.y = (parts.baseHeadY || 2.95) + Math.abs(Math.sin(phase)) * 0.08;
+              if (parts.auraMesh) {
+                parts.auraMesh.rotation.z += 0.05;
+              }
             }
           }
 
+          const cfg = CHAR_CONFIG[this.selectedChar];
+          const lightColor = this.player.evoStage === 2 ? cfg.ultColorOuter : cfg.fireColorOuter;
+          this.playerLight.color.setHex(lightColor);
           this.playerLight.position.set(playerWorldX, playerWorldY + 2.4, 1.0);
-          this.playerLight.intensity = this.player.evolved ? 1.5 : 0.25;
+          this.playerLight.intensity = this.player.evoStage === 2 ? 2.2 : (this.player.evoStage === 1 ? 1.4 : 0.25);
 
-          // Smooth 3D Camera Follow
+          // Smooth 3D Camera Follow (with dramatic camera shake & zoom during Game Over animation)
           const camPreset = CAMERA_MODES[this.cameraModeIdx] || CAMERA_MODES[0];
-          this.camera.position.x = playerWorldX * 0.48;
-          this.camera.position.y = camPreset.y + playerWorldY * 0.25;
-          this.camera.position.z = camPreset.z;
-          this.camera.lookAt(playerWorldX * 0.25, camPreset.lookY + playerWorldY * 0.15, camPreset.lookZ);
+          const shakeX = this.dying ? (Math.random() - 0.5) * 0.65 * Math.max(0, this.deathTimer) : 0;
+          const shakeY = this.dying ? (Math.random() - 0.5) * 0.55 * Math.max(0, this.deathTimer) : 0;
+
+          this.camera.position.x = playerWorldX * 0.48 + shakeX;
+          this.camera.position.y = camPreset.y + playerWorldY * 0.25 + shakeY;
+          this.camera.position.z = camPreset.z - (this.dying ? (1.45 - this.deathTimer) * 1.8 : 0);
+          this.camera.lookAt(playerWorldX * 0.35, camPreset.lookY + playerWorldY * 0.15, this.dying ? -6 : camPreset.lookZ);
 
           // Render Three.js WebGL Scene
           this.renderer.render(this.scene, this.camera);
 
-          // Keep overlayCanvas completely clear
+          // Draw Game Over Crash Banner Overlay during the 1.45s death animation
           const w = this.viewW || 800;
           const h = this.viewH || 500;
           octx.clearRect(0, 0, w, h);
+
+          if (this.dying) {
+            const prog = Math.min(1, (1.45 - this.deathTimer) / 1.2);
+            // Red impact vignette flash
+            const grad = octx.createRadialGradient(w / 2, h / 2, w * 0.15, w / 2, h / 2, w * 0.65);
+            grad.addColorStop(0, 'rgba(239, 68, 68, 0)');
+            grad.addColorStop(1, `rgba(220, 38, 38, ${0.48 * (1 - prog * 0.5)})`);
+            octx.fillStyle = grad;
+            octx.fillRect(0, 0, w, h);
+
+            // Animated Game Over Impact Title
+            octx.save();
+            octx.translate(w / 2, h * 0.36);
+            const scale = 0.85 + Math.sin(Math.min(1, prog * 2.2) * Math.PI * 0.5) * 0.22;
+            octx.scale(scale, scale);
+            octx.font = '900 38px "Noto Sans TC", "Inter", sans-serif';
+            octx.textAlign = 'center';
+            octx.fillStyle = '#fef08a';
+            octx.shadowColor = '#dc2626';
+            octx.shadowBlur = 18;
+            octx.fillText('💥 GAME OVER • 撞上障礙物！', 0, 0);
+            octx.font = '700 18px "Noto Sans TC", "Inter", sans-serif';
+            octx.fillStyle = '#ffffff';
+            octx.fillText(`正在統計 ${this.playerName} 嘅冒險戰績...`, 0, 36);
+            octx.restore();
+          }
         }
       };
 
@@ -2369,13 +4164,30 @@
       document.getElementById('btnMegaFlame').addEventListener('click', () => Game.fireMegaFlame());
       document.getElementById('btnCameraMode').addEventListener('click', () => Game.cycleCameraMode());
 
-      // Start & Preset Name Buttons
-      document.querySelectorAll('.preset-name-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const nameInput = document.getElementById('playerNameInput');
-          nameInput.value = btn.getAttribute('data-preset-name') || '八神太一';
-          document.getElementById('nameErrorMsg').classList.add('hidden');
-        });
+      // Character Selection Cards (Agumon vs Gabumon)
+      document.getElementById('selectCharAgumon').addEventListener('click', () => {
+        SoundFX.init();
+        SoundFX.playTone(523.25, 'triangle', 0.12, 0.1, 659.25);
+        Game.setCharacter('agumon');
+      });
+      document.getElementById('selectCharGabumon').addEventListener('click', () => {
+        SoundFX.init();
+        SoundFX.playTone(587.33, 'triangle', 0.12, 0.1, 783.99);
+        Game.setCharacter('gabumon');
+      });
+
+      // Landing Page -> Minimalist Setup Modal Navigation
+      document.getElementById('btnEnterSetup').addEventListener('click', () => {
+        SoundFX.init();
+        SoundFX.playTone(659.25, 'triangle', 0.15, 0.12, 880);
+        document.getElementById('landingModal').classList.add('hidden');
+        document.getElementById('startModal').classList.remove('hidden');
+        document.getElementById('playerNameInput').focus();
+      });
+
+      document.getElementById('btnBackToLanding').addEventListener('click', () => {
+        document.getElementById('startModal').classList.add('hidden');
+        document.getElementById('landingModal').classList.remove('hidden');
       });
 
       document.getElementById('btnStartGame').addEventListener('click', () => {
@@ -2396,8 +4208,7 @@
 
       document.getElementById('btnChangeName').addEventListener('click', () => {
         document.getElementById('gameOverModal').classList.add('hidden');
-        document.getElementById('startModal').classList.remove('hidden');
-        document.getElementById('playerNameInput').focus();
+        document.getElementById('landingModal').classList.remove('hidden');
       });
 
       // Leaderboard Clear Confirmation
@@ -2415,7 +4226,7 @@
       // Top Bar Controls: Mute, Pause, Guide
       document.getElementById('btnMute').addEventListener('click', () => {
         SoundFX.init();
-        SoundFX.muted = !SoundFX.muted;
+        SoundFX.setMuted(!SoundFX.muted);
         document.getElementById('btnMute').textContent = SoundFX.muted ? '🔇' : '🔊';
       });
 
