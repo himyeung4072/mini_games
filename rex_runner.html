@@ -2,269 +2,515 @@
 <html lang="zh-HK">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#ecd9b5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="format-detection" content="telephone=no" />
   <title>METALGREYMON RUNNER - 機械暴龍獸 3D 沙漠跑酷</title>
   <style>
-    /* ═══ 基礎與全螢幕滿版設定 ═══ */
+    /* ═══ 基礎、安全區域與全螢幕設定 ═══ */
+    :root {
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --ink: #3d3122;
+      --ink-soft: #4a3b28;
+      --accent: #d95a2b;
+      --hud-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+      --chip: #1b9fd0;
+      --tbtn: clamp(64px, 15vmin, 104px);
+    }
+    body.night {
+      --ink: #f3ead8;
+      --ink-soft: #e8dcc4;
+      --hud-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+      --chip: #6fe0ff;
+    }
     * {
       box-sizing: border-box;
       user-select: none;
       -webkit-user-select: none;
       -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
+      overscroll-behavior: none;
       background-color: #ecd9b5;
-      font-family: 'Courier New', Courier, monospace;
+      font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
       touch-action: none;
     }
     #canvas-container {
-      width: 100%;
-      height: 100%;
       position: absolute;
-      top: 0;
-      left: 0;
+      inset: 0;
       z-index: 1;
+      touch-action: none;
     }
+    #canvas-container canvas { display: block; }
 
-    /* ═══ 七、極簡 HUD 介面 ═══ */
+    /* ═══ HUD ═══ */
     #hud {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       z-index: 2;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 24px 32px;
-      color: #3d3122;
+      padding:
+        calc(var(--safe-t) + clamp(10px, 2.4vmin, 24px))
+        calc(var(--safe-r) + clamp(12px, 3vmin, 32px))
+        calc(var(--safe-b) + 12px)
+        calc(var(--safe-l) + clamp(12px, 3vmin, 32px));
+      color: var(--ink);
+      transition: color 0.6s;
     }
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 12px;
       width: 100%;
     }
-
-    /* 角落冷卻條：Giga Destroyer */
-    .skill-box {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+    .skill-box { display: flex; flex-direction: column; gap: 4px; }
     .skill-label {
-      font-size: 17px;
+      font-size: clamp(10px, calc(1.2vmin + 7px), 17px);
       font-weight: bold;
       letter-spacing: 1px;
-      color: #4a3b28;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+      color: var(--ink-soft);
+      text-shadow: var(--hud-shadow);
+      white-space: nowrap;
     }
     .cooldown-track {
-      width: 180px;
+      width: clamp(110px, 26vw, 180px);
       height: 11px;
       background: rgba(61, 49, 34, 0.22);
       border: 1px solid rgba(61, 49, 34, 0.55);
-      border-radius: 2px;
+      border-radius: 3px;
       overflow: hidden;
     }
+    body.night .cooldown-track { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.5); }
     #cooldown-fill {
       width: 100%;
       height: 100%;
       background: #d95a2b;
-      transition: background-color 0.2s;
+      transform-origin: left center;
     }
-    #cooldown-fill.ready {
-      background: #e06d2e;
-      box-shadow: 0 0 6px #ff9d42;
-    }
+    #cooldown-fill.ready { background: #ff7a32; box-shadow: 0 0 8px #ff9d42; }
 
-    /* 角落細小等寬分數 */
+    .right-col { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .score-box {
-      font-size: 22px;
+      font-size: clamp(14px, calc(1.6vmin + 9px), 22px);
       font-weight: bold;
       letter-spacing: 1.5px;
       text-align: right;
-      color: #3d3122;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-      line-height: 1.4;
+      text-shadow: var(--hud-shadow);
+      line-height: 1.35;
+      white-space: nowrap;
     }
-    .score-hi {
-      opacity: 0.65;
-      margin-right: 10px;
-    }
-    #bonus-toast {
-      font-size: 16px;
-      color: #c84b20;
-      opacity: 0;
-      transition: opacity 0.2s;
-      height: 22px;
-    }
+    .score-dim { opacity: 0.65; margin-right: 0.5em; }
+    .sub-line { font-size: 0.7em; display: flex; justify-content: flex-end; gap: 10px; min-height: 1.4em; }
+    #chip-count { color: var(--chip); }
+    #bonus-toast { color: #c84b20; opacity: 0; transition: opacity 0.2s; }
+    body.night #bonus-toast { color: #ffb070; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 25%, 75% { opacity: 0.1; } 50% { opacity: 1; } }
+    #curr-score.blink { animation: blink 0.7s steps(1) 1; }
 
-    /* 畫面底部中間細字提示 */
+    .icon-row { display: flex; gap: 8px; }
+    .icon-btn {
+      pointer-events: auto;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border-radius: 10px;
+      border: 1px solid rgba(61, 49, 34, 0.45);
+      background: rgba(248, 238, 218, 0.45);
+      color: #3d3122;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .icon-btn svg { width: 20px; height: 20px; }
+    .icon-btn:active { transform: scale(0.92); }
+    body.touch .icon-btn { width: 44px; height: 44px; }
+    body:not(.playing) #btn-pause { display: none; }
+
     .bottom-hint {
       text-align: center;
-      font-size: 16px;
+      font-size: clamp(11px, calc(1vmin + 8px), 16px);
       letter-spacing: 0.8px;
-      color: rgba(40, 30, 20, 0.95);
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+      color: var(--ink);
+      text-shadow: var(--hud-shadow);
       padding-bottom: 4px;
+      transition: opacity 0.8s;
     }
+    .bottom-hint.faded { opacity: 0; }
+    .only-touch { display: none; }
+    body.touch .only-touch { display: block; }
+    body.touch .only-desktop { display: none !important; }
 
-    /* ═══ Game Over 與開始覆蓋層 ═══ */
-    #overlay {
+    /* ═══ 觸控按鈕 ═══ */
+    #touch-controls {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 5;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      display: none;
+    }
+    body.touch.playing #touch-controls { display: block; }
+    .tbtn {
+      position: absolute;
+      pointer-events: auto;
+      width: var(--tbtn);
+      height: var(--tbtn);
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(61, 49, 34, 0.5);
+      background: rgba(248, 238, 218, 0.4);
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
+      color: #3d3122;
+      font-family: inherit;
+      font-weight: bold;
+      font-size: clamp(12px, 2.6vmin, 18px);
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      touch-action: none;
+      isolation: isolate;
+      transition: transform 0.08s, background-color 0.12s;
+      box-shadow: 0 4px 14px rgba(61, 49, 34, 0.18);
+    }
+    .tbtn svg { width: 42%; height: 42%; }
+    .tbtn.pressed { transform: scale(0.9); background-color: rgba(217, 90, 43, 0.6); color: #fff; }
+    #btn-duck { left: calc(var(--safe-l) + 18px); bottom: calc(var(--safe-b) + 18px); }
+    #btn-jump {
+      right: calc(var(--safe-r) + 18px);
+      bottom: calc(var(--safe-b) + 18px);
+      width: calc(var(--tbtn) * 1.22);
+      height: calc(var(--tbtn) * 1.22);
+    }
+    #btn-fire {
+      right: calc(var(--safe-r) + 18px + var(--tbtn) * 1.22 + 14px);
+      bottom: calc(var(--safe-b) + 18px + var(--tbtn) * 0.55);
+      width: calc(var(--tbtn) * 0.92);
+      height: calc(var(--tbtn) * 0.92);
+      font-size: clamp(11px, 2.2vmin, 16px);
+      background: conic-gradient(rgba(217, 90, 43, 0.9) calc(var(--cd, 1) * 360deg), rgba(61, 49, 34, 0.25) 0);
+      border-color: rgba(61, 49, 34, 0.6);
+    }
+    #btn-fire::before {
+      content: '';
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      background: rgba(248, 238, 218, 0.88);
+      z-index: -1;
+    }
+    #btn-fire.ready { box-shadow: 0 0 0 3px rgba(255, 140, 60, 0.55), 0 0 18px rgba(255, 120, 40, 0.7); }
+    #btn-fire:not(.ready) { color: rgba(61, 49, 34, 0.55); }
+    #btn-fire.pressed::before { background: rgba(255, 170, 110, 0.95); }
+
+    /* ═══ 中央提示、閃光 ═══ */
+    #center-toast {
+      position: absolute;
+      top: 26%;
+      left: 0;
+      right: 0;
+      z-index: 4;
+      text-align: center;
+      pointer-events: none;
+      color: var(--ink);
+      font-weight: bold;
+      font-size: clamp(26px, 7vmin, 56px);
+      letter-spacing: 3px;
+      text-shadow: var(--hud-shadow);
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.22s, transform 0.22s;
+    }
+    #center-toast.show { opacity: 1; transform: scale(1); }
+    #center-toast small { display: block; font-size: 0.42em; letter-spacing: 2px; opacity: 0.85; margin-top: 4px; }
+    #flash { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; background: #fff; }
+
+    /* ═══ 開始 / 暫停 / Game Over 覆蓋層 ═══ */
+    #overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: flex;
       justify-content: center;
       align-items: center;
-      background: rgba(236, 217, 181, 0.35);
-      backdrop-filter: blur(2px);
-      -webkit-backdrop-filter: blur(2px);
+      padding: calc(var(--safe-t) + 12px) calc(var(--safe-r) + 12px) calc(var(--safe-b) + 12px) calc(var(--safe-l) + 12px);
+      background: rgba(236, 217, 181, 0.32);
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
       transition: opacity 0.25s ease;
     }
-    #overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
+    #overlay.hidden { opacity: 0; pointer-events: none; }
     .panel {
-      background: rgba(248, 238, 218, 0.92);
+      background: rgba(248, 238, 218, 0.94);
       border: 2px solid #4a3b28;
-      padding: 24px 32px;
+      border-radius: 6px;
+      padding: clamp(16px, 3.5vmin, 30px) clamp(18px, 4.5vmin, 40px);
       text-align: center;
-      box-shadow: 0 10px 25px rgba(61, 49, 34, 0.18);
-      max-width: 88%;
-    }
-    .panel h1 {
-      margin: 0 0 8px 0;
-      font-size: 20px;
-      letter-spacing: 2px;
+      box-shadow: 0 12px 30px rgba(61, 49, 34, 0.22);
+      width: min(460px, 100%);
+      max-height: 100%;
+      overflow-y: auto;
       color: #3d3122;
     }
-    .panel p {
-      margin: 6px 0 18px 0;
-      font-size: 13px;
-      color: #5c4b36;
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #fff;
+      background: #d95a2b;
+      padding: 3px 10px;
+      border-radius: 3px;
+      margin-bottom: 8px;
     }
+    .badge:empty { display: none; }
+    .panel h1 { margin: 0 0 6px 0; font-size: clamp(20px, 4.6vmin, 30px); letter-spacing: 2px; }
+    .panel p { margin: 4px 0 14px 0; font-size: clamp(12px, 2.2vmin, 15px); color: #5c4b36; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+      gap: 8px;
+      margin: 0 0 16px 0;
+    }
+    .stats:empty { display: none; }
+    .stat { background: rgba(61, 49, 34, 0.07); border-radius: 4px; padding: 6px 4px; }
+    .stat b { display: block; font-size: clamp(15px, 3vmin, 20px); }
+    .stat span { font-size: 11px; color: #6b5a44; letter-spacing: 1px; }
+    .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .btn {
       pointer-events: auto;
       cursor: pointer;
       background: #3d3122;
       color: #f8eeda;
       border: none;
-      padding: 10px 24px;
+      border-radius: 4px;
+      padding: 12px 26px;
+      min-height: 46px;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: bold;
       letter-spacing: 1.5px;
+      touch-action: manipulation;
       transition: transform 0.1s, background 0.15s;
     }
-    .btn:hover {
-      background: #c85a28;
+    .btn.secondary { background: transparent; color: #3d3122; border: 2px solid #3d3122; }
+    .btn[hidden] { display: none; }
+    @media (hover: hover) { .btn:hover { background: #c85a28; color: #fff; } }
+    .btn:active { transform: scale(0.96); }
+    .controls-help {
+      margin-top: 14px;
+      font-size: clamp(11px, 2vmin, 13px);
+      line-height: 1.7;
+      color: #6b5a44;
     }
-    .btn:active {
-      transform: scale(0.96);
+    .controls-help kbd {
+      font-family: inherit;
+      background: rgba(61, 49, 34, 0.1);
+      border: 1px solid rgba(61, 49, 34, 0.3);
+      border-radius: 3px;
+      padding: 0 4px;
+    }
+    .tip { margin-top: 6px; color: #1b86b3; }
+
+    /* 細螢幕直向手機：分數分兩行，節省寬度 */
+    @media (max-width: 420px) {
+      .score-dim { display: block; margin-right: 0; font-size: 0.72em; }
+      .score-line { display: flex; flex-direction: column; align-items: flex-end; }
+    }
+    /* 矮螢幕橫向手機：縮細面板 */
+    @media (max-height: 430px) {
+      .controls-help { margin-top: 8px; line-height: 1.5; }
+      .panel p { margin-bottom: 10px; }
     }
   </style>
-  <!-- ═══ 一、技術要求：固定版本 Three.js r128 CDN ═══ -->
+  <!-- 固定版本 Three.js r128 CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <!-- 3D 畫布容器 -->
   <div id="canvas-container"></div>
 
-  <!-- 極簡 HUD 介面 -->
   <div id="hud">
     <div class="top-bar">
       <div class="skill-box">
         <div class="skill-label" id="skill-text">GIGA DESTROYER [READY]</div>
-        <div class="cooldown-track">
-          <div id="cooldown-fill" class="ready"></div>
-        </div>
+        <div class="cooldown-track"><div id="cooldown-fill" class="ready"></div></div>
       </div>
-      <div class="score-box">
-        <div>
-          <span class="score-hi" id="level-ind">LV 1</span>
-          <span class="score-hi" id="hi-score">HI 00000</span>
-          <span id="curr-score">00000</span>
+      <div class="right-col">
+        <div class="score-box">
+          <div class="score-line">
+            <span class="score-dim" id="level-ind">LV 1</span>
+            <span class="score-dim" id="hi-score">HI 00000</span>
+            <span id="curr-score">00000</span>
+          </div>
+          <div class="sub-line">
+            <span id="bonus-toast"></span>
+            <span id="chip-count">◆ 0</span>
+          </div>
         </div>
-        <div id="bonus-toast">+100 DESTROY!</div>
+        <div class="icon-row">
+          <button class="icon-btn" id="btn-pause" aria-label="暫停">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-mute" aria-label="靜音"></button>
+          <button class="icon-btn" id="btn-fs" aria-label="全螢幕">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="bottom-hint">
-      SPACE/↑ 跳躍 · ↓ 蹲低 · F 導彈 &nbsp;|&nbsp; 點擊:跳 · 下掃:蹲 · 雙擊:導彈
+    <div class="bottom-hint only-desktop" id="bottom-hint">
+      SPACE/↑ 跳躍 · ↓ 蹲低/急降 · F 導彈 · P 暫停 · M 靜音
     </div>
   </div>
 
-  <!-- 遊戲開始 / Game Over 視窗 -->
+  <!-- 觸控按鈕（手機 / 平板） -->
+  <div id="touch-controls">
+    <button class="tbtn" id="btn-duck" aria-label="蹲低">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l-8-9h5V4h6v7h5z"/></svg>
+      <span>蹲</span>
+    </button>
+    <button class="tbtn" id="btn-fire" aria-label="發射導彈"><span>導彈</span></button>
+    <button class="tbtn" id="btn-jump" aria-label="跳躍">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 9h-5v7H9v-7H4z"/></svg>
+      <span>跳</span>
+    </button>
+  </div>
+
+  <div id="center-toast"></div>
+  <div id="flash"></div>
+
   <div id="overlay">
     <div class="panel">
+      <div class="badge" id="overlay-badge"></div>
       <h1 id="overlay-title">METALGREYMON RUNNER</h1>
-      <p id="overlay-sub">穿越黃昏沙漠 · 避開仙人掌與飛鳥</p>
-      <button class="btn" id="action-btn">START RUN</button>
+      <p id="overlay-sub">機械暴龍獸 · 黃昏沙漠跑酷</p>
+      <div class="stats" id="overlay-stats"></div>
+      <div class="btn-row">
+        <button class="btn" id="action-btn">START RUN</button>
+        <button class="btn secondary" id="alt-btn" hidden>重新開始</button>
+      </div>
+      <div class="controls-help">
+        <div class="only-desktop">
+          <kbd>SPACE</kbd>/<kbd>↑</kbd> 跳躍（長按連跳）· <kbd>↓</kbd> 蹲低 / 空中急降<br />
+          <kbd>F</kbd> Giga Destroyer 導彈 · <kbd>P</kbd> 暫停 · <kbd>M</kbd> 靜音
+        </div>
+        <div class="only-touch">
+          右下「跳」· 左下「蹲」（空中按即急降）· 「導彈」擊毀障礙<br />
+          亦可點擊畫面跳躍、向下掃蹲低
+        </div>
+        <div class="tip">◆ 收集藍色數碼晶片：+20 分，並加快導彈充能</div>
+      </div>
     </div>
   </div>
 
   <script>
+    'use strict';
     /*************************************************************************
-     * 1. 遊戲全域參數與狀態 (CONFIG & STATE)
+     * 1. 全域參數、裝置偵測與狀態 (CONFIG, DEVICE & STATE)
      *************************************************************************/
     const CONFIG = {
-      baseSpeed: 30,           // 初始跑步速度
-      maxSpeed: 92,            // 最高速度上限
-      speedAccel: 1.0,         // 每秒加速率
-      gravity: -82,            // 跳躍重力加速度
-      jumpVelocity: 28,        // 跳躍初速度
-      groundY: 0,              // 地面基準高度
-      playerScale: 0.75,       // 角色整體縮放（1 = 原大小）
-      skillCooldown: 5.0,      // Giga Destroyer 冷卻秒數
-      fogColor: 0xecd9b5,      // 沙漠暖奶黃霧色
-      skyTopColor: '#8fb8d9',  // 天空頂部淺藍
-      skyHorizonColor: '#f5e8ce' // 地平線暖奶白
+      baseSpeed: 30,            // 初始跑步速度
+      maxSpeed: 92,             // 最高速度上限
+      speedAccel: 1.0,          // 每秒加速率
+      gravity: -82,             // 重力加速度
+      jumpVelocity: 28,         // 跳躍初速度
+      fastFallVelocity: -34,    // 空中按蹲低時急降速度
+      jumpBuffer: 0.14,         // 落地前預按跳躍嘅緩衝時間（秒）
+      groundY: 0,
+      playerScale: 0.75,        // 角色整體縮放
+      skillCooldown: 5.0,       // Giga Destroyer 冷卻秒數
+      destroyScore: 100,        // 擊毀障礙加分
+      chipScore: 20,            // 晶片加分
+      chipCooldownCut: 0.6,     // 每粒晶片減少冷卻秒數
+      levelEvery: 500           // 每幾多分升一級
+    };
+
+    const IS_COARSE = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    const LOW_POWER = IS_COARSE || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+    // localStorage 喺部分私隱模式會拋錯，統一包裝
+    const store = {
+      get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 忽略 */ } }
     };
 
     const STATE = {
-      mode: 'MENU',            // MENU | PLAYING | GAMEOVER
+      mode: 'MENU',             // MENU | PLAYING | PAUSED | COUNTDOWN | GAMEOVER
       score: 0,
       bonusScore: 0,
       distance: 0,
-      hiScore: parseInt(localStorage.getItem('mg_runner_hi') || '0', 10),
+      hiScore: parseInt(store.get('mg_runner_hi', '0'), 10) || 0,
       speed: CONFIG.baseSpeed,
       runTime: 0,
       level: 1,
-      cooldown: 0,             // 0 代表可以使用技能
-      nextSpawnDist: 20
+      cooldown: 0,
+      nextSpawnDist: 20,
+      destroyed: 0,
+      chips: 0,
+      lastMilestone: 0,
+      hitStop: 0,
+      countdown: 0,
+      lastCount: 0,
+      restartLockUntil: 0
     };
 
+    // 輸入狀態：用 Set 記錄邊啲來源（鍵盤 / 每隻手指）仲按住
+    const input = {
+      jumpHolders: new Set(),
+      duckHolders: new Set()
+    };
+
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+
     /*************************************************************************
-     * 2. 8-Bit 晶片音樂與音效合成器 (Web Audio API Chiptune Engine)
-     * 完全由程式碼即時生成緊湊刺激的 8-bit BGM 與遊戲音效
+     * 2. 8-Bit 晶片音樂與音效引擎 (Web Audio API)
+     * - 以 AudioContext 時間做 look-ahead 排程，節奏穩定唔會飄
+     * - 主音量 → 壓縮器，避免爆音；支援靜音並記住設定
      *************************************************************************/
     class SoundEngine {
       constructor() {
         this.ctx = null;
-        this.isPlayingBGM = false;
-        this.bgmTimer = null;
+        this.muted = store.get('mg_runner_muted', '0') === '1';
+        this.bgmOn = false;
         this.step = 0;
+        this.nextTime = 0;
+        this.stepDur = 0.125;
 
-        // 緊湊刺激嘅數碼暴龍戰鬥風 8-bit 音階序列 (D小調熱血進行)
+        // 主旋律 A（D 小調熱血進行）
         this.melody = [
           587.33, 0, 587.33, 659.25, 698.46, 0, 659.25, 587.33,
           523.25, 0, 523.25, 587.33, 659.25, 0, 523.25, 440.00,
           466.16, 0, 466.16, 523.25, 587.33, 0, 698.46, 659.25,
           587.33, 523.25, 466.16, 440.00, 523.25, 0, 587.33, 0
+        ];
+        // 主旋律 B（每 4 小節出現一次嘅高八度變奏）
+        this.melodyB = [
+          880.00, 0, 783.99, 698.46, 659.25, 0, 587.33, 659.25,
+          698.46, 0, 659.25, 587.33, 523.25, 0, 587.33, 659.25,
+          587.33, 0, 698.46, 783.99, 880.00, 0, 932.33, 880.00,
+          783.99, 698.46, 659.25, 554.37, 587.33, 0, 0, 0
         ];
         this.bass = [
           146.83, 293.66, 146.83, 293.66, 146.83, 293.66, 146.83, 293.66,
@@ -276,328 +522,435 @@
 
       init() {
         if (!this.ctx) {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioCtx();
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          try { this.ctx = new AC(); } catch (e) { return; }
+          const c = this.ctx;
+          this.master = c.createGain();
+          this.master.gain.value = this.muted ? 0 : 0.9;
+          const comp = c.createDynamicsCompressor();
+          comp.threshold.value = -12;
+          comp.knee.value = 8;
+          comp.ratio.value = 5;
+          comp.attack.value = 0.003;
+          comp.release.value = 0.18;
+          this.master.connect(comp);
+          comp.connect(c.destination);
+
+          this.bgmBus = c.createGain();
+          this.bgmBus.gain.value = 0.75;
+          this.bgmBus.connect(this.master);
+          this.sfxBus = c.createGain();
+          this.sfxBus.gain.value = 1;
+          this.sfxBus.connect(this.master);
+
+          // 預先生成 1 秒白噪音，之後重用（唔使每次分配記憶體）
+          this.noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate);
+          const data = this.noiseBuf.getChannelData(0);
+          for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+
+          // iOS 解鎖：喺用戶手勢內播放一段無聲 buffer
+          const silent = c.createBufferSource();
+          silent.buffer = c.createBuffer(1, 1, 22050);
+          silent.connect(c.destination);
+          silent.start(0);
+
+          setInterval(() => this.schedule(), 25);
         }
         if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
+          const p = this.ctx.resume();
+          if (p && p.catch) p.catch(() => {});
         }
       }
 
-      // 播放單一合成音符
-      playTone(freq, type, duration, vol = 0.08, slideTo = null) {
+      suspend() {
+        if (this.ctx && this.ctx.state === 'running') {
+          const p = this.ctx.suspend();
+          if (p && p.catch) p.catch(() => {});
+        }
+      }
+
+      setMuted(m) {
+        this.muted = m;
+        store.set('mg_runner_muted', m ? '1' : '0');
+        if (this.ctx) this.master.gain.setTargetAtTime(m ? 0 : 0.9, this.ctx.currentTime, 0.03);
+      }
+
+      setTempo(level) {
+        this.stepDur = Math.max(0.096, 0.125 - (level - 1) * 0.006);
+      }
+
+      tone(freq, type, dur, vol = 0.08, slideTo = null, when = 0, bus = null) {
         if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const c = this.ctx;
+        const t = Math.max(when || 0, c.currentTime);
+        const osc = c.createOscillator();
+        const g = c.createGain();
         osc.type = type;
-        osc.frequency.setValueAtTime(freq, now);
-        if (slideTo) {
-          osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
-        }
-        gain.gain.setValueAtTime(vol, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + duration);
+        osc.frequency.setValueAtTime(freq, t);
+        if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(g);
+        g.connect(bus || this.sfxBus);
+        osc.start(t);
+        osc.stop(t + dur + 0.03);
       }
 
-      // 播放白噪音（鼓點、爆炸、導彈尾氣）
-      playNoise(duration, vol = 0.1, filterFreq = 1200) {
+      noise(dur, vol = 0.1, freq = 1200, when = 0, bus = null, type = 'lowpass') {
         if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const bufferSize = this.ctx.sampleRate * duration;
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
-
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(filterFreq, now);
-
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(vol, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.ctx.destination);
-        noise.start(now);
+        const c = this.ctx;
+        const t = Math.max(when || 0, c.currentTime);
+        const src = c.createBufferSource();
+        src.buffer = this.noiseBuf;
+        const f = c.createBiquadFilter();
+        f.type = type;
+        f.frequency.setValueAtTime(freq, t);
+        const g = c.createGain();
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        src.connect(f);
+        f.connect(g);
+        g.connect(bus || this.sfxBus);
+        src.start(t, Math.random() * 0.4, dur + 0.05);
       }
 
       startBGM() {
         this.init();
-        if (this.isPlayingBGM) return;
-        this.isPlayingBGM = true;
+        if (!this.ctx) return;
+        this.bgmOn = true;
         this.step = 0;
-        const stepTime = 125; // 120 BPM 16分音符緊湊節奏
-
-        this.bgmTimer = setInterval(() => {
-          if (STATE.mode !== 'PLAYING') return;
-          const idx = this.step % this.melody.length;
-          const mFreq = this.melody[idx];
-          const bFreq = this.bass[idx];
-
-          // 主旋律 (Square 波)
-          if (mFreq > 0) {
-            this.playTone(mFreq, 'square', 0.11, 0.045);
-          }
-          // 低音 Bassline (Triangle 波)
-          if (bFreq > 0) {
-            this.playTone(bFreq, 'triangle', 0.11, 0.07);
-          }
-          // 8-bit 鼓組節拍
-          if (this.step % 4 === 0) {
-            this.playTone(110, 'sine', 0.09, 0.12, 35); // Kick
-          } else if (this.step % 4 === 2) {
-            this.playNoise(0.08, 0.055, 2400); // Snare
-          } else {
-            this.playNoise(0.03, 0.02, 5000);  // Hi-hat
-          }
-          this.step++;
-        }, stepTime);
+        this.nextTime = this.ctx.currentTime + 0.08;
       }
 
-      stopBGM() {
-        this.isPlayingBGM = false;
-        if (this.bgmTimer) {
-          clearInterval(this.bgmTimer);
-          this.bgmTimer = null;
+      stopBGM() { this.bgmOn = false; }
+
+      schedule() {
+        if (!this.ctx || !this.bgmOn) return;
+        if (STATE.mode !== 'PLAYING') {
+          this.nextTime = this.ctx.currentTime + 0.05;
+          return;
+        }
+        while (this.nextTime < this.ctx.currentTime + 0.12) {
+          this.playStep(this.step, this.nextTime);
+          this.step++;
+          this.nextTime += this.stepDur;
         }
       }
 
-      sfxJump() {
-        this.init();
-        this.playTone(180, 'square', 0.18, 0.07, 540);
+      playStep(step, t) {
+        const idx = step % 32;
+        const bar = Math.floor(step / 32) % 4;
+        const lead = bar === 3 ? this.melodyB : this.melody;
+        const m = lead[idx];
+        const b = this.bass[idx];
+        const d = this.stepDur;
+        const bus = this.bgmBus;
+
+        if (m > 0) this.tone(m, 'square', d * 0.9, 0.038, null, t, bus);
+        if (b > 0) this.tone(b, 'triangle', d * 0.95, 0.075, null, t, bus);
+        // 第 2 小節起加入高八度閃爍琶音
+        if (bar >= 1 && m > 0 && idx % 2 === 1) this.tone(m * 2, 'square', d * 0.4, 0.012, null, t, bus);
+
+        // 鼓組
+        if (idx % 4 === 0) this.tone(120, 'sine', 0.11, 0.16, 38, t, bus);              // Kick
+        if (idx % 8 === 4) this.noise(0.1, 0.07, 2600, t, bus);                           // Snare
+        if (idx % 2 === 1) this.noise(0.03, 0.025, 7000, t, bus, 'highpass');             // Hi-hat
+        if (idx === 0 && bar === 0 && step > 0) this.noise(0.5, 0.05, 6000, t, bus, 'highpass'); // Crash
       }
 
-      sfxDuck() {
-        this.init();
-        this.playTone(300, 'triangle', 0.09, 0.06, 120);
-      }
-
+      sfxJump() { this.init(); this.tone(240, 'square', 0.16, 0.06, 620); this.tone(480, 'triangle', 0.1, 0.03, 900); }
+      sfxLand() { this.init(); this.noise(0.08, 0.07, 500); }
+      sfxDuck() { this.init(); this.tone(300, 'triangle', 0.09, 0.05, 120); }
       sfxMissile() {
         this.init();
-        this.playTone(520, 'sawtooth', 0.28, 0.08, 140);
-        this.playNoise(0.32, 0.09, 1800);
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime;
+        this.tone(520, 'sawtooth', 0.3, 0.07, 120, t);
+        this.tone(560, 'sawtooth', 0.28, 0.05, 130, t + 0.06);
+        this.noise(0.38, 0.09, 1800, t);
       }
-
       sfxExplode() {
         this.init();
-        this.playNoise(0.45, 0.18, 650);
-        this.playTone(95, 'sawtooth', 0.35, 0.1, 28);
+        this.noise(0.55, 0.22, 700);
+        this.noise(0.12, 0.08, 4000, 0, null, 'highpass');
+        this.tone(110, 'sawtooth', 0.42, 0.1, 30);
       }
-
+      sfxChip() {
+        this.init();
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime;
+        this.tone(988, 'square', 0.07, 0.04, null, t);
+        this.tone(1319, 'square', 0.14, 0.04, null, t + 0.07);
+      }
+      sfxMilestone() {
+        this.init();
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime;
+        this.tone(1046, 'square', 0.08, 0.035, null, t);
+        this.tone(1568, 'square', 0.12, 0.035, null, t + 0.09);
+      }
+      sfxLevelUp() {
+        this.init();
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone(f, 'square', 0.12, 0.045, null, t + i * 0.075));
+      }
+      sfxReady() {
+        this.init();
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime;
+        this.tone(660, 'triangle', 0.08, 0.05, null, t);
+        this.tone(990, 'triangle', 0.12, 0.05, null, t + 0.07);
+      }
+      sfxCount(go) { this.init(); this.tone(go ? 880 : 440, 'square', go ? 0.25 : 0.1, 0.05); }
+      sfxUi() { this.init(); this.tone(620, 'square', 0.05, 0.03); }
       sfxGameOver() {
         this.init();
-        this.playNoise(0.35, 0.15, 800);
-        setTimeout(() => this.playTone(330, 'square', 0.18, 0.08, 293), 100);
-        setTimeout(() => this.playTone(293, 'square', 0.18, 0.08, 261), 280);
-        setTimeout(() => this.playTone(246, 'sawtooth', 0.45, 0.09, 146), 460);
+        if (!this.ctx) return;
+        const t = this.ctx.currentTime;
+        this.noise(0.4, 0.16, 800, t);
+        this.tone(330, 'square', 0.18, 0.08, 293, t + 0.1);
+        this.tone(293, 'square', 0.18, 0.08, 261, t + 0.28);
+        this.tone(246, 'sawtooth', 0.5, 0.09, 146, t + 0.46);
       }
     }
 
     const sound = new SoundEngine();
 
+    function haptic(pattern) {
+      if (!document.body.classList.contains('touch') || !navigator.vibrate) return;
+      try { navigator.vibrate(pattern); } catch (e) { /* 部分瀏覽器唔支援 */ }
+    }
+
     /*************************************************************************
-     * 3. THREE.JS 場景、鏡頭與燈光初始化 (SCENE, CAMERA & LIGHTS)
+     * 3. THREE.JS 場景、鏡頭、燈光 (按裝置效能調整畫質)
      *************************************************************************/
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    // 空氣透視霧氣：柔和沙漠暖奶黃色
-    scene.fog = new THREE.FogExp2(CONFIG.fogColor, 0.0072);
+    scene.fog = new THREE.FogExp2(0xecd9b5, 0.0072);
 
-    const camera = new THREE.PerspectiveCamera(
-      50,
-      window.innerWidth / window.innerHeight,
-      0.5,
-      320
-    );
+    const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.5, 320);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const DPR = window.devicePixelRatio || 1;
+    const renderer = new THREE.WebGLRenderer({
+      antialias: DPR < 2,
+      powerPreference: 'high-performance'
+    });
+    let pixelRatio = Math.min(DPR, LOW_POWER ? 1.5 : 2);
+    renderer.setPixelRatio(pixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); // 限制最高 2
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 柔和陰影
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
 
-    // 環境光與半球光：營造溫暖柔和嘅黃昏空氣感
     const hemiLight = new THREE.HemisphereLight(0xddeeff, 0xd8be94, 0.72);
     hemiLight.position.set(0, 60, 0);
     scene.add(hemiLight);
 
-    // 低角度太陽（方向光）由左邊照射，投射大面積柔和長影
     const sunLight = new THREE.DirectionalLight(0xfff1d0, 0.95);
     sunLight.position.set(-48, 26, 18);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    const SHADOW_SIZE = LOW_POWER ? 1024 : 2048;
+    sunLight.shadow.mapSize.set(SHADOW_SIZE, SHADOW_SIZE);
     sunLight.shadow.camera.near = 5;
     sunLight.shadow.camera.far = 160;
-    const d = 48;
-    sunLight.shadow.camera.left = -d;
-    sunLight.shadow.camera.right = d;
-    sunLight.shadow.camera.top = d;
-    sunLight.shadow.camera.bottom = -d;
+    const SD = 48;
+    sunLight.shadow.camera.left = -SD;
+    sunLight.shadow.camera.right = SD;
+    sunLight.shadow.camera.top = SD;
+    sunLight.shadow.camera.bottom = -SD;
     sunLight.shadow.bias = -0.0005;
     scene.add(sunLight);
 
-    /*************************************************************************
-     * 4. 程序化紋理與天空、遠景沙丘、地面生成 (ENVIRONMENT)
-     *************************************************************************/
-    // 4.1 天空漸變背景（頂部淺藍 #8fb8d9 漸變到地平線暖奶白）
-    function createSkyTexture() {
-      const c = document.createElement('canvas');
-      c.width = 32;
-      c.height = 512;
-      const ctx = c.getContext('2d');
-      const grad = ctx.createLinearGradient(0, 0, 0, 512);
-      grad.addColorStop(0.0, '#8fb8d9');
-      grad.addColorStop(0.48, '#bfd4e3');
-      grad.addColorStop(0.78, '#efe3c8');
-      grad.addColorStop(1.0, '#ecd9b5');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 32, 512);
-      const tex = new THREE.CanvasTexture(c);
-      tex.encoding = THREE.sRGBEncoding;
-      return tex;
+    // 共用單位方塊幾何體：所有 voxel 用 scale 調整尺寸，避免每次生成障礙物都洩漏 GPU 記憶體
+    const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
+    function ubox(w, h, d, mat, x, y, z, cast = true, receive = true) {
+      const m = new THREE.Mesh(UNIT_BOX, mat);
+      m.scale.set(w, h, d);
+      m.position.set(x, y, z);
+      m.castShadow = cast;
+      m.receiveShadow = receive;
+      return m;
     }
-    scene.background = createSkyTexture();
 
-    // 4.2 遠處細細嘅立體方塊白雲
-    const cloudGroup = new THREE.Group();
-    const cloudMat = new THREE.MeshBasicMaterial({ color: 0xfdfaf2, fog: false, transparent: true, opacity: 0.88 });
-    const cloudBlocks = [
+    /*************************************************************************
+     * 4. 環境：漸變天空 + 太陽 / 月亮、星空、白雲、沙丘、平頂山、地面
+     *************************************************************************/
+    // 4.1 天空球（Shader 漸變 + 太陽光暈），跟住鏡頭移動
+    const skyUniforms = {
+      topColor: { value: new THREE.Color() },
+      horizonColor: { value: new THREE.Color() },
+      bottomColor: { value: new THREE.Color() },
+      sunColor: { value: new THREE.Color() },
+      sunDir: { value: new THREE.Vector3(-0.42, 0.13, -1).normalize() },
+      glow: { value: 0.35 }
+    };
+    const skyMat = new THREE.ShaderMaterial({
+      uniforms: skyUniforms,
+      vertexShader: `
+        varying vec3 vDir;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vDir = wp.xyz - cameraPosition;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 horizonColor;
+        uniform vec3 bottomColor;
+        uniform vec3 sunColor;
+        uniform vec3 sunDir;
+        uniform float glow;
+        varying vec3 vDir;
+        void main() {
+          vec3 d = normalize(vDir);
+          float h = d.y;
+          vec3 col = h > 0.0
+            ? mix(horizonColor, topColor, pow(smoothstep(0.0, 0.55, h), 0.8))
+            : mix(horizonColor, bottomColor, smoothstep(0.0, -0.12, h));
+          float s = max(dot(d, sunDir), 0.0);
+          col += sunColor * (pow(s, 40.0) * glow + pow(s, 6.0) * glow * 0.22);
+          col = mix(col, sunColor, smoothstep(0.9986, 0.9991, s));
+          gl_FragColor = vec4(col, 1.0);
+          #include <encodings_fragment>
+        }
+      `,
+      side: THREE.BackSide,
+      depthWrite: false,
+      depthTest: false,
+      fog: false
+    });
+    const skyMesh = new THREE.Mesh(new THREE.SphereGeometry(280, 32, 16), skyMat);
+    skyMesh.renderOrder = -10;
+    skyMesh.frustumCulled = false;
+    scene.add(skyMesh);
+
+    // 4.2 星空（夜晚先出現）
+    const starMat = new THREE.PointsMaterial({
+      color: 0xffffff, size: 2.2, sizeAttenuation: false,
+      transparent: true, opacity: 0, fog: false, depthWrite: false
+    });
+    (function createStars() {
+      const N = LOW_POWER ? 220 : 380;
+      const pos = new Float32Array(N * 3);
+      for (let i = 0; i < N; i++) {
+        const y = 0.06 + Math.random() * 0.94;
+        const r = Math.sqrt(1 - y * y);
+        const th = Math.random() * Math.PI * 2;
+        pos[i * 3] = Math.cos(th) * r * 250;
+        pos[i * 3 + 1] = y * 250;
+        pos[i * 3 + 2] = Math.sin(th) * r * 250;
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const stars = new THREE.Points(g, starMat);
+      stars.renderOrder = -9;
+      scene.add(stars);
+    })();
+
+    // 4.3 方塊白雲（多朵，緩慢飄移）
+    const cloudMat = new THREE.MeshBasicMaterial({ color: 0xfdfaf2, fog: false, transparent: true, opacity: 0.9 });
+    const CLOUD_BLOCKS = [
       [0, 0, 0, 8, 2.2, 3],
       [-3.5, -0.4, 0.2, 4.5, 1.5, 2.5],
       [3.8, -0.3, -0.2, 5, 1.6, 2.5],
       [1.0, 1.1, 0, 4.5, 1.4, 2.5]
     ];
-    cloudBlocks.forEach(([x, y, z, w, h, d]) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), cloudMat);
-      m.position.set(x, y, z);
-      cloudGroup.add(m);
-    });
-    cloudGroup.position.set(22, 42, -165);
-    scene.add(cloudGroup);
+    const clouds = [];
+    for (let i = 0; i < 7; i++) {
+      const g = new THREE.Group();
+      CLOUD_BLOCKS.forEach(([x, y, z, w, h, d]) => g.add(ubox(w, h, d, cloudMat, x, y, z, false, false)));
+      g.scale.setScalar(0.7 + Math.random() * 0.8);
+      g.position.set(-150 + i * 46 + Math.random() * 20, 32 + Math.random() * 24, -150 - Math.random() * 40);
+      scene.add(g);
+      clouds.push({ g, speed: 0.6 + Math.random() * 1.2 });
+    }
 
-    // 4.3 遠景：3 層霧濛濛嘅沙丘剪影（顏色逐層變淡）
-    function createDunes() {
+    // 4.4 三層霧濛濛沙丘剪影（Lambert，跟住晝夜光線變色）
+    (function createDunes() {
       const layers = [
-        { z: -175, color: 0xe2cda7, height: 18, scaleX: 1.3, seed: 1.2 },
-        { z: -135, color: 0xd7bf96, height: 13, scaleX: 1.0, seed: 2.7 },
-        { z: -98,  color: 0xcbb084, height: 8.5, scaleX: 0.85, seed: 4.1 }
+        { z: -175, color: 0xe2cda7, height: 18, seed: 1.2 },
+        { z: -135, color: 0xd7bf96, height: 13, seed: 2.7 },
+        { z: -98, color: 0xcbb084, height: 8.5, seed: 4.1 }
       ];
-
       layers.forEach((layer) => {
         const shape = new THREE.Shape();
         shape.moveTo(-260, -5);
         const steps = 40;
         for (let i = 0; i <= steps; i++) {
           const x = -260 + (520 / steps) * i;
-          const y =
-            Math.sin(i * 0.35 + layer.seed) * (layer.height * 0.45) +
-            Math.cos(i * 0.18 - layer.seed) * (layer.height * 0.35) +
-            layer.height * 0.6;
+          const y = Math.sin(i * 0.35 + layer.seed) * (layer.height * 0.45) +
+            Math.cos(i * 0.18 - layer.seed) * (layer.height * 0.35) + layer.height * 0.6;
           shape.lineTo(x, y);
         }
         shape.lineTo(260, -5);
         shape.closePath();
-
-        const geom = new THREE.ShapeGeometry(shape);
-        const mat = new THREE.MeshBasicMaterial({
-          color: layer.color,
-          fog: true
-        });
-        const mesh = new THREE.Mesh(geom, mat);
+        const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshLambertMaterial({ color: layer.color }));
         mesh.position.set(0, -1, layer.z);
         scene.add(mesh);
       });
-    }
-    createDunes();
+    })();
 
-    // 4.4 地面與中央跑道 Canvas 像素噪點紋理
+    // 4.5 地面與跑道 Canvas 像素紋理
     function createDesertGroundTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
-
-      // 暖奶黃色沙地底色 (#ecd9b5)
       ctx.fillStyle = '#ecd9b5';
       ctx.fillRect(0, 0, 256, 256);
-
-      // 輕微像素感噪點
       for (let y = 0; y < 256; y += 2) {
         for (let x = 0; x < 256; x += 2) {
           const r = Math.random();
-          if (r < 0.16) {
-            ctx.fillStyle = '#e3cea6';
-            ctx.fillRect(x, y, 2, 2);
-          } else if (r < 0.24) {
-            ctx.fillStyle = '#f2e2c2';
-            ctx.fillRect(x, y, 2, 2);
-          } else if (r < 0.26) {
-            ctx.fillStyle = '#d4bc92';
-            ctx.fillRect(x, y, 4, 2);
-          }
+          if (r < 0.16) { ctx.fillStyle = '#e3cea6'; ctx.fillRect(x, y, 2, 2); }
+          else if (r < 0.24) { ctx.fillStyle = '#f2e2c2'; ctx.fillRect(x, y, 2, 2); }
+          else if (r < 0.26) { ctx.fillStyle = '#d4bc92'; ctx.fillRect(x, y, 4, 2); }
         }
       }
-
       const tex = new THREE.CanvasTexture(canvas);
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.repeat.set(18, 22);
-      tex.magFilter = THREE.NearestFilter; // 保留輕微像素感
+      tex.magFilter = THREE.NearestFilter;
+      tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
       tex.encoding = THREE.sRGBEncoding;
       return tex;
     }
 
-    // 中央顏色較深嘅跑道紋理（含腳印同碎石痕跡）
     function createTrailTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 128;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
-
       ctx.fillStyle = '#d7be93';
       ctx.fillRect(0, 0, 128, 256);
-
-      // 跑道兩側自然過渡邊緣
       ctx.fillStyle = '#e2caa0';
       ctx.fillRect(0, 0, 10, 256);
       ctx.fillRect(118, 0, 10, 256);
-
-      // 跑道上嘅碎石與橫痕
       for (let i = 0; i < 90; i++) {
         const x = 12 + Math.floor(Math.random() * 104);
         const y = Math.floor(Math.random() * 256);
         ctx.fillStyle = Math.random() > 0.4 ? '#c5aa7d' : '#b89b6d';
         ctx.fillRect(x, y, 4 + Math.floor(Math.random() * 6), 2);
       }
-
-      // 跑道上嘅暴龍三趾腳印痕跡
+      // 暴龍三趾腳印
       ctx.fillStyle = '#c1a578';
-      const printY = [32, 96, 160, 224];
-      printY.forEach((py, idx) => {
+      [32, 96, 160, 224].forEach((py, idx) => {
         const px = idx % 2 === 0 ? 38 : 74;
         ctx.fillRect(px, py, 14, 10);
         ctx.fillRect(px - 2, py - 6, 4, 5);
         ctx.fillRect(px + 5, py - 7, 4, 6);
         ctx.fillRect(px + 12, py - 6, 4, 5);
       });
-
       const tex = new THREE.CanvasTexture(canvas);
       tex.wrapS = THREE.ClampToEdgeWrapping;
       tex.wrapT = THREE.RepeatWrapping;
       tex.repeat.set(1, 14);
       tex.magFilter = THREE.NearestFilter;
+      tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
       tex.encoding = THREE.sRGBEncoding;
       return tex;
     }
@@ -605,104 +958,251 @@
     const groundTex = createDesertGroundTexture();
     const trailTex = createTrailTexture();
 
-    const groundMat = new THREE.MeshStandardMaterial({
-      map: groundTex,
-      roughness: 0.95,
-      metalness: 0.02
-    });
-    const groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(260, 320), groundMat);
+    const groundMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(260, 320),
+      new THREE.MeshStandardMaterial({ map: groundTex, roughness: 0.95, metalness: 0.02 })
+    );
     groundMesh.rotation.x = -Math.PI / 2;
     groundMesh.position.set(0, CONFIG.groundY, -90);
     groundMesh.receiveShadow = true;
     scene.add(groundMesh);
 
-    const trailMat = new THREE.MeshStandardMaterial({
-      map: trailTex,
-      roughness: 0.96,
-      metalness: 0.02,
-      polygonOffset: true,
-      polygonOffsetFactor: -1
-    });
-    const trailMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 320), trailMat);
+    const trailMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(8.5, 320),
+      new THREE.MeshStandardMaterial({ map: trailTex, roughness: 0.96, metalness: 0.02, polygonOffset: true, polygonOffsetFactor: -1 })
+    );
     trailMesh.rotation.x = -Math.PI / 2;
     trailMesh.position.set(0, CONFIG.groundY + 0.02, -90);
     trailMesh.receiveShadow = true;
     scene.add(trailMesh);
 
-    // 4.5 地面循環移動嘅深色小石子、短橫痕與兩邊遠處排成一線嘅細仙人掌
+    // 4.6 地面循環細節：小石、橫痕、路邊仙人掌、遠處平頂山
     const groundDetails = [];
     const pebbleMat = new THREE.MeshStandardMaterial({ color: 0xa68b60, roughness: 0.9 });
     const streakMat = new THREE.MeshBasicMaterial({ color: 0xc4a97c });
     const sideCactusMat = new THREE.MeshStandardMaterial({ color: 0x385230, roughness: 0.88 });
+    const mesaMat = new THREE.MeshLambertMaterial({ color: 0xc4935f });
+    const mesaBandMat = new THREE.MeshLambertMaterial({ color: 0xa8774a });
+    const boneMat = new THREE.MeshStandardMaterial({ color: 0xf1e9d6, roughness: 0.7 });
 
-    function initGroundDetails() {
-      // 散佈細碎深色小石子同短橫痕
-      for (let i = 0; i < 85; i++) {
-        const isStreak = Math.random() > 0.45;
+    (function initGroundDetails() {
+      const count = LOW_POWER ? 60 : 85;
+      for (let i = 0; i < count; i++) {
         let mesh;
-        if (isStreak) {
-          mesh = new THREE.Mesh(new THREE.BoxGeometry(0.9 + Math.random() * 1.4, 0.05, 0.16), streakMat);
+        if (Math.random() > 0.45) {
+          mesh = ubox(0.9 + Math.random() * 1.4, 0.05, 0.16, streakMat, 0, 0, 0, false, false);
         } else {
           const s = 0.18 + Math.random() * 0.25;
-          mesh = new THREE.Mesh(new THREE.BoxGeometry(s, s * 0.6, s), pebbleMat);
-          mesh.castShadow = true;
+          mesh = ubox(s, s * 0.6, s, pebbleMat, 0, 0, 0, true, true);
         }
         const side = Math.random() > 0.5 ? 1 : -1;
-        const x = (Math.random() < 0.25)
-          ? (Math.random() - 0.5) * 6.5
-          : side * (4.8 + Math.random() * 38);
-        const z = -Math.random() * 210 + 25;
-        mesh.position.set(x, 0.04, z);
+        const x = Math.random() < 0.25 ? (Math.random() - 0.5) * 6.5 : side * (4.8 + Math.random() * 38);
+        mesh.position.set(x, 0.04, -Math.random() * 210 + 25);
         scene.add(mesh);
         groundDetails.push(mesh);
       }
 
-      // 跑道兩邊遠處細細嘅深色仙人掌，排成一條線伸向地平線
+      // 路邊細仙人掌
       for (let i = 0; i < 18; i++) {
         const z = 20 - i * 12;
         [-22, 24].forEach((baseX) => {
           const g = new THREE.Group();
           const h = 1.6 + (i % 3) * 0.35;
-          const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.42, h, 0.42), sideCactusMat);
-          trunk.position.y = h / 2;
-          trunk.castShadow = true;
-          g.add(trunk);
-
-          const armL = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.28, 0.28), sideCactusMat);
-          armL.position.set(-0.35, h * 0.55, 0);
-          const armLUp = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.55, 0.28), sideCactusMat);
-          armLUp.position.set(-0.52, h * 0.55 + 0.25, 0);
-          g.add(armL, armLUp);
-
+          g.add(ubox(0.42, h, 0.42, sideCactusMat, 0, h / 2, 0));
+          g.add(ubox(0.6, 0.28, 0.28, sideCactusMat, -0.35, h * 0.55, 0));
+          g.add(ubox(0.28, 0.55, 0.28, sideCactusMat, -0.52, h * 0.55 + 0.25, 0));
           g.position.set(baseX + (Math.random() - 0.5) * 1.8, 0, z);
           scene.add(g);
           groundDetails.push(g);
         });
       }
+
+      // 散落獸骨（小彩蛋）
+      for (let i = 0; i < 5; i++) {
+        const g = new THREE.Group();
+        g.add(ubox(1.6, 0.18, 0.18, boneMat, 0, 0.1, 0));
+        g.add(ubox(0.3, 0.3, 0.3, boneMat, -0.85, 0.14, 0));
+        g.add(ubox(0.3, 0.3, 0.3, boneMat, 0.85, 0.14, 0));
+        g.rotation.y = Math.random() * Math.PI;
+        g.position.set((Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 12), 0, -Math.random() * 200 + 20);
+        scene.add(g);
+        groundDetails.push(g);
+      }
+
+      // 遠處平頂山（增加層次感）
+      for (let i = 0; i < 8; i++) {
+        const side = i % 2 ? 1 : -1;
+        const w = 8 + Math.random() * 10;
+        const h = 5 + Math.random() * 9;
+        const d = 6 + Math.random() * 8;
+        const g = new THREE.Group();
+        g.add(ubox(w, h, d, mesaMat, 0, h / 2, 0, false, false));
+        g.add(ubox(w * 1.02, h * 0.12, d * 1.02, mesaBandMat, 0, h * 0.55, 0, false, false));
+        g.add(ubox(w * 0.75, h * 0.3, d * 0.75, mesaMat, 0, h * 1.15, 0, false, false));
+        g.position.set(side * (50 + Math.random() * 40), 0, 20 - i * 27 - Math.random() * 10);
+        scene.add(g);
+        groundDetails.push(g);
+      }
+    })();
+
+    // 4.7 晝夜循環：每升一級切換一個時段，所有顏色平滑過渡
+    const PHASES = [
+      { name: '午後沙漠', top: 0x8fb8d9, horizon: 0xf5e8ce, fog: 0xecd9b5, sun: 0xfff1d0, sunI: 0.95, hemiSky: 0xddeeff, hemiGround: 0xd8be94, hemiI: 0.72, cloud: 0xfdfaf2, disc: 0xfff4cf, glow: 0.35, night: 0 },
+      { name: '夕陽黃昏', top: 0x6f86b8, horizon: 0xf7b77a, fog: 0xe9b98a, sun: 0xffc38a, sunI: 0.9, hemiSky: 0xffd1a8, hemiGround: 0xc99a70, hemiI: 0.66, cloud: 0xffd6b0, disc: 0xffb060, glow: 0.85, night: 0 },
+      { name: '紫色暮光', top: 0x3d3f75, horizon: 0xd98a7a, fog: 0xb98a86, sun: 0xff9a7a, sunI: 0.6, hemiSky: 0xb7a4d6, hemiGround: 0x8a6a6a, hemiI: 0.62, cloud: 0xe7b4b8, disc: 0xff7f5a, glow: 0.7, night: 0.35 },
+      { name: '星空夜行', top: 0x0d1430, horizon: 0x3a4a72, fog: 0x2e3a5c, sun: 0x9fb6ff, sunI: 0.5, hemiSky: 0x8093c9, hemiGround: 0x3a3550, hemiI: 0.6, cloud: 0x8a96bb, disc: 0xe8eeff, glow: 0.25, night: 1 },
+      { name: '破曉黎明', top: 0x6a8fc4, horizon: 0xf3c9a8, fog: 0xe5c4a6, sun: 0xffe0b8, sunI: 0.82, hemiSky: 0xdbe6ff, hemiGround: 0xcdb08e, hemiI: 0.7, cloud: 0xfde8dc, disc: 0xffd8a0, glow: 0.6, night: 0.08 }
+    ];
+    const ENV_COLORS = ['top', 'horizon', 'fog', 'sun', 'hemiSky', 'hemiGround', 'cloud', 'disc'];
+    const ENV_LINEAR = ['top', 'horizon', 'fog', 'disc']; // 天空 / 霧要轉線性，令顯示顏色同設定一致
+    const ENV_NUMS = ['sunI', 'hemiI', 'glow', 'night'];
+    function makeEnv(p) {
+      const e = {};
+      ENV_COLORS.forEach((k) => { e[k] = new THREE.Color(p[k]); });
+      ENV_LINEAR.forEach((k) => e[k].convertSRGBToLinear());
+      ENV_NUMS.forEach((k) => { e[k] = p[k]; });
+      return e;
     }
-    initGroundDetails();
+    const envTargets = PHASES.map(makeEnv);
+    const env = makeEnv(PHASES[0]);
+    let envTarget = envTargets[0];
+    let isNightHud = false;
+
+    function phaseOf(level) { return (level - 1) % PHASES.length; }
+    function setEnvPhase(level) { envTarget = envTargets[phaseOf(level)]; }
+
+    function updateEnv(dt, instant = false) {
+      const k = instant ? 1 : 1 - Math.exp(-dt * 0.7);
+      ENV_COLORS.forEach((c) => env[c].lerp(envTarget[c], k));
+      ENV_NUMS.forEach((n) => { env[n] += (envTarget[n] - env[n]) * k; });
+
+      skyUniforms.topColor.value.copy(env.top);
+      skyUniforms.horizonColor.value.copy(env.horizon);
+      skyUniforms.bottomColor.value.copy(env.fog);
+      skyUniforms.sunColor.value.copy(env.disc);
+      skyUniforms.glow.value = env.glow;
+      scene.fog.color.copy(env.fog);
+      sunLight.color.copy(env.sun);
+      sunLight.intensity = env.sunI;
+      hemiLight.color.copy(env.hemiSky);
+      hemiLight.groundColor.copy(env.hemiGround);
+      hemiLight.intensity = env.hemiI;
+      cloudMat.color.copy(env.cloud);
+      starMat.opacity = env.night;
+
+      // 夜晚 HUD 自動轉淺色字（有遲滯避免閃爍）
+      const night = env.night > 0.55 ? true : (env.night < 0.45 ? false : isNightHud);
+      if (night !== isNightHud) {
+        isNightHud = night;
+        document.body.classList.toggle('night', night);
+      }
+    }
 
     /*************************************************************************
-     * 5. 主角：機械暴龍獸 (VOXEL METALGREYMON - 1.3x 比例)
-     * 特徵：橙黃皮膚+深啡條紋、銀灰金屬頭盔+前伸尖角+紅眼、高反光金屬胸甲、
-     * 左銀灰機械砲臂、右橙色恐龍爪、背脊深色尖刺、粗長尾巴帶金屬環節、三趾粗腿
+     * 5. 粒子物件池（煙霧、爆炸、塵土、速度線）— 預先建立、重複使用，零記憶體洩漏
+     *************************************************************************/
+    class ParticlePool {
+      constructor(size) {
+        this.items = [];
+        this.cursor = 0;
+        for (let i = 0; i < size; i++) {
+          const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1, depthWrite: false });
+          const mesh = new THREE.Mesh(UNIT_BOX, mat);
+          mesh.visible = false;
+          scene.add(mesh);
+          this.items.push({ mesh, active: false, vx: 0, vy: 0, vz: 0, life: 0, maxLife: 1, size: 1, grow: 0, gravity: 0, drag: 0, scroll: false, sx: 1, sy: 1, sz: 1, alpha: 1, spin: 0 });
+        }
+      }
+
+      spawn(o) {
+        const n = this.items.length;
+        let p = null;
+        for (let k = 0; k < n; k++) {
+          const i = (this.cursor + k) % n;
+          if (!this.items[i].active) { p = this.items[i]; this.cursor = (i + 1) % n; break; }
+        }
+        if (!p) { p = this.items[this.cursor]; this.cursor = (this.cursor + 1) % n; }
+        p.active = true;
+        p.mesh.visible = true;
+        p.mesh.position.set(o.x, o.y, o.z);
+        p.mesh.rotation.set(o.rx || 0, o.ry || 0, o.rz || 0);
+        p.vx = o.vx || 0; p.vy = o.vy || 0; p.vz = o.vz || 0;
+        p.life = p.maxLife = o.life || 0.5;
+        p.size = o.size || 0.3;
+        p.grow = o.grow || 0;
+        p.gravity = o.gravity || 0;
+        p.drag = o.drag || 0;
+        p.scroll = !!o.scroll;
+        p.sx = o.sx || 1; p.sy = o.sy || 1; p.sz = o.sz || 1;
+        p.alpha = o.opacity === undefined ? 1 : o.opacity;
+        p.spin = o.spin || 0;
+        p.mesh.material.color.setHex(o.color === undefined ? 0xffffff : o.color);
+        p.mesh.material.opacity = p.alpha;
+        this.applyScale(p, 0);
+        return p;
+      }
+
+      applyScale(p, age) {
+        const s = Math.max(0.001, p.size + p.grow * age);
+        p.mesh.scale.set(s * p.sx, s * p.sy, s * p.sz);
+      }
+
+      update(dt, scroll) {
+        if (dt <= 0) return;
+        for (let i = 0; i < this.items.length; i++) {
+          const p = this.items[i];
+          if (!p.active) continue;
+          p.life -= dt;
+          if (p.life <= 0) { p.active = false; p.mesh.visible = false; continue; }
+          if (p.gravity) p.vy += p.gravity * dt;
+          if (p.drag) {
+            const f = Math.max(0, 1 - p.drag * dt);
+            p.vx *= f; p.vy *= f; p.vz *= f;
+          }
+          const pos = p.mesh.position;
+          pos.x += p.vx * dt;
+          pos.y += p.vy * dt;
+          pos.z += (p.vz + (p.scroll ? scroll : 0)) * dt;
+          if (p.spin) { p.mesh.rotation.x += p.spin * dt; p.mesh.rotation.y += p.spin * 0.7 * dt; }
+          this.applyScale(p, p.maxLife - p.life);
+          p.mesh.material.opacity = p.alpha * Math.min(1, (p.life / p.maxLife) * 1.4);
+        }
+      }
+
+      clear() {
+        this.items.forEach((p) => { p.active = false; p.mesh.visible = false; });
+      }
+    }
+
+    const particles = new ParticlePool(LOW_POWER ? 220 : 320);
+
+    /*************************************************************************
+     * 6. 主角：機械暴龍獸 (VOXEL METALGREYMON)
+     * 新增：可開合下顎（發射 / 倒地時張口）、胸口艙門開啟+發光核心、眨眼、
+     * 跳躍時紫翼拍動、落地壓縮回彈、隨速度前傾、倒地動畫
      *************************************************************************/
     class MetalGreymon {
       constructor() {
         this.root = new THREE.Group();
-        // 大小約普通恐龍 1.3 倍
-        this.scale = 1.3;
-        this.root.scale.set(this.scale, this.scale, this.scale);
         this.root.position.set(0, CONFIG.groundY, 0);
-
-        // 物理與動作狀態
         this.vy = 0;
         this.isGrounded = true;
         this.isDucking = false;
+        this.wantDuck = false;
         this.runCycle = 0;
         this.recoilTimer = 0;
-
-        // 碰撞盒
+        this.hatchOpen = 0;
+        this.roarTimer = 0;
+        this.landTimer = 0;
+        this.jumpQueued = 0;
+        this.blinkTimer = 2.5;
+        this.blinkLeft = 0;
+        this.flapT = 0;
+        this.dead = false;
+        this.deathY = 0;
+        this.deathLanded = false;
+        this.onLand = null;
+        this.onJump = null;
         this.collider = new THREE.Box3();
 
         this.buildVoxelModel();
@@ -710,175 +1210,154 @@
         scene.add(this.root);
       }
 
-      // 輔助建立 Voxel 方塊
-      box(w, h, d, mat, x, y, z, castShadow = true) {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-        m.position.set(x, y, z);
-        m.castShadow = castShadow;
-        m.receiveShadow = true;
-        return m;
-      }
+      box(w, h, d, mat, x, y, z, cast = true) { return ubox(w, h, d, mat, x, y, z, cast, true); }
 
       buildVoxelModel() {
-        // 材質定義
         const matOrange = new THREE.MeshStandardMaterial({ color: 0xe08a2e, roughness: 0.72, metalness: 0.05 });
         const matStripe = new THREE.MeshStandardMaterial({ color: 0x3b2314, roughness: 0.8 });
         const matBelly = new THREE.MeshStandardMaterial({ color: 0xf0be78, roughness: 0.8 });
-        // 高金屬度、低粗糙度銀灰色胸甲與機械材質
-        const matArmorChrome = new THREE.MeshStandardMaterial({ color: 0xdfe5ea, metalness: 0.22, roughness: 0.5 });
-        const matHelmetMetal = new THREE.MeshStandardMaterial({ color: 0xb4bdc6, metalness: 0.22, roughness: 0.55 });
-        const matDarkMetal = new THREE.MeshStandardMaterial({ color: 0x66707a, metalness: 0.2, roughness: 0.6 });
+        const matArmorChrome = new THREE.MeshStandardMaterial({ color: 0xdfe5ea, metalness: 0.35, roughness: 0.42 });
+        const matHelmetMetal = new THREE.MeshStandardMaterial({ color: 0xb4bdc6, metalness: 0.3, roughness: 0.5 });
+        const matDarkMetal = new THREE.MeshStandardMaterial({ color: 0x66707a, metalness: 0.25, roughness: 0.6 });
         const matHorn = new THREE.MeshStandardMaterial({ color: 0xe8e4d5, roughness: 0.4, metalness: 0.2 });
         const matRedEye = new THREE.MeshBasicMaterial({ color: 0xff2a2a });
         const matSpike = new THREE.MeshStandardMaterial({ color: 0x2f241d, roughness: 0.6 });
         const matWing = new THREE.MeshStandardMaterial({ color: 0x5c3c7a, roughness: 0.65 });
+        const matMouth = new THREE.MeshStandardMaterial({ color: 0x7a1f1f, roughness: 0.8 });
+        const matCore = new THREE.MeshBasicMaterial({ color: 0xffa040 });
 
-        // 主身體群組（負責步伐起伏、跳躍前傾與蹲低壓縮）
         this.bodyPivot = new THREE.Group();
         this.bodyPivot.position.set(0, 1.55, 0);
         this.root.add(this.bodyPivot);
 
-        // ── 1. 壯碩軀幹與條紋 ──
+        // ── 1. 軀幹與條紋 ──
         this.torso = new THREE.Group();
         this.bodyPivot.add(this.torso);
-
-        // 主腹部與胸腔
         this.torso.add(this.box(1.75, 1.85, 2.05, matOrange, 0, 0.45, -0.1));
         this.torso.add(this.box(1.45, 1.5, 0.3, matBelly, 0, 0.35, -1.02));
-        // 身軀橫向深啡條紋（3/4 背面清晰可見）
         this.torso.add(this.box(1.82, 0.18, 1.5, matStripe, 0, 0.95, 0.05));
         this.torso.add(this.box(1.82, 0.18, 1.6, matStripe, 0, 0.45, 0.1));
         this.torso.add(this.box(1.8, 0.16, 1.4, matStripe, 0, -0.02, 0.15));
 
-        // 胸口銀灰色高反光金屬裝甲板 + 左右發射艙門
+        // 胸甲 + 可開合發射艙門 + 發光核心
         this.chestArmor = new THREE.Group();
         this.chestArmor.position.set(0, 0.65, -1.12);
         this.torso.add(this.chestArmor);
         this.chestArmor.add(this.box(1.68, 1.15, 0.28, matArmorChrome, 0, 0, 0));
-        this.chestArmor.add(this.box(0.55, 0.42, 0.34, matDarkMetal, -0.42, 0.08, -0.06));
-        this.chestArmor.add(this.box(0.55, 0.42, 0.34, matDarkMetal, 0.42, 0.08, -0.06));
+        this.chestArmor.add(this.box(0.42, 0.3, 0.3, matCore, -0.42, 0.08, -0.02, false));
+        this.chestArmor.add(this.box(0.42, 0.3, 0.3, matCore, 0.42, 0.08, -0.02, false));
+        this.hatchL = this.box(0.55, 0.42, 0.34, matDarkMetal, -0.42, 0.08, -0.06);
+        this.hatchR = this.box(0.55, 0.42, 0.34, matDarkMetal, 0.42, 0.08, -0.06);
+        this.chestArmor.add(this.hatchL, this.hatchR);
 
-        // 肩膀金屬裝甲部件（背面與側面醒目）
+        // 肩甲
         this.torso.add(this.box(0.65, 0.58, 0.78, matArmorChrome, -1.08, 1.05, -0.15));
         this.torso.add(this.box(0.52, 0.45, 0.65, matHelmetMetal, 1.05, 0.98, -0.15));
 
-        // 背脊一排細細嘅深色尖刺（背面核心視覺）
+        // 背脊尖刺
         for (let i = 0; i < 5; i++) {
-          const sy = 1.25 - i * 0.36;
-          const sz = 0.72 + i * 0.12;
-          this.torso.add(this.box(0.24, 0.28, 0.38, matSpike, 0, sy, sz));
+          this.torso.add(this.box(0.24, 0.28 + (i === 1 ? 0.08 : 0), 0.38, matSpike, 0, 1.25 - i * 0.36, 0.72 + i * 0.12));
         }
 
-        // 背部小型紫翼細節（低角度不遮擋背刺與金屬肩甲）
-        const wingL = this.box(0.95, 0.55, 0.08, matWing, -0.75, 1.15, 0.68);
-        wingL.rotation.set(0.2, 0.35, 0.35);
-        const wingR = this.box(0.95, 0.55, 0.08, matWing, 0.75, 1.15, 0.68);
-        wingR.rotation.set(0.2, -0.35, -0.35);
-        this.torso.add(wingL, wingR);
+        // 背部紫翼（跳躍時拍動）
+        this.wingL = this.box(0.95, 0.55, 0.08, matWing, -0.75, 1.15, 0.68);
+        this.wingL.rotation.set(0.2, 0.35, 0.35);
+        this.wingR = this.box(0.95, 0.55, 0.08, matWing, 0.75, 1.15, 0.68);
+        this.wingR.rotation.set(0.2, -0.35, -0.35);
+        this.torso.add(this.wingL, this.wingR);
 
-        // ── 2. 大型暴龍頭 + 灰色金屬頭盔 + 前伸尖角 + 紅眼 ──
+        // ── 2. 頭部：上顎 + 頭盔 + 尖角 + 紅眼；下顎獨立可開合 ──
         this.headGroup = new THREE.Group();
         this.headGroup.position.set(0, 1.58, -0.75);
         this.torso.add(this.headGroup);
 
-        // 橙色下顎與臉頰
-        this.headGroup.add(this.box(1.42, 0.68, 1.55, matOrange, 0, 0.05, -0.35));
-        this.headGroup.add(this.box(1.46, 0.14, 0.9, matStripe, 0, 0.12, -0.2));
+        this.headGroup.add(this.box(1.42, 0.42, 1.55, matOrange, 0, 0.18, -0.35));
+        this.headGroup.add(this.box(1.46, 0.14, 0.9, matStripe, 0, 0.22, -0.2));
+        // 上排牙
+        [-0.42, -0.14, 0.14, 0.42].forEach((tx) => this.headGroup.add(this.box(0.12, 0.16, 0.12, matHorn, tx, -0.06, -1.0, false)));
 
-        // 銀灰色金屬頭盔/面罩（包覆頭頂、後腦與鼻樑）
+        this.jaw = new THREE.Group();
+        this.jaw.position.set(0, -0.03, 0.35);
+        this.headGroup.add(this.jaw);
+        this.jaw.add(this.box(1.36, 0.3, 1.5, matOrange, 0, -0.1, -0.72));
+        this.jaw.add(this.box(1.2, 0.1, 1.3, matMouth, 0, 0.02, -0.7, false));
+        [-0.35, 0.35].forEach((tx) => this.jaw.add(this.box(0.12, 0.16, 0.12, matHorn, tx, 0.08, -1.3, false)));
+
+        // 頭盔
         this.headGroup.add(this.box(1.54, 0.78, 1.68, matHelmetMetal, 0, 0.68, -0.32));
-        this.headGroup.add(this.box(1.58, 0.32, 0.65, matArmorChrome, 0, 0.58, 0.38)); // 頭盔後緣反光板
-        this.headGroup.add(this.box(0.28, 0.25, 0.25, matDarkMetal, -0.62, 0.85, 0.25)); // 頭盔鉚釘
+        this.headGroup.add(this.box(1.58, 0.32, 0.65, matArmorChrome, 0, 0.58, 0.38));
+        this.headGroup.add(this.box(0.28, 0.25, 0.25, matDarkMetal, -0.62, 0.85, 0.25));
         this.headGroup.add(this.box(0.28, 0.25, 0.25, matDarkMetal, 0.62, 0.85, 0.25));
-
-        // 頭盔兩側後掠翼角
         this.headGroup.add(this.box(0.25, 0.38, 0.75, matArmorChrome, -0.82, 0.82, 0.18));
         this.headGroup.add(this.box(0.25, 0.38, 0.75, matArmorChrome, 0.82, 0.82, 0.18));
 
-        // 頭頂與鼻端向前伸嘅尖角
         const mainHorn = this.box(0.28, 0.32, 1.25, matHorn, 0, 0.72, -1.55);
         mainHorn.rotation.x = 0.22;
         const topHorn = this.box(0.22, 0.68, 0.28, matHorn, 0, 1.25, -0.55);
         topHorn.rotation.x = -0.35;
         this.headGroup.add(mainHorn, topHorn);
 
-        // 發光紅色眼睛
-        this.headGroup.add(this.box(0.16, 0.2, 0.36, matRedEye, -0.76, 0.48, -0.55, false));
-        this.headGroup.add(this.box(0.16, 0.2, 0.36, matRedEye, 0.76, 0.48, -0.55, false));
+        this.eyes = [
+          this.box(0.16, 0.2, 0.36, matRedEye, -0.76, 0.48, -0.55, false),
+          this.box(0.16, 0.2, 0.36, matRedEye, 0.76, 0.48, -0.55, false)
+        ];
+        this.eyes.forEach((e) => this.headGroup.add(e));
 
-        // ── 3. 左手臂：銀灰色巨型機械臂（帶發射口與三叉鋼爪） ──
+        // ── 3. 左：銀灰機械臂 ──
         this.leftArmGroup = new THREE.Group();
         this.leftArmGroup.position.set(-1.18, 0.82, -0.25);
         this.torso.add(this.leftArmGroup);
-
-        // 機械前臂與裝甲殼
         this.leftArmGroup.add(this.box(0.62, 0.62, 1.35, matArmorChrome, -0.15, -0.15, -0.55));
         this.leftArmGroup.add(this.box(0.68, 0.32, 0.55, matDarkMetal, -0.15, -0.15, -0.45));
-        // 機械臂發射口
         this.leftArmGroup.add(this.box(0.36, 0.36, 0.3, matDarkMetal, -0.15, -0.15, -1.28));
-        // 三支銀色機械巨爪
+        this.leftArmGroup.add(this.box(0.2, 0.2, 0.06, matCore, -0.15, -0.15, -1.44, false));
         this.leftArmGroup.add(this.box(0.14, 0.14, 0.55, matArmorChrome, -0.35, 0.02, -1.48));
         this.leftArmGroup.add(this.box(0.14, 0.14, 0.55, matArmorChrome, 0.05, 0.02, -1.48));
         this.leftArmGroup.add(this.box(0.14, 0.14, 0.5, matArmorChrome, -0.15, -0.32, -1.45));
 
-        // ── 4. 右手臂：橙色恐龍爪（帶深色條紋） ──
+        // ── 4. 右：橙色恐龍爪 ──
         this.rightArmGroup = new THREE.Group();
         this.rightArmGroup.position.set(1.08, 0.78, -0.25);
         this.torso.add(this.rightArmGroup);
-
         this.rightArmGroup.add(this.box(0.45, 0.45, 0.95, matOrange, 0.1, -0.15, -0.4));
         this.rightArmGroup.add(this.box(0.48, 0.14, 0.4, matStripe, 0.1, -0.05, -0.35));
         this.rightArmGroup.add(this.box(0.12, 0.12, 0.32, matHorn, 0.0, -0.2, -0.95));
         this.rightArmGroup.add(this.box(0.12, 0.12, 0.32, matHorn, 0.2, -0.2, -0.95));
 
-        // ── 5. 粗長尾巴（向後伸出，後段有銀色金屬環節） ──
+        // ── 5. 尾巴 ──
         this.tailGroup = new THREE.Group();
         this.tailGroup.position.set(0, 0.1, 0.85);
         this.torso.add(this.tailGroup);
-
-        // 第一節粗尾（橙色配條紋）
         this.tailGroup.add(this.box(1.15, 0.95, 1.35, matOrange, 0, 0, 0.55));
         this.tailGroup.add(this.box(1.18, 0.16, 0.45, matStripe, 0, 0.25, 0.65));
-
-        // 第二節中段與後段（帶金屬環節）
         this.tailMid = new THREE.Group();
         this.tailMid.position.set(0, -0.05, 1.2);
         this.tailGroup.add(this.tailMid);
-
         this.tailMid.add(this.box(0.82, 0.72, 1.25, matOrange, 0, 0, 0.55));
-        // 後段金屬環節 1 & 2
         this.tailMid.add(this.box(0.88, 0.78, 0.32, matArmorChrome, 0, 0, 0.85));
         this.tailMid.add(this.box(0.68, 0.58, 0.32, matDarkMetal, 0, 0.02, 1.25));
         this.tailMid.add(this.box(0.55, 0.48, 0.75, matArmorChrome, 0, 0.05, 1.65));
 
-        // ── 6. 粗壯雙腳與三隻爪趾 ──
+        // ── 6. 雙腳 ──
         this.leftLeg = this.createLeg(matOrange, matStripe, matHorn, -0.68);
         this.rightLeg = this.createLeg(matOrange, matStripe, matHorn, 0.68);
         this.root.add(this.leftLeg, this.rightLeg);
       }
 
       createLeg(matOrange, matStripe, matHorn, xOffset) {
-        const legGroup = new THREE.Group(); // 髖關節
+        const legGroup = new THREE.Group();
         legGroup.position.set(xOffset, 1.55, 0.05);
-
-        // 大腿（粗壯，微向前）
         legGroup.add(this.box(0.8, 0.95, 1.0, matOrange, 0, -0.3, -0.1));
         legGroup.add(this.box(0.84, 0.15, 1.02, matStripe, 0, -0.2, -0.1));
-
-        // 膝關節
         const knee = new THREE.Group();
         knee.position.set(0, -0.66, -0.32);
         legGroup.add(knee);
         knee.add(this.box(0.66, 0.46, 0.6, matOrange, 0, 0, -0.04));
-
-        // 小腿（獸腳類：由膝向後下方斜）
         const shin = new THREE.Group();
         shin.rotation.x = -0.5;
         knee.add(shin);
         shin.add(this.box(0.5, 0.85, 0.5, matOrange, 0, -0.4, 0));
         shin.add(this.box(0.54, 0.12, 0.54, matStripe, 0, -0.22, 0));
-
-        // 腳踝 + 腳掌 + 三趾
         const ankle = new THREE.Group();
         ankle.position.set(0, -0.82, 0);
         shin.add(ankle);
@@ -886,114 +1365,217 @@
         ankle.add(this.box(0.18, 0.22, 0.38, matHorn, -0.24, -0.1, -0.78));
         ankle.add(this.box(0.18, 0.22, 0.42, matHorn, 0, -0.1, -0.82));
         ankle.add(this.box(0.18, 0.22, 0.38, matHorn, 0.24, -0.1, -0.78));
-
         legGroup.userData = { shin, ankle };
         return legGroup;
       }
 
-      // 腿部姿勢：hip 髖擺動角、bend 膝額外彎曲量；k<1 時平滑過渡
       poseLeg(leg, hip, bend, k = 1) {
-        const L = THREE.MathUtils.lerp;
         const { shin, ankle } = leg.userData;
         const sTarget = -0.5 - bend;
-        leg.rotation.x = k >= 1 ? hip : L(leg.rotation.x, hip, k);
-        shin.rotation.x = k >= 1 ? sTarget : L(shin.rotation.x, sTarget, k);
+        leg.rotation.x = k >= 1 ? hip : lerp(leg.rotation.x, hip, k);
+        shin.rotation.x = k >= 1 ? sTarget : lerp(shin.rotation.x, sTarget, k);
         ankle.rotation.x = -(leg.rotation.x + shin.rotation.x); // 腳掌保持水平
       }
 
-      jump() {
-        if (this.isGrounded) {
-          this.vy = CONFIG.jumpVelocity;
-          this.isGrounded = false;
-          this.isDucking = false;
-          sound.sfxJump();
-        }
+      requestJump() {
+        if (!this.dead) this.jumpQueued = CONFIG.jumpBuffer;
       }
 
-      setDuck(ducking) {
-        if (ducking && !this.isDucking) {
+      doJump() {
+        this.vy = CONFIG.jumpVelocity;
+        this.isGrounded = false;
+        this.isDucking = false;
+        this.jumpQueued = 0;
+        this.flapT = 0;
+        sound.sfxJump();
+        if (this.onJump) this.onJump();
+      }
+
+      setDuck(want) {
+        if (want === this.wantDuck) return;
+        this.wantDuck = want;
+        if (want && !this.dead) {
           sound.sfxDuck();
-        }
-        this.isDucking = ducking;
-        // 若喺空中按蹲低，加速快速落地
-        if (ducking && !this.isGrounded && this.vy > -22) {
-          this.vy = -34;
+          // 空中按蹲低 → 急降
+          if (!this.isGrounded && this.vy > CONFIG.fastFallVelocity * 0.65) this.vy = CONFIG.fastFallVelocity;
         }
       }
 
       triggerMissilePose() {
         this.recoilTimer = 0.32;
+        this.hatchOpen = 1;
+        this.roarTimer = 0.45;
+      }
+
+      die() {
+        this.dead = true;
+        this.vy = 10;
+        this.isGrounded = false;
+        this.isDucking = false;
+        this.deathY = this.root.position.y;
+        this.deathLanded = false;
+      }
+
+      reset() {
+        this.root.position.set(0, CONFIG.groundY, 0);
+        this.root.rotation.set(0, 0, 0);
+        this.vy = 0;
+        this.isGrounded = true;
+        this.isDucking = false;
+        this.wantDuck = false;
+        this.dead = false;
+        this.jumpQueued = 0;
+        this.recoilTimer = 0;
+        this.hatchOpen = 0;
+        this.roarTimer = 0;
+        this.landTimer = 0;
+        this.torso.rotation.set(0, 0, 0);
+        this.jaw.rotation.x = 0;
+        this.eyes.forEach((e) => { e.scale.y = 0.2; });
+      }
+
+      updateFace(dt) {
+        if (this.roarTimer > 0) this.roarTimer -= dt;
+        const jawT = this.dead ? -0.6 : (this.roarTimer > 0 ? -0.5 : 0);
+        this.jaw.rotation.x = lerp(this.jaw.rotation.x, jawT, Math.min(1, dt * 18));
+
+        if (this.dead) {
+          this.eyes.forEach((e) => { e.scale.y = lerp(e.scale.y, 0.05, Math.min(1, dt * 6)); });
+          return;
+        }
+        this.blinkTimer -= dt;
+        if (this.blinkTimer <= 0) {
+          this.blinkLeft = 0.12;
+          this.blinkTimer = 2 + Math.random() * 3.5;
+        }
+        let ey = 1;
+        if (this.blinkLeft > 0) { this.blinkLeft -= dt; ey = 0.15; }
+        this.eyes.forEach((e) => { e.scale.y = 0.2 * ey; });
+      }
+
+      updateDeath(dt) {
+        const k = Math.min(1, dt * 4);
+        this.vy += CONFIG.gravity * dt;
+        this.deathY += this.vy * dt;
+        if (this.deathY <= CONFIG.groundY) {
+          this.deathY = CONFIG.groundY;
+          if (!this.deathLanded && this.vy < -4) {
+            this.deathLanded = true;
+            if (this.onLand) this.onLand(-this.vy);
+          }
+          this.vy = 0;
+        }
+        this.root.rotation.z = lerp(this.root.rotation.z, 1.3, k);
+        this.root.rotation.x = lerp(this.root.rotation.x, -0.12, k);
+        // 側身倒地時抬高少少，避免身體插入地面
+        this.root.position.y = this.deathY + 0.65 * CONFIG.playerScale * (this.root.rotation.z / 1.3);
+        this.root.position.x = lerp(this.root.position.x, 0.3, k);
+        this.torso.rotation.x = lerp(this.torso.rotation.x, 0.15, k);
+        this.poseLeg(this.leftLeg, -0.6, 0.25, k);
+        this.poseLeg(this.rightLeg, 0.45, 0.55, k);
+        this.tailGroup.rotation.y = lerp(this.tailGroup.rotation.y, 0.3, k);
       }
 
       update(dt, speed) {
-        // 垂直物理與拋物線重力
+        if (dt <= 0) return;
+        if (this.dead) {
+          this.updateDeath(dt);
+          this.updateFace(dt);
+          return;
+        }
+
+        // 跳躍緩衝 / 長按連跳
+        if (this.jumpQueued > 0) this.jumpQueued = Math.max(0, this.jumpQueued - dt);
+        if (this.isGrounded && (this.jumpQueued > 0 || input.jumpHolders.size > 0)) this.doJump();
+
+        // 垂直物理
         if (!this.isGrounded) {
           this.vy += CONFIG.gravity * dt;
           this.root.position.y += this.vy * dt;
           if (this.root.position.y <= CONFIG.groundY) {
+            const impact = -this.vy;
             this.root.position.y = CONFIG.groundY;
             this.vy = 0;
             this.isGrounded = true;
+            this.landTimer = 0.2;
+            if (this.onLand) this.onLand(impact);
           }
         }
+        this.isDucking = this.isGrounded && this.wantDuck;
 
-        // 跑步步伐相位
         this.runCycle += dt * (speed * 0.42);
+        const sf = clamp((speed - CONFIG.baseSpeed) / (CONFIG.maxSpeed - CONFIG.baseSpeed), 0, 1);
+        if (this.landTimer > 0) this.landTimer = Math.max(0, this.landTimer - dt);
+        const landDip = (this.landTimer / 0.2) * 0.38;
+        const k16 = Math.min(1, dt * 16);
+        const k14 = Math.min(1, dt * 14);
+        const k12 = Math.min(1, dt * 12);
 
         if (this.isGrounded) {
-          // 跑步動畫：腳步沉重有力，身體隨步伐微微起伏
           const legSwing = Math.sin(this.runCycle) * 0.68;
           const cs = Math.cos(this.runCycle);
           this.poseLeg(this.leftLeg, legSwing, Math.max(0, cs) * 0.75);
           this.poseLeg(this.rightLeg, -legSwing, Math.max(0, -cs) * 0.75);
-
-          const bounce = Math.abs(Math.cos(this.runCycle)) * 0.22;
+          const bounce = Math.abs(cs) * 0.22;
 
           if (this.isDucking) {
-            // 蹲低動畫：身體壓低、頭向前伸
-            this.bodyPivot.position.y = THREE.MathUtils.lerp(this.bodyPivot.position.y, 1.02 + bounce * 0.4, dt * 16);
-            this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, -0.58, dt * 16);
-            this.headGroup.position.z = THREE.MathUtils.lerp(this.headGroup.position.z, -1.15, dt * 16);
-            this.headGroup.rotation.x = THREE.MathUtils.lerp(this.headGroup.rotation.x, 0.32, dt * 16);
-            this.leftArmGroup.rotation.x = THREE.MathUtils.lerp(this.leftArmGroup.rotation.x, -0.25, dt * 14);
+            this.bodyPivot.position.y = lerp(this.bodyPivot.position.y, 1.02 + bounce * 0.4 - landDip * 0.5, k16);
+            this.torso.rotation.x = lerp(this.torso.rotation.x, -0.58, k16);
+            this.headGroup.position.z = lerp(this.headGroup.position.z, -1.15, k16);
+            this.headGroup.rotation.x = lerp(this.headGroup.rotation.x, 0.32, k16);
+            this.leftArmGroup.rotation.x = lerp(this.leftArmGroup.rotation.x, -0.25, k14);
           } else {
-            // 正常奔跑姿態
-            this.bodyPivot.position.y = THREE.MathUtils.lerp(this.bodyPivot.position.y, 1.55 + bounce, dt * 16);
-            this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, -0.14, dt * 14);
-            this.headGroup.position.z = THREE.MathUtils.lerp(this.headGroup.position.z, -0.75, dt * 14);
-            this.headGroup.rotation.x = THREE.MathUtils.lerp(this.headGroup.rotation.x, 0.08, dt * 14);
-            this.leftArmGroup.rotation.x = THREE.MathUtils.lerp(
-              this.leftArmGroup.rotation.x,
-              -legSwing * 0.45,
-              dt * 14
-            );
+            this.bodyPivot.position.y = lerp(this.bodyPivot.position.y, 1.55 + bounce - landDip, k16);
+            this.torso.rotation.x = lerp(this.torso.rotation.x, -0.14 - sf * 0.1, k14);
+            this.headGroup.position.z = lerp(this.headGroup.position.z, -0.75, k14);
+            this.headGroup.rotation.x = lerp(this.headGroup.rotation.x, 0.08 + Math.sin(this.runCycle * 2) * 0.05, k14);
+            const armTarget = this.recoilTimer > 0 ? -0.55 : -legSwing * 0.45;
+            this.leftArmGroup.rotation.x = lerp(this.leftArmGroup.rotation.x, armTarget, k14);
             this.rightArmGroup.rotation.x = legSwing * 0.45;
           }
+          // 收起翼
+          this.wingL.rotation.z = lerp(this.wingL.rotation.z, 0.35, k12);
+          this.wingR.rotation.z = lerp(this.wingR.rotation.z, -0.35, k12);
         } else {
-          // 跳躍動畫：身體前傾，機械左手向前伸
-          this.poseLeg(this.leftLeg, -0.45, 0.45, dt * 10);
-          this.poseLeg(this.rightLeg, 0.28, 0.85, dt * 10);
-          this.torso.rotation.x = THREE.MathUtils.lerp(this.torso.rotation.x, -0.34, dt * 12);
-          this.leftArmGroup.rotation.x = THREE.MathUtils.lerp(this.leftArmGroup.rotation.x, 0.12, dt * 12);
-          this.rightArmGroup.rotation.x = THREE.MathUtils.lerp(this.rightArmGroup.rotation.x, -0.35, dt * 12);
+          // 跳躍：身體前傾、拍翼
+          this.poseLeg(this.leftLeg, -0.45, 0.45, Math.min(1, dt * 10));
+          this.poseLeg(this.rightLeg, 0.28, 0.85, Math.min(1, dt * 10));
+          this.bodyPivot.position.y = lerp(this.bodyPivot.position.y, 1.55, k12);
+          this.torso.rotation.x = lerp(this.torso.rotation.x, this.vy > 0 ? -0.34 : -0.2, k12);
+          this.headGroup.position.z = lerp(this.headGroup.position.z, -0.75, k12);
+          this.headGroup.rotation.x = lerp(this.headGroup.rotation.x, this.vy > 0 ? -0.05 : 0.15, k12);
+          this.leftArmGroup.rotation.x = lerp(this.leftArmGroup.rotation.x, 0.12, k12);
+          this.rightArmGroup.rotation.x = lerp(this.rightArmGroup.rotation.x, -0.35, k12);
+          this.flapT += dt * 16;
+          const flap = 0.3 + Math.sin(this.flapT) * 0.45;
+          this.wingL.rotation.z = 0.35 + flap;
+          this.wingR.rotation.z = -0.35 - flap;
         }
 
         // 尾巴慣性擺動
         this.tailGroup.rotation.y = Math.cos(this.runCycle * 0.5) * 0.22;
-        this.tailGroup.rotation.x = Math.sin(this.runCycle) * 0.08;
+        this.tailGroup.rotation.x = Math.sin(this.runCycle) * 0.08 + (this.isGrounded ? 0 : 0.15);
         this.tailMid.rotation.y = Math.sin(this.runCycle * 0.5 - 0.6) * 0.28;
 
-        // 發射 Giga Destroyer 時胸口裝甲微震反衝
+        // 發射反衝 + 艙門開合
         if (this.recoilTimer > 0) {
           this.recoilTimer -= dt;
           this.chestArmor.position.z = -1.26;
         } else {
-          this.chestArmor.position.z = THREE.MathUtils.lerp(this.chestArmor.position.z, -1.12, dt * 10);
+          this.chestArmor.position.z = lerp(this.chestArmor.position.z, -1.12, Math.min(1, dt * 10));
         }
+        if (this.hatchOpen > 0) this.hatchOpen = Math.max(0, this.hatchOpen - dt * 1.6);
+        const ho = Math.min(1, this.hatchOpen * 2.2);
+        this.hatchL.position.x = -0.42 - 0.3 * ho;
+        this.hatchR.position.x = 0.42 + 0.3 * ho;
+        this.hatchL.rotation.y = ho * 1.1;
+        this.hatchR.rotation.y = -ho * 1.1;
 
-        // 更新寬鬆且貼合視覺嘅碰撞盒（蹲低時高度明顯降低以避開飛鳥）
+        this.updateFace(dt);
+
+        // 碰撞盒（蹲低時高度降低以避開高位飛鳥）
         const py = this.root.position.y;
-        const maxH = this.isDucking ? 2.55 : 4.9; // 縮放後仍要擋住高位飛鳥（需蹲低閃避）
+        const maxH = this.isDucking ? 2.55 : 4.9;
         const S = CONFIG.playerScale;
         this.collider.min.set(-0.95 * S, py + 0.25 * S, -1.15 * S);
         this.collider.max.set(0.95 * S, py + maxH * S, 1.05 * S);
@@ -1003,600 +1585,985 @@
     const player = new MetalGreymon();
 
     /*************************************************************************
-     * 6. 障礙物系統：仙人掌組合與高低拍翼飛鳥 (OBSTACLES)
+     * 7. 障礙物（仙人掌組合 / 高低飛鳥）與數碼晶片收集品
      *************************************************************************/
     const obstacles = [];
+    const chips = [];
     const matCactus = new THREE.MeshStandardMaterial({ color: 0x3f5a36, roughness: 0.85 });
     const matCactusDark = new THREE.MeshStandardMaterial({ color: 0x2f4528, roughness: 0.9 });
+    const matFlower = new THREE.MeshStandardMaterial({ color: 0xe86a9a, roughness: 0.6 });
     const matBirdBody = new THREE.MeshStandardMaterial({ color: 0x4a382b, roughness: 0.75 });
     const matBirdWing = new THREE.MeshStandardMaterial({ color: 0x6b4e37, roughness: 0.75 });
     const matBirdBeak = new THREE.MeshStandardMaterial({ color: 0xe09a32, roughness: 0.6 });
+    const matBirdEye = new THREE.MeshBasicMaterial({ color: 0xfff2d0 });
+    const chipGeo = new THREE.OctahedronGeometry(0.45, 0);
+    const chipMat = new THREE.MeshStandardMaterial({
+      color: 0x3fd8ff, emissive: 0x1aa8e0, emissiveIntensity: 0.7,
+      metalness: 0.3, roughness: 0.25, flatShading: true
+    });
 
-    // 建立單棵方塊仙人掌（有主幹同左右高低手臂）
-    function buildSingleCactus(heightScale = 1.0) {
+    function buildSingleCactus(hs = 1.0) {
       const g = new THREE.Group();
-      const h = 3.2 * heightScale;
-
-      // 主幹
-      const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.78, h, 0.78), matCactus);
-      trunk.position.y = h / 2;
-      trunk.castShadow = true;
-      trunk.receiveShadow = true;
-      g.add(trunk);
-
-      // 左手臂
-      const armL1 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.46, 0.46), matCactus);
-      armL1.position.set(-0.68, h * 0.52, 0);
-      armL1.castShadow = true;
-      const armL2 = new THREE.Mesh(new THREE.BoxGeometry(0.46, 1.05 * heightScale, 0.46), matCactus);
-      armL2.position.set(-0.95, h * 0.52 + 0.45 * heightScale, 0);
-      armL2.castShadow = true;
-      g.add(armL1, armL2);
-
-      // 右手臂
-      const armR1 = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.44, 0.44), matCactusDark);
-      armR1.position.set(0.62, h * 0.66, 0);
-      armR1.castShadow = true;
-      const armR2 = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.9 * heightScale, 0.44), matCactusDark);
-      armR2.position.set(0.85, h * 0.66 + 0.38 * heightScale, 0);
-      armR2.castShadow = true;
-      g.add(armR1, armR2);
-
+      const h = 3.2 * hs;
+      g.add(ubox(0.78, h, 0.78, matCactus, 0, h / 2, 0));
+      g.add(ubox(0.82, h * 0.9, 0.18, matCactusDark, 0, h * 0.45, 0, false)); // 直紋
+      g.add(ubox(0.95, 0.46, 0.46, matCactus, -0.68, h * 0.52, 0));
+      g.add(ubox(0.46, 1.05 * hs, 0.46, matCactus, -0.95, h * 0.52 + 0.45 * hs, 0));
+      g.add(ubox(0.85, 0.44, 0.44, matCactusDark, 0.62, h * 0.66, 0));
+      g.add(ubox(0.44, 0.9 * hs, 0.44, matCactusDark, 0.85, h * 0.66 + 0.38 * hs, 0));
+      if (Math.random() < 0.35) g.add(ubox(0.36, 0.22, 0.36, matFlower, 0, h + 0.1, 0, false));
       return g;
     }
 
-    // 建立仙人掌組合（高矮同 單/雙/三棵組合）
     function createCactusObstacle() {
       const group = new THREE.Group();
       const count = Math.random() < 0.4 ? 1 : (Math.random() < 0.72 ? 2 : 3);
       let maxH = 0;
-
       for (let i = 0; i < count; i++) {
-        const hs = count === 1
-          ? (0.85 + Math.random() * 0.45)
-          : (0.68 + Math.random() * 0.45);
+        const hs = count === 1 ? 0.85 + Math.random() * 0.45 : 0.68 + Math.random() * 0.45;
         const c = buildSingleCactus(hs);
-        const offsetX = (i - (count - 1) / 2) * 1.15;
-        const offsetZ = (i % 2 === 0 ? 1 : -1) * (i * 0.55);
-        c.position.set(offsetX, 0, offsetZ);
+        c.position.set((i - (count - 1) / 2) * 1.15, 0, (i % 2 === 0 ? 1 : -1) * (i * 0.55));
         group.add(c);
-        if (3.2 * hs > maxH) maxH = 3.2 * hs;
+        maxH = Math.max(maxH, 3.2 * hs);
       }
-
-      const halfZ = 0.45 + count * 0.32;
       return {
-        type: 'CACTUS',
-        mesh: group,
-        halfW: 0.75 + count * 0.35,
-        minY: 0,
-        maxY: maxH - 0.35,
-        halfZ: halfZ,
+        type: 'CACTUS', mesh: group,
+        halfW: 0.75 + count * 0.35, minY: 0, maxY: maxH - 0.35, halfZ: 0.45 + count * 0.32,
         collider: new THREE.Box3()
       };
     }
 
-    // 建立拍翼飛鳥障礙物（分高低兩種高度）
     function createBirdObstacle() {
       const group = new THREE.Group();
       const isHigh = Math.random() > 0.46;
-      // 高飛鳥：站立會撞頭，蹲低可安全穿過；低飛鳥：必須跳躍越過
-      const flyY = isHigh ? 3.55 : 1.45;
+      const flyY = isHigh ? 3.55 : 1.45; // 高：要蹲低；低：要跳
 
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.65, 1.85), matBirdBody);
-      body.castShadow = true;
-      group.add(body);
+      group.add(ubox(0.95, 0.65, 1.85, matBirdBody, 0, 0, 0));
+      group.add(ubox(0.68, 0.58, 0.75, matBirdBody, 0, 0.25, 1.15));
+      group.add(ubox(0.72, 0.14, 0.16, matBirdEye, 0, 0.36, 1.32, false));
+      group.add(ubox(0.36, 0.28, 0.75, matBirdBeak, 0, 0.18, 1.75));
+      group.add(ubox(0.6, 0.12, 0.7, matBirdWing, 0, 0.1, -1.15));
 
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.58, 0.75), matBirdBody);
-      head.position.set(0, 0.25, 1.15);
-      head.castShadow = true;
-      group.add(head);
-
-      const beak = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.28, 0.75), matBirdBeak);
-      beak.position.set(0, 0.18, 1.75);
-      group.add(beak);
-
-      // 左右可拍動翅膀關節
-      const leftWingPivot = new THREE.Group();
-      leftWingPivot.position.set(-0.45, 0.15, 0);
-      const leftWing = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.16, 1.15), matBirdWing);
-      leftWing.position.set(-1.05, 0, 0);
-      leftWing.castShadow = true;
-      leftWingPivot.add(leftWing);
-
-      const rightWingPivot = new THREE.Group();
-      rightWingPivot.position.set(0.45, 0.15, 0);
-      const rightWing = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.16, 1.15), matBirdWing);
-      rightWing.position.set(1.05, 0, 0);
-      rightWing.castShadow = true;
-      rightWingPivot.add(rightWing);
-
-      group.add(leftWingPivot, rightWingPivot);
+      const makeWing = (sign) => {
+        const pivot = new THREE.Group();
+        pivot.position.set(0.45 * sign, 0.15, 0);
+        pivot.add(ubox(2.15, 0.16, 1.15, matBirdWing, 1.05 * sign, 0, 0));
+        const tip = new THREE.Group();
+        tip.position.set(2.1 * sign, 0, 0);
+        tip.add(ubox(1.0, 0.12, 0.8, matBirdBody, 0.5 * sign, 0, 0.1));
+        pivot.add(tip);
+        group.add(pivot);
+        return { pivot, tip };
+      };
+      const L = makeWing(-1);
+      const R = makeWing(1);
       group.position.y = flyY;
 
       return {
-        type: 'BIRD',
-        mesh: group,
-        leftWingPivot,
-        rightWingPivot,
-        flapPhase: Math.random() * Math.PI * 2,
-        flyY,
-        halfW: 1.15,
-        minY: flyY - 0.42,
-        maxY: flyY + 0.55,
-        halfZ: 0.9,
+        type: 'BIRD', mesh: group,
+        leftWingPivot: L.pivot, rightWingPivot: R.pivot, leftTip: L.tip, rightTip: R.tip,
+        flapPhase: Math.random() * Math.PI * 2, flyY,
+        halfW: 1.15, minY: flyY - 0.42, maxY: flyY + 0.55, halfZ: 0.9,
         collider: new THREE.Box3()
       };
+    }
+
+    function spawnChip(x, y, z) {
+      const m = new THREE.Mesh(chipGeo, chipMat);
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      scene.add(m);
+      chips.push({ mesh: m, baseY: y, phase: Math.random() * Math.PI * 2, collider: new THREE.Box3() });
     }
 
     function spawnObstacle() {
       const isBird = STATE.score > 120 && Math.random() < Math.min(0.55, 0.28 + STATE.level * 0.04);
       const obs = isBird ? createBirdObstacle() : createCactusObstacle();
-      // 由遠處霧中出現
-      obs.mesh.position.z = -185;
+      const spawnZ = -185;
+      obs.mesh.position.z = spawnZ;
       scene.add(obs.mesh);
       obstacles.push(obs);
 
-      // 間距隨速度動態拉闊，保證玩家有充足反應時間
-      const tighten = Math.max(0.85, 1 - (STATE.level - 1) * 0.03); // 越高級間距越密（有下限，保證落地空間）
+      const tighten = Math.max(0.85, 1 - (STATE.level - 1) * 0.03);
       const minGap = (24 + STATE.speed * 0.72) * tighten;
       const maxGap = minGap + 18 + Math.random() * 14;
       STATE.nextSpawnDist = minGap + Math.random() * (maxGap - minGap);
-    }
 
-    /*************************************************************************
-     * 7. 特殊技能 GIGA DESTROYER（雙導彈、白煙尾跡與爆炸粒子系統）
-     *************************************************************************/
-    const missiles = [];
-    const particles = [];
-
-    const matMissileBody = new THREE.MeshStandardMaterial({ color: 0x3a434d, metalness: 0.7, roughness: 0.3 });
-    const matMissileNose = new THREE.MeshStandardMaterial({ color: 0xd93829, roughness: 0.4 });
-    const matSmoke = new THREE.MeshBasicMaterial({ color: 0xf7f4eb, transparent: true, opacity: 0.85 });
-
-    function fireGigaDestroyer() {
-      if (STATE.mode !== 'PLAYING' || STATE.cooldown > 0) return;
-
-      STATE.cooldown = CONFIG.skillCooldown;
-      player.triggerMissilePose();
-      sound.sfxMissile();
-
-      // 從胸口左右發射 2 枚有機體鯊魚頭特徵嘅方塊導彈
-      const startY = player.root.position.y + (player.isDucking ? 2.1 : 3.05) * CONFIG.playerScale;
-      [-0.65, 0.65].forEach((offsetX) => {
-        const mGroup = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 1.35), matMissileBody);
-        const nose = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.45), matMissileNose);
-        nose.position.z = -0.85;
-        mGroup.add(body, nose);
-
-        mGroup.position.set(offsetX, startY, -1.6);
-        scene.add(mGroup);
-
-        missiles.push({
-          mesh: mGroup,
-          speed: STATE.speed + 78,
-          smokeTimer: 0,
-          collider: new THREE.Box3()
-        });
-      });
-    }
-
-    // 產生導彈白煙尾跡粒子
-    function spawnSmokeParticle(pos) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), matSmoke.clone());
-      m.material.depthWrite = false;
-      m.position.set(
-        pos.x + (Math.random() - 0.5) * 0.2,
-        pos.y + (Math.random() - 0.5) * 0.2,
-        pos.z + 0.7
-      );
-      scene.add(m);
-      particles.push({
-        mesh: m,
-        vx: (Math.random() - 0.5) * 2.2,
-        vy: 1.2 + Math.random() * 2.0,
-        vz: 6 + Math.random() * 4,
-        life: 0.45,
-        maxLife: 0.45,
-        grow: 0.9
-      });
-    }
-
-    // 產生擊爆障礙物嘅爆炸火光與碎塊粒子
-    function spawnExplosion(pos, isCactus) {
-      const colors = isCactus
-        ? [0xff6a2b, 0xffb833, 0x3f5a36, 0xf7f4eb]
-        : [0xff6a2b, 0xffb833, 0x6b4e37, 0xf7f4eb];
-
-      for (let i = 0; i < 26; i++) {
-        const c = colors[i % colors.length];
-        const size = 0.28 + Math.random() * 0.38;
-        const mat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 1 });
-        const m = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
-        m.position.copy(pos);
-        m.position.y += 1.2;
-        scene.add(m);
-
-        particles.push({
-          mesh: m,
-          vx: (Math.random() - 0.5) * 22,
-          vy: 6 + Math.random() * 18,
-          vz: (Math.random() - 0.5) * 22,
-          gravity: -42,
-          life: 0.55 + Math.random() * 0.25,
-          maxLife: 0.8,
-          grow: -0.5
-        });
+      // 晶片排列：仙人掌上方弧形（獎勵跳躍）或兩個障礙之間地面一行
+      const r = Math.random();
+      if (obs.type === 'CACTUS' && r < 0.3) {
+        spawnChip(0, 4.2, spawnZ + 3.2);
+        spawnChip(0, 5.0, spawnZ);
+        spawnChip(0, 4.2, spawnZ - 3.2);
+      } else if (r < 0.62 && STATE.nextSpawnDist > 36) {
+        const mid = spawnZ - STATE.nextSpawnDist * 0.5;
+        for (let k = -1; k <= 1; k++) spawnChip(0, 1.3, mid + k * 2.6);
       }
     }
 
     /*************************************************************************
-     * 8. 二、鏡頭跟隨系統 (THIRD-PERSON 3/4 BACK CAMERA)
-     * 鏡頭喺主角後面偏低，視線望向地平線；主角位置稍為偏左，呈現 3/4 背面
+     * 8. GIGA DESTROYER 導彈與特效
      *************************************************************************/
-    const camState = {
-      currentPos: new THREE.Vector3(7.6, 4.3, 10.5),
-      currentLook: new THREE.Vector3(-2.2, 2.1, -6)
+    const missiles = [];
+    const matMissileBody = new THREE.MeshStandardMaterial({ color: 0x3a434d, metalness: 0.7, roughness: 0.3 });
+    const matMissileNose = new THREE.MeshStandardMaterial({ color: 0xd93829, roughness: 0.4 });
+    const matMissileFin = new THREE.MeshStandardMaterial({ color: 0x9aa4ae, metalness: 0.5, roughness: 0.4 });
+    const matMissileGlow = new THREE.MeshBasicMaterial({ color: 0xffb040 });
+
+    function fireGigaDestroyer() {
+      if (STATE.mode !== 'PLAYING' || STATE.cooldown > 0 || player.dead) return;
+      STATE.cooldown = CONFIG.skillCooldown;
+      player.triggerMissilePose();
+      sound.sfxMissile();
+      haptic(20);
+
+      const S = CONFIG.playerScale;
+      const startY = player.root.position.y + (player.isDucking ? 2.1 : 3.05) * S;
+      [-0.65, 0.65].forEach((ox) => {
+        const g = new THREE.Group();
+        g.add(ubox(0.46, 0.46, 1.35, matMissileBody, 0, 0, 0));
+        g.add(ubox(0.38, 0.38, 0.45, matMissileNose, 0, 0, -0.85));
+        g.add(ubox(0.9, 0.08, 0.32, matMissileFin, 0, 0, 0.55));
+        g.add(ubox(0.08, 0.9, 0.32, matMissileFin, 0, 0, 0.55));
+        g.add(ubox(0.3, 0.3, 0.12, matMissileGlow, 0, 0, 0.72, false));
+        g.position.set(ox, startY, -1.6);
+        scene.add(g);
+        missiles.push({ mesh: g, baseX: ox, age: 0, wobble: Math.random() * 6, speed: STATE.speed + 78, smokeTimer: 0, collider: new THREE.Box3() });
+
+        // 炮口火光
+        particles.spawn({ x: ox, y: startY, z: -1.8, size: 0.9, grow: -5, life: 0.14, color: 0xffd27a, opacity: 0.95 });
+      });
+    }
+
+    function spawnSmoke(pos) {
+      particles.spawn({
+        x: pos.x + (Math.random() - 0.5) * 0.2, y: pos.y + (Math.random() - 0.5) * 0.2, z: pos.z + 0.8,
+        vx: (Math.random() - 0.5) * 2.2, vy: 1.2 + Math.random() * 2, vz: 6 + Math.random() * 4,
+        size: 0.22, grow: 1.6, life: 0.45, color: 0xf7f4eb, opacity: 0.8
+      });
+      particles.spawn({ x: pos.x, y: pos.y, z: pos.z + 0.75, size: 0.32, grow: -1.2, life: 0.12, color: 0xff9a3a, opacity: 0.9 });
+    }
+
+    function spawnExplosion(pos, isCactus) {
+      const colors = isCactus ? [0xff6a2b, 0xffb833, 0x3f5a36, 0xf7f4eb] : [0xff6a2b, 0xffb833, 0x6b4e37, 0xf7f4eb];
+      const cy = pos.y + (isCactus ? 1.4 : 0);
+      particles.spawn({ x: pos.x, y: cy, z: pos.z, size: 3.2, grow: -9, life: 0.2, color: 0xfff0b0, opacity: 0.95, scroll: true });
+      particles.spawn({ x: pos.x, y: cy, z: pos.z, size: 1.6, grow: 6, life: 0.32, color: 0xff7a2b, opacity: 0.75, scroll: true });
+      const debris = LOW_POWER ? 18 : 26;
+      for (let i = 0; i < debris; i++) {
+        particles.spawn({
+          x: pos.x, y: cy, z: pos.z,
+          vx: (Math.random() - 0.5) * 22, vy: 6 + Math.random() * 18, vz: (Math.random() - 0.5) * 22 + STATE.speed * 0.4,
+          size: 0.28 + Math.random() * 0.38, grow: -0.5, gravity: -42, spin: 8,
+          life: 0.55 + Math.random() * 0.25, color: colors[i % colors.length]
+        });
+      }
+      for (let i = 0; i < 7; i++) {
+        particles.spawn({
+          x: pos.x + (Math.random() - 0.5) * 1.5, y: cy, z: pos.z + (Math.random() - 0.5) * 1.5,
+          vx: (Math.random() - 0.5) * 3, vy: 2.5 + Math.random() * 3, vz: 0,
+          size: 0.8, grow: 2.4, drag: 1.5, life: 0.9, color: 0x8a7e6c, opacity: 0.5, scroll: true
+        });
+      }
+    }
+
+    function spawnChipSparkle(pos) {
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2;
+        particles.spawn({
+          x: pos.x, y: pos.y, z: pos.z,
+          vx: Math.cos(a) * 5, vy: Math.sin(a) * 5, vz: 0,
+          size: 0.18, grow: -0.3, drag: 3, life: 0.4, color: i % 2 ? 0x8ff0ff : 0xffffff
+        });
+      }
+    }
+
+    function spawnFootDust() {
+      const side = Math.sin(player.runCycle) > 0 ? -1 : 1;
+      particles.spawn({
+        x: side * 0.5 + (Math.random() - 0.5) * 0.3, y: 0.12, z: 0.35,
+        vx: (Math.random() - 0.5) * 1.6, vy: 0.8 + Math.random() * 1.4, vz: 1 + Math.random() * 2,
+        size: 0.22 + Math.random() * 0.2, grow: 0.9, drag: 2, life: 0.45, color: 0xd8c095, opacity: 0.55, scroll: true
+      });
+    }
+
+    function spawnLandDust(strength) {
+      const n = Math.round(clamp(strength / 3, 4, 12));
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        particles.spawn({
+          x: Math.cos(a) * 0.6, y: 0.15, z: Math.sin(a) * 0.6,
+          vx: Math.cos(a) * 5, vy: 1 + Math.random() * 1.5, vz: Math.sin(a) * 5,
+          size: 0.3, grow: 1.4, drag: 3, life: 0.5, color: 0xd8c095, opacity: 0.6, scroll: true
+        });
+      }
+    }
+
+    player.onLand = (impact) => {
+      if (STATE.mode === 'PLAYING' || STATE.mode === 'GAMEOVER') {
+        spawnLandDust(impact);
+        sound.sfxLand();
+        if (impact > 25) camRig.shake = Math.max(camRig.shake, 0.12);
+      }
+    };
+    player.onJump = () => {
+      for (let i = 0; i < 4; i++) {
+        particles.spawn({
+          x: (Math.random() - 0.5) * 1.2, y: 0.1, z: 0.3,
+          vx: (Math.random() - 0.5) * 3, vy: 0.5, vz: 2,
+          size: 0.28, grow: 1.2, drag: 2.5, life: 0.4, color: 0xd8c095, opacity: 0.5, scroll: true
+        });
+      }
     };
 
+    /*************************************************************************
+     * 9. 鏡頭（3/4 背面第三人稱）、螢幕比例自適應、畫面震動、動態解像度
+     *************************************************************************/
+    const layout = { camX: 7.6, camY: 4.3, camZ: 10.5, lookX: -2.2, fov: 48 };
+    const camRig = {
+      pos: new THREE.Vector3(7.6, 4.3, 10.5),
+      look: new THREE.Vector3(-2.2, 2.1, -6),
+      tPos: new THREE.Vector3(),
+      tLook: new THREE.Vector3(),
+      shake: 0
+    };
+
+    // 按長闊比連續插值：闊螢幕（電腦 / 橫向平板）→ 窄螢幕（直向手機）
+    function computeLayout() {
+      const a = window.innerWidth / Math.max(1, window.innerHeight);
+      const t = clamp((1.45 - a) / (1.45 - 0.5), 0, 1);
+      layout.camX = lerp(7.6, 5.0, t);
+      layout.camY = lerp(4.3, 5.3, t);
+      layout.camZ = lerp(10.5, 15.0, t);
+      layout.lookX = lerp(-2.2, -0.8, t);
+      layout.fov = lerp(48, 62, t);
+    }
+
     function updateCamera(dt) {
-      const aspect = window.innerWidth / window.innerHeight;
-      const isPortrait = aspect < 1.0;
+      const p = player.root.position;
+      const running = player.isGrounded && !player.dead && (STATE.mode === 'PLAYING' || STATE.mode === 'MENU');
+      const runShakeY = running ? Math.sin(player.runCycle * 2) * 0.09 : 0;
+      const runShakeX = running ? Math.cos(player.runCycle) * 0.06 : 0;
+      const py = player.dead ? 0 : p.y;
 
-      // 根據手機直向或電腦橫向動態調整偏移，確保主角永遠偏左並露出完整 3/4 背面（頭盔、背刺、左機械手、長尾）
-      const baseCamX = isPortrait ? 5.4 : 7.6;
-      const baseCamZ = isPortrait ? 14.0 : 10.5;
-      const baseCamY = isPortrait ? 5.0 : 4.3;
+      camRig.tPos.set(layout.camX + runShakeX, layout.camY + py * 0.68 + runShakeY, layout.camZ);
+      camRig.tLook.set(layout.lookX, 2.1 + py * 0.6, -6);
+      const k = Math.min(1, dt * 11);
+      camRig.pos.lerp(camRig.tPos, k);
+      camRig.look.lerp(camRig.tLook, k);
 
-      // 跑步時輕微晃動 + 跳躍時微微上揚與跟隨延遲
-      const runShakeY = player.isGrounded ? Math.sin(player.runCycle * 2) * 0.09 : 0;
-      const runShakeX = player.isGrounded ? Math.cos(player.runCycle) * 0.06 : 0;
-      const jumpFollowY = player.root.position.y * 0.68;
+      camera.position.copy(camRig.pos);
+      if (camRig.shake > 0.002) {
+        camera.position.x += (Math.random() - 0.5) * camRig.shake;
+        camera.position.y += (Math.random() - 0.5) * camRig.shake;
+        camRig.shake *= Math.exp(-dt * 7);
+      } else {
+        camRig.shake = 0;
+      }
+      camera.lookAt(camRig.look);
 
-      const targetPos = new THREE.Vector3(
-        baseCamX + runShakeX,
-        baseCamY + jumpFollowY + runShakeY,
-        baseCamZ
-      );
-
-      // 視線略為向前望向地平線，跳躍時鏡頭視角微微上揚
-      const jumpPitchLift = player.root.position.y * 0.6;
-      const targetLook = new THREE.Vector3(
-        isPortrait ? -1.0 : -2.2,
-        2.1 + jumpPitchLift,
-        -6
-      );
-
-      // 柔和跟隨延遲 (Damping)
-      camState.currentPos.lerp(targetPos, Math.min(1, dt * 11));
-      camState.currentLook.lerp(targetLook, Math.min(1, dt * 11));
-
-      camera.position.copy(camState.currentPos);
-      camera.lookAt(camState.currentLook);
+      // 速度越快 FOV 越闊，增強速度感
+      const sf = STATE.mode === 'PLAYING' ? (STATE.speed - CONFIG.baseSpeed) / (CONFIG.maxSpeed - CONFIG.baseSpeed) : 0;
+      const targetFov = layout.fov + sf * 7;
+      if (Math.abs(camera.fov - targetFov) > 0.01) {
+        camera.fov = lerp(camera.fov, targetFov, Math.min(1, dt * 3));
+        camera.updateProjectionMatrix();
+      }
     }
 
     function onWindowResize() {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      camera.aspect = w / h;
-      // 手機直向稍微放大 FOV 增強速度感與左右視野
-      camera.fov = w < h ? 58 : 48;
+      computeLayout();
+      camera.aspect = w / Math.max(1, h);
+      if (STATE.mode !== 'PLAYING') camera.fov = layout.fov;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     }
-    window.addEventListener('resize', onWindowResize);
+    let resizeRaf = 0;
+    function scheduleResize() {
+      cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(onWindowResize);
+    }
+    window.addEventListener('resize', scheduleResize);
+    window.addEventListener('orientationchange', () => setTimeout(onWindowResize, 250));
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', scheduleResize);
     onWindowResize();
 
-    /*************************************************************************
-     * 9. 操控與介面更新 (CONTROLS & HUD)
-     *************************************************************************/
-    const uiCurrScore = document.getElementById('curr-score');
-    const uiHiScore = document.getElementById('hi-score');
-    const uiLevel = document.getElementById('level-ind');
-    const uiCooldownFill = document.getElementById('cooldown-fill');
-    const uiSkillText = document.getElementById('skill-text');
-    const uiBonusToast = document.getElementById('bonus-toast');
-    const uiOverlay = document.getElementById('overlay');
-    const uiOverlayTitle = document.getElementById('overlay-title');
-    const uiOverlaySub = document.getElementById('overlay-sub');
-    const uiActionBtn = document.getElementById('action-btn');
-
-    function formatScore(num) {
-      return String(Math.floor(num)).padStart(5, '0');
+    // 動態解像度：持續掉幀就降低像素比（只降不升，避免來回跳）
+    const perf = { acc: 0, frames: 0 };
+    const MIN_PR = Math.min(pixelRatio, 0.85);
+    function monitorPerf(raw) {
+      if ((STATE.mode !== 'PLAYING' && STATE.mode !== 'MENU') || raw > 0.25) return;
+      perf.acc += raw;
+      perf.frames++;
+      if (perf.acc < 2.5) return;
+      const avg = perf.acc / perf.frames;
+      perf.acc = 0;
+      perf.frames = 0;
+      if (avg > 1 / 45 && pixelRatio > MIN_PR) {
+        pixelRatio = Math.max(MIN_PR, pixelRatio - 0.25);
+        renderer.setPixelRatio(pixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
     }
-    uiHiScore.textContent = 'HI ' + formatScore(STATE.hiScore);
+
+    /*************************************************************************
+     * 10. HUD 與覆蓋層介面
+     *************************************************************************/
+    const $ = (id) => document.getElementById(id);
+    const uiCurrScore = $('curr-score');
+    const uiHiScore = $('hi-score');
+    const uiLevel = $('level-ind');
+    const uiCooldownFill = $('cooldown-fill');
+    const uiSkillText = $('skill-text');
+    const uiBonusToast = $('bonus-toast');
+    const uiChipCount = $('chip-count');
+    const uiOverlay = $('overlay');
+    const uiOverlayBadge = $('overlay-badge');
+    const uiOverlayTitle = $('overlay-title');
+    const uiOverlaySub = $('overlay-sub');
+    const uiOverlayStats = $('overlay-stats');
+    const uiActionBtn = $('action-btn');
+    const uiAltBtn = $('alt-btn');
+    const uiCenter = $('center-toast');
+    const uiFlash = $('flash');
+    const uiHint = $('bottom-hint');
+    const btnPause = $('btn-pause');
+    const btnMute = $('btn-mute');
+    const btnFS = $('btn-fs');
+    const btnJump = $('btn-jump');
+    const btnDuck = $('btn-duck');
+    const btnFire = $('btn-fire');
+
+    const formatScore = (n) => String(Math.floor(n)).padStart(5, '0');
+
+    const hud = { score: '', hi: '', level: '', skill: '', fill: -1, chips: -1 };
+    function updateHUD(force = false) {
+      if (force) { hud.score = hud.hi = hud.level = hud.skill = ''; hud.fill = -1; hud.chips = -1; }
+      const s = formatScore(STATE.score);
+      if (s !== hud.score) { uiCurrScore.textContent = s; hud.score = s; }
+      const hiVal = STATE.mode === 'PLAYING' || STATE.mode === 'PAUSED' || STATE.mode === 'COUNTDOWN'
+        ? Math.max(STATE.hiScore, STATE.score) : STATE.hiScore;
+      const hi = 'HI ' + formatScore(hiVal);
+      if (hi !== hud.hi) { uiHiScore.textContent = hi; hud.hi = hi; }
+      const lv = 'LV ' + STATE.level;
+      if (lv !== hud.level) { uiLevel.textContent = lv; hud.level = lv; }
+      if (STATE.chips !== hud.chips) { uiChipCount.textContent = '◆ ' + STATE.chips; hud.chips = STATE.chips; }
+
+      const ratio = STATE.cooldown > 0 ? 1 - STATE.cooldown / CONFIG.skillCooldown : 1;
+      const r = Math.round(ratio * 200) / 200;
+      if (r !== hud.fill) {
+        hud.fill = r;
+        uiCooldownFill.style.transform = `scaleX(${r})`;
+        btnFire.style.setProperty('--cd', String(r));
+        const ready = r >= 1;
+        uiCooldownFill.classList.toggle('ready', ready);
+        btnFire.classList.toggle('ready', ready);
+      }
+      const txt = STATE.cooldown > 0 ? `GIGA DESTROYER [${STATE.cooldown.toFixed(1)}s]` : 'GIGA DESTROYER [READY]';
+      if (txt !== hud.skill) { uiSkillText.textContent = txt; hud.skill = txt; }
+    }
 
     let bonusToastTimer = null;
-    function showBonusToast() {
+    function showBonusToast(text) {
+      uiBonusToast.textContent = text;
       uiBonusToast.style.opacity = '1';
-      if (bonusToastTimer) clearTimeout(bonusToastTimer);
-      bonusToastTimer = setTimeout(() => {
-        uiBonusToast.style.opacity = '0';
-      }, 900);
+      clearTimeout(bonusToastTimer);
+      bonusToastTimer = setTimeout(() => { uiBonusToast.style.opacity = '0'; }, 900);
+    }
+
+    let centerToastTimer = null;
+    function centerToast(main, sub = '', ms = 1400) {
+      uiCenter.textContent = '';
+      const m = document.createElement('div');
+      m.textContent = main;
+      uiCenter.appendChild(m);
+      if (sub) {
+        const s = document.createElement('small');
+        s.textContent = sub;
+        uiCenter.appendChild(s);
+      }
+      uiCenter.classList.add('show');
+      clearTimeout(centerToastTimer);
+      if (ms > 0) centerToastTimer = setTimeout(() => uiCenter.classList.remove('show'), ms);
+    }
+
+    function flashScreen(color, alpha) {
+      uiFlash.style.transition = 'none';
+      uiFlash.style.background = color;
+      uiFlash.style.opacity = String(alpha);
+      void uiFlash.offsetWidth;
+      uiFlash.style.transition = 'opacity 0.45s ease-out';
+      uiFlash.style.opacity = '0';
+    }
+
+    function blinkScore() {
+      uiCurrScore.classList.remove('blink');
+      void uiCurrScore.offsetWidth;
+      uiCurrScore.classList.add('blink');
+    }
+
+    function makeStat(value, label) {
+      const d = document.createElement('div');
+      d.className = 'stat';
+      const b = document.createElement('b');
+      b.textContent = value;
+      const s = document.createElement('span');
+      s.textContent = label;
+      d.append(b, s);
+      return d;
+    }
+
+    let overlayKind = 'menu';
+    function showOverlay(kind, opts = {}) {
+      overlayKind = kind;
+      uiOverlayStats.textContent = '';
+      uiAltBtn.hidden = kind !== 'pause';
+      if (kind === 'menu') {
+        uiOverlayBadge.textContent = '';
+        uiOverlayTitle.textContent = 'METALGREYMON RUNNER';
+        uiOverlaySub.textContent = '機械暴龍獸 · 穿越沙漠晝夜 · 避開仙人掌與飛鳥';
+        if (STATE.hiScore > 0) uiOverlayStats.append(makeStat(formatScore(STATE.hiScore), '最高分'));
+        uiActionBtn.textContent = 'START RUN';
+      } else if (kind === 'pause') {
+        uiOverlayBadge.textContent = '';
+        uiOverlayTitle.textContent = 'PAUSED';
+        uiOverlaySub.textContent = '休息一下，準備好再出發';
+        uiOverlayStats.append(makeStat(formatScore(STATE.score), '目前分數'), makeStat('LV ' + STATE.level, PHASES[phaseOf(STATE.level)].name));
+        uiActionBtn.textContent = '繼續 RESUME';
+      } else {
+        uiOverlayBadge.textContent = opts.isNew ? 'NEW RECORD!' : '';
+        uiOverlayTitle.textContent = 'GAME OVER';
+        uiOverlaySub.textContent = opts.isNew ? '刷新最高紀錄！' : '再接再厲，機械暴龍獸！';
+        uiOverlayStats.append(
+          makeStat(formatScore(STATE.score), '分數'),
+          makeStat(formatScore(STATE.hiScore), '最高'),
+          makeStat(String(STATE.destroyed), '擊毀'),
+          makeStat(String(STATE.chips), '晶片'),
+          makeStat('LV ' + STATE.level, '到達')
+        );
+        uiActionBtn.textContent = '再玩一次';
+      }
+      uiOverlay.classList.remove('hidden');
+    }
+
+    const ICON_SOUND_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+    const ICON_SOUND_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6"/></svg>';
+    function refreshMuteIcon() {
+      btnMute.innerHTML = sound.muted ? ICON_SOUND_OFF : ICON_SOUND_ON;
+      btnMute.setAttribute('aria-label', sound.muted ? '開啟聲音' : '靜音');
+    }
+    function toggleMute() {
+      sound.setMuted(!sound.muted);
+      refreshMuteIcon();
+    }
+    refreshMuteIcon();
+
+    const docEl = document.documentElement;
+    const canFullscreen = !!(docEl.requestFullscreen || docEl.webkitRequestFullscreen);
+    if (!canFullscreen) btnFS.style.display = 'none';
+    function toggleFullscreen() {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsEl) {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) exit.call(document);
+      } else {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+        const r = req.call(docEl);
+        if (r && r.catch) r.catch(() => {});
+      }
+    }
+
+    /*************************************************************************
+     * 11. 遊戲流程：開始 / 暫停 / 倒數 / 升級 / Game Over
+     *************************************************************************/
+    let gameOverTimer = null;
+    const gestures = new Map();
+
+    function clearInputs() {
+      input.jumpHolders.clear();
+      input.duckHolders.clear();
+      player.wantDuck = false;
+      gestures.forEach((g) => clearTimeout(g.timer));
+      gestures.clear();
+      [btnJump, btnDuck, btnFire].forEach((b) => b.classList.remove('pressed'));
     }
 
     function startGame() {
-      // 清理舊障礙物與導彈
+      sound.init();
+      sound.sfxUi();
+      clearTimeout(gameOverTimer);
       obstacles.forEach((o) => scene.remove(o.mesh));
       obstacles.length = 0;
       missiles.forEach((m) => scene.remove(m.mesh));
       missiles.length = 0;
+      chips.forEach((c) => scene.remove(c.mesh));
+      chips.length = 0;
+      particles.clear();
 
-      STATE.mode = 'PLAYING';
-      STATE.score = 0;
-      STATE.bonusScore = 0;
-      STATE.distance = 0;
-      STATE.speed = CONFIG.baseSpeed;
-      STATE.cooldown = 0;
-      STATE.nextSpawnDist = 26;
-      STATE.level = 1;
+      Object.assign(STATE, {
+        mode: 'PLAYING', score: 0, bonusScore: 0, distance: 0, speed: CONFIG.baseSpeed,
+        runTime: 0, level: 1, cooldown: 0, nextSpawnDist: 26, destroyed: 0, chips: 0,
+        lastMilestone: 0, hitStop: 0
+      });
 
-      player.root.position.y = CONFIG.groundY;
-      player.vy = 0;
-      player.isGrounded = true;
-      player.isDucking = false;
+      player.reset();
+      clearInputs();
+      setEnvPhase(1);
+      sound.setTempo(1);
 
       uiOverlay.classList.add('hidden');
+      uiCenter.classList.remove('show');
+      document.body.classList.add('playing');
+      uiHint.classList.remove('faded');
+      updateHUD(true);
       sound.startBGM();
     }
 
     function triggerGameOver() {
       STATE.mode = 'GAMEOVER';
+      STATE.hitStop = 0.12;
+      player.die();
+      camRig.shake = 0.7;
+      flashScreen('#ff5a3a', 0.45);
+      haptic([60, 40, 90]);
       sound.stopBGM();
       sound.sfxGameOver();
+      clearInputs();
+      document.body.classList.remove('playing');
 
-      if (STATE.score > STATE.hiScore) {
+      const isNew = STATE.score > STATE.hiScore;
+      if (isNew) {
         STATE.hiScore = Math.floor(STATE.score);
-        localStorage.setItem('mg_runner_hi', String(STATE.hiScore));
+        store.set('mg_runner_hi', String(STATE.hiScore));
       }
-      uiHiScore.textContent = 'HI ' + formatScore(STATE.hiScore);
+      updateHUD(true);
+      STATE.restartLockUntil = performance.now() + 900;
+      gameOverTimer = setTimeout(() => showOverlay('gameover', { isNew }), 850);
+    }
 
-      uiOverlayTitle.textContent = 'GAME OVER';
-      uiOverlaySub.textContent = `SCORE: ${formatScore(STATE.score)}  ·  BEST: ${formatScore(STATE.hiScore)}`;
-      uiActionBtn.textContent = '再玩一次';
-      uiOverlay.classList.remove('hidden');
+    function pauseGame() {
+      if (STATE.mode !== 'PLAYING' && STATE.mode !== 'COUNTDOWN') return;
+      STATE.mode = 'PAUSED';
+      clearInputs();
+      uiCenter.classList.remove('show');
+      showOverlay('pause');
+    }
+
+    function resumeGame() {
+      if (STATE.mode !== 'PAUSED') return;
+      sound.init();
+      sound.sfxUi();
+      uiOverlay.classList.add('hidden');
+      STATE.mode = 'COUNTDOWN';
+      STATE.countdown = 1.5;
+      STATE.lastCount = 0;
+    }
+
+    function updateCountdown(dt) {
+      STATE.countdown -= dt;
+      const n = Math.ceil(STATE.countdown / 0.5);
+      if (n > 0 && n !== STATE.lastCount) {
+        STATE.lastCount = n;
+        centerToast(String(n), '', 0);
+        sound.sfxCount(false);
+      }
+      if (STATE.countdown <= 0) {
+        STATE.mode = 'PLAYING';
+        centerToast('GO!', '', 450);
+        sound.sfxCount(true);
+      }
+    }
+
+    function onLevelUp(lv) {
+      setEnvPhase(lv);
+      sound.setTempo(lv);
+      sound.sfxLevelUp();
+      centerToast('LEVEL ' + lv, PHASES[phaseOf(lv)].name, 1600);
+      haptic(30);
+    }
+
+    function reduceCooldown(sec) {
+      if (STATE.cooldown <= 0) return;
+      STATE.cooldown = Math.max(0, STATE.cooldown - sec);
+      if (STATE.cooldown === 0) { sound.sfxReady(); haptic(15); }
+    }
+
+    function collectChip(c) {
+      STATE.chips++;
+      STATE.bonusScore += CONFIG.chipScore;
+      reduceCooldown(CONFIG.chipCooldownCut);
+      sound.sfxChip();
+      spawnChipSparkle(c.mesh.position);
+      showBonusToast('+' + CONFIG.chipScore + ' ◆');
     }
 
     uiActionBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      startGame();
+      if (overlayKind === 'pause') resumeGame();
+      else if (performance.now() >= STATE.restartLockUntil) startGame();
     });
+    uiAltBtn.addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+    btnPause.addEventListener('click', (e) => { e.stopPropagation(); pauseGame(); });
+    btnMute.addEventListener('click', (e) => { e.stopPropagation(); sound.init(); toggleMute(); });
+    btnFS.addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
 
-    // 電腦鍵盤操作：SPACE / ↑ 跳躍、↓ 蹲低、F 導彈
-    window.addEventListener('keydown', (e) => {
-      if (STATE.mode !== 'PLAYING') {
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter') {
-          e.preventDefault();
-          startGame();
-        }
-        return;
+    // 切換分頁 / 鎖屏 / 失焦 → 自動暫停並暫停音訊
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        pauseGame();
+        sound.suspend();
+      } else if (sound.ctx) {
+        sound.init();
       }
+    });
+    window.addEventListener('blur', pauseGame);
 
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
+    /*************************************************************************
+     * 12. 操控：鍵盤、觸控按鈕、畫面手勢
+     *************************************************************************/
+    function refreshDuck() { player.setDuck(input.duckHolders.size > 0); }
+    function addDuck(id) {
+      if (STATE.mode !== 'PLAYING') return;
+      input.duckHolders.add(id);
+      refreshDuck();
+    }
+    function removeDuck(id) {
+      if (input.duckHolders.delete(id)) refreshDuck();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const c = e.code;
+      sound.init();
+      if (c === 'KeyM') { if (!e.repeat) toggleMute(); return; }
+
+      if (STATE.mode === 'PLAYING') {
+        if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') {
+          e.preventDefault();
+          if (!e.repeat) player.requestJump();
+          input.jumpHolders.add('key');
+        } else if (c === 'ArrowDown' || c === 'KeyS') {
+          e.preventDefault();
+          addDuck('key');
+        } else if (c === 'KeyF' || c === 'KeyX') {
+          e.preventDefault();
+          if (!e.repeat) fireGigaDestroyer();
+        } else if (c === 'KeyP' || c === 'Escape') {
+          e.preventDefault();
+          pauseGame();
+        }
+      } else if (STATE.mode === 'PAUSED') {
+        if (!e.repeat && (c === 'KeyP' || c === 'Escape' || c === 'Space' || c === 'Enter')) {
+          e.preventDefault();
+          resumeGame();
+        }
+      } else if (STATE.mode === 'MENU' || STATE.mode === 'GAMEOVER') {
+        if (c === 'Space' || c === 'ArrowUp' || c === 'Enter') {
+          e.preventDefault();
+          if (!e.repeat && performance.now() >= STATE.restartLockUntil) startGame();
+        }
+      } else if (c === 'Space' || c === 'ArrowUp' || c === 'ArrowDown') {
         e.preventDefault();
-        player.jump();
-      } else if (e.code === 'ArrowDown') {
-        e.preventDefault();
-        player.setDuck(true);
-      } else if (e.code === 'KeyF') {
-        e.preventDefault();
-        fireGigaDestroyer();
       }
     });
 
     window.addEventListener('keyup', (e) => {
-      if (e.code === 'ArrowDown') {
-        player.setDuck(false);
+      const c = e.code;
+      if (c === 'Space' || c === 'ArrowUp' || c === 'KeyW') input.jumpHolders.delete('key');
+      if (c === 'ArrowDown' || c === 'KeyS') removeDuck('key');
+    });
+
+    // 觸控按鈕：支援多點觸控（例如按住蹲低同時發射導彈）
+    function bindPress(el, onDown, onUp) {
+      const active = new Set();
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sound.init();
+        try { el.setPointerCapture(e.pointerId); } catch (err) { /* 舊瀏覽器 */ }
+        active.add(e.pointerId);
+        el.classList.add('pressed');
+        onDown(e.pointerId);
+      });
+      const release = (e) => {
+        if (!active.delete(e.pointerId)) return;
+        if (active.size === 0) el.classList.remove('pressed');
+        if (onUp) onUp(e.pointerId);
+      };
+      el.addEventListener('pointerup', release);
+      el.addEventListener('pointercancel', release);
+      el.addEventListener('lostpointercapture', release);
+      el.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    bindPress(btnJump,
+      (id) => {
+        if (STATE.mode !== 'PLAYING') return;
+        player.requestJump();
+        input.jumpHolders.add('b' + id);
+      },
+      (id) => input.jumpHolders.delete('b' + id));
+    bindPress(btnDuck, (id) => addDuck('b' + id), (id) => removeDuck('b' + id));
+    bindPress(btnFire, () => fireGigaDestroyer());
+
+    function enableTouchUI() {
+      if (!document.body.classList.contains('touch')) document.body.classList.add('touch');
+    }
+    if (IS_COARSE) enableTouchUI();
+
+    // 畫面手勢：輕點 = 跳；向下掃 = 蹲（按住維持）；滑鼠左鍵跳、右鍵導彈
+    container.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') enableTouchUI();
+      if (STATE.mode !== 'PLAYING') return;
+      e.preventDefault();
+      if (e.pointerType === 'mouse') {
+        if (e.button === 0) player.requestJump();
+        else if (e.button === 2) fireGigaDestroyer();
+        return;
+      }
+      const g = { y: e.clientY, duck: false, jumped: false, timer: null };
+      // 短暫等待判斷係咪向下掃，避免想蹲低時誤跳
+      g.timer = setTimeout(() => {
+        if (!g.duck && !g.jumped && gestures.get(e.pointerId) === g && STATE.mode === 'PLAYING') {
+          g.jumped = true;
+          player.requestJump();
+        }
+      }, 70);
+      gestures.set(e.pointerId, g);
+      try { container.setPointerCapture(e.pointerId); } catch (err) { /* 忽略 */ }
+    });
+
+    container.addEventListener('pointermove', (e) => {
+      const g = gestures.get(e.pointerId);
+      if (!g || STATE.mode !== 'PLAYING') return;
+      if (!g.duck && e.clientY - g.y > 26) {
+        g.duck = true;
+        clearTimeout(g.timer);
+        addDuck('g' + e.pointerId);
       }
     });
 
-    // 手機觸控操作：點擊畫面跳躍、向下掃蹲低、雙擊畫面發射導彈
-    let touchStartY = 0;
-    let lastTapTime = 0;
-    let swipeDuckActive = false;
-    let autoStandTimer = null;
+    function endGesture(e) {
+      const g = gestures.get(e.pointerId);
+      if (!g) return;
+      clearTimeout(g.timer);
+      if (!g.duck && !g.jumped && e.type === 'pointerup' && STATE.mode === 'PLAYING') player.requestJump();
+      if (g.duck) removeDuck('g' + e.pointerId);
+      gestures.delete(e.pointerId);
+    }
+    container.addEventListener('pointerup', endGesture);
+    container.addEventListener('pointercancel', endGesture);
 
-    window.addEventListener('touchstart', (e) => {
-      if (e.target === uiActionBtn) return;
-      if (STATE.mode !== 'PLAYING') return;
-
-      touchStartY = e.touches[0].clientY;
-      swipeDuckActive = false;
-
-      const now = performance.now();
-      if (now - lastTapTime < 280) {
-        // 雙擊觸發 Giga Destroyer
-        fireGigaDestroyer();
-        lastTapTime = 0;
-      } else {
-        lastTapTime = now;
-      }
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (e) => {
-      if (STATE.mode !== 'PLAYING') return;
-      const dy = e.touches[0].clientY - touchStartY;
-      if (dy > 32 && !swipeDuckActive) {
-        swipeDuckActive = true;
-        player.setDuck(true);
-        if (autoStandTimer) clearTimeout(autoStandTimer);
-        autoStandTimer = setTimeout(() => {
-          player.setDuck(false);
-        }, 680);
-      }
-    }, { passive: true });
-
-    window.addEventListener('touchend', (e) => {
-      if (e.target === uiActionBtn) return;
-      if (STATE.mode !== 'PLAYING') return;
-
-      if (!swipeDuckActive) {
-        player.jump();
-      } else {
-        // 放開手指後短暫延遲恢復站立，手感更順暢
-        if (autoStandTimer) clearTimeout(autoStandTimer);
-        autoStandTimer = setTimeout(() => {
-          player.setDuck(false);
-        }, 280);
-      }
-    }, { passive: true });
+    // 解鎖音訊、禁止縮放 / 長按選單 / 雙擊放大
+    window.addEventListener('pointerdown', () => sound.init(), { capture: true, passive: true });
+    window.addEventListener('touchend', () => sound.init(), { capture: true, passive: true });
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('dblclick', (e) => e.preventDefault());
+    document.addEventListener('gesturestart', (e) => e.preventDefault());
 
     /*************************************************************************
-     * 10. 主遊戲迴圈 (MAIN LOOP - requestAnimationFrame + delta time)
+     * 13. 遊戲邏輯更新
+     *************************************************************************/
+    function updateGameplay(dt) {
+      STATE.runTime += dt;
+      STATE.speed = Math.min(CONFIG.maxSpeed, STATE.speed + CONFIG.speedAccel * dt);
+      const moveStep = STATE.speed * dt;
+      STATE.distance += moveStep;
+      const distScore = Math.floor(STATE.distance * 0.45);
+      STATE.score = distScore + STATE.bonusScore;
+
+      // 升級 / 每 100 分里程碑提示
+      const newLevel = 1 + Math.floor(STATE.score / CONFIG.levelEvery);
+      let leveled = false;
+      if (newLevel > STATE.level) {
+        STATE.level = newLevel;
+        onLevelUp(newLevel);
+        leveled = true;
+      }
+      const ms = Math.floor(distScore / 100);
+      if (ms > STATE.lastMilestone) {
+        STATE.lastMilestone = ms;
+        if (!leveled) sound.sfxMilestone();
+        blinkScore();
+      }
+
+      if (STATE.cooldown > 0) {
+        STATE.cooldown = Math.max(0, STATE.cooldown - dt);
+        if (STATE.cooldown === 0) { sound.sfxReady(); haptic(15); }
+      }
+
+      if (STATE.runTime > 8) uiHint.classList.add('faded');
+
+      // 生成障礙
+      STATE.nextSpawnDist -= moveStep;
+      if (STATE.nextSpawnDist <= 0) spawnObstacle();
+
+      // 障礙移動與碰撞
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        const obsSpeed = obs.type === 'BIRD' ? STATE.speed * 1.12 : STATE.speed;
+        obs.mesh.position.z += obsSpeed * dt;
+
+        if (obs.type === 'BIRD') {
+          obs.flapPhase += dt * 15;
+          const wa = Math.sin(obs.flapPhase) * 0.65;
+          const ta = Math.sin(obs.flapPhase - 0.9) * 0.5;
+          obs.leftWingPivot.rotation.z = wa;
+          obs.rightWingPivot.rotation.z = -wa;
+          obs.leftTip.rotation.z = ta;
+          obs.rightTip.rotation.z = -ta;
+          obs.mesh.position.y = obs.flyY + Math.cos(obs.flapPhase) * 0.14;
+        }
+
+        const oz = obs.mesh.position.z;
+        obs.collider.min.set(-obs.halfW, obs.minY, oz - obs.halfZ);
+        obs.collider.max.set(obs.halfW, obs.maxY, oz + obs.halfZ);
+
+        if (player.collider.intersectsBox(obs.collider)) {
+          triggerGameOver();
+          return;
+        }
+        if (oz > 24) {
+          scene.remove(obs.mesh);
+          obstacles.splice(i, 1);
+        }
+      }
+
+      // 導彈
+      for (let i = missiles.length - 1; i >= 0; i--) {
+        const m = missiles[i];
+        m.age += dt;
+        const mp = m.mesh.position;
+        mp.z -= m.speed * dt;
+        mp.x = m.baseX * (1 - Math.min(1, m.age * 1.5) * 0.6) + Math.sin(m.age * 20 + m.wobble) * 0.05;
+        m.mesh.rotation.z += dt * 9;
+        m.smokeTimer += dt;
+        if (m.smokeTimer > (LOW_POWER ? 0.04 : 0.025)) {
+          m.smokeTimer = 0;
+          spawnSmoke(mp);
+        }
+        m.collider.min.set(mp.x - 1.5, 0, mp.z - 2.2);
+        m.collider.max.set(mp.x + 1.5, 6.0, mp.z + 2.2);
+
+        let hit = false;
+        for (let j = obstacles.length - 1; j >= 0; j--) {
+          const obs = obstacles[j];
+          if (m.collider.intersectsBox(obs.collider)) {
+            spawnExplosion(obs.mesh.position, obs.type === 'CACTUS');
+            sound.sfxExplode();
+            haptic(30);
+            camRig.shake = Math.max(camRig.shake, 0.35);
+            flashScreen('#fff3d0', 0.25);
+            scene.remove(obs.mesh);
+            obstacles.splice(j, 1);
+            STATE.bonusScore += CONFIG.destroyScore;
+            STATE.destroyed++;
+            showBonusToast('+' + CONFIG.destroyScore + ' DESTROY!');
+            hit = true;
+            break;
+          }
+        }
+        if (hit || mp.z < -180) {
+          scene.remove(m.mesh);
+          missiles.splice(i, 1);
+        }
+      }
+
+      // 晶片
+      for (let i = chips.length - 1; i >= 0; i--) {
+        const c = chips[i];
+        const p = c.mesh.position;
+        p.z += moveStep;
+        c.phase += dt * 3;
+        c.mesh.rotation.y += dt * 3;
+        p.y = c.baseY + Math.sin(c.phase) * 0.15;
+        c.collider.min.set(p.x - 0.55, p.y - 0.55, p.z - 0.55);
+        c.collider.max.set(p.x + 0.55, p.y + 0.55, p.z + 0.55);
+        if (player.collider.intersectsBox(c.collider)) {
+          collectChip(c);
+          scene.remove(c.mesh);
+          chips.splice(i, 1);
+        } else if (p.z > 24) {
+          scene.remove(c.mesh);
+          chips.splice(i, 1);
+        }
+      }
+
+      updateHUD();
+    }
+
+    /*************************************************************************
+     * 14. 主迴圈 (requestAnimationFrame + delta time)
      *************************************************************************/
     const clock = new THREE.Clock();
+    let dustTimer = 0;
+    let speedLineAcc = 0;
 
     function animate() {
       requestAnimationFrame(animate);
+      const raw = clock.getDelta();
+      monitorPerf(raw);
+      const realDt = Math.min(raw, 0.05);
+      let dt = realDt;
 
-      // 限制最大 delta time 防止切換分頁時物理暴衝
-      const dt = Math.min(clock.getDelta(), 0.05);
+      // 撞擊瞬間短暫停格，加強打擊感
+      if (STATE.hitStop > 0) { STATE.hitStop -= realDt; dt = 0; }
+      if (STATE.mode === 'PAUSED' || STATE.mode === 'COUNTDOWN') dt = 0;
+      if (STATE.mode === 'COUNTDOWN') updateCountdown(realDt);
+      if (STATE.mode === 'PLAYING' && dt > 0) updateGameplay(dt);
 
-      if (STATE.mode === 'PLAYING') {
-        // 1. 速度隨時間慢慢加快
-        STATE.speed = Math.min(CONFIG.maxSpeed, STATE.speed + CONFIG.speedAccel * dt);
-        const moveStep = STATE.speed * dt;
-        STATE.distance += moveStep;
-        STATE.score = Math.floor(STATE.distance * 0.45) + STATE.bonusScore;
-        STATE.level = 1 + Math.floor(STATE.score / 500); // 每 500 分升一級
-        uiLevel.textContent = 'LV ' + STATE.level;
+      const worldSpeed = (STATE.mode === 'PLAYING' || STATE.mode === 'MENU') ? STATE.speed : 0;
+      if (dt > 0) {
+        player.update(dt, worldSpeed);
 
-        // 2. 更新 Giga Destroyer 冷卻條
-        if (STATE.cooldown > 0) {
-          STATE.cooldown = Math.max(0, STATE.cooldown - dt);
-          const ratio = (1 - STATE.cooldown / CONFIG.skillCooldown) * 100;
-          uiCooldownFill.style.width = `${ratio}%`;
-          uiCooldownFill.classList.remove('ready');
-          uiSkillText.textContent = `GIGA DESTROYER [${STATE.cooldown.toFixed(1)}s]`;
-        } else {
-          uiCooldownFill.style.width = '100%';
-          uiCooldownFill.classList.add('ready');
-          uiSkillText.textContent = 'GIGA DESTROYER [READY]';
-        }
-
-        // 3. 更新分數顯示
-        uiCurrScore.textContent = formatScore(STATE.score);
-        if (STATE.score > STATE.hiScore) {
-          uiHiScore.textContent = 'HI ' + formatScore(STATE.score);
-        }
-
-        // 4. 推進障礙物生成與移動
-        STATE.nextSpawnDist -= moveStep;
-        if (STATE.nextSpawnDist <= 0) {
-          spawnObstacle();
-        }
-
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-          const obs = obstacles[i];
-          const obsSpeed = obs.type === 'BIRD' ? STATE.speed * 1.12 : STATE.speed;
-          obs.mesh.position.z += obsSpeed * dt;
-
-          // 飛鳥拍翼動畫
-          if (obs.type === 'BIRD') {
-            obs.flapPhase += dt * 15;
-            const wingAngle = Math.sin(obs.flapPhase) * 0.65;
-            obs.leftWingPivot.rotation.z = wingAngle;
-            obs.rightWingPivot.rotation.z = -wingAngle;
-            obs.mesh.position.y = obs.flyY + Math.cos(obs.flapPhase) * 0.14;
+        if (worldSpeed > 0) {
+          groundTex.offset.y += worldSpeed * dt * 0.068;
+          trailTex.offset.y += worldSpeed * dt * 0.043;
+          for (let i = 0; i < groundDetails.length; i++) {
+            const item = groundDetails[i];
+            item.position.z += worldSpeed * dt;
+            if (item.position.z > 24) item.position.z -= 215;
           }
 
-          // 更新障礙物碰撞盒
-          const oz = obs.mesh.position.z;
-          obs.collider.min.set(-obs.halfW, obs.minY, oz - obs.halfZ);
-          obs.collider.max.set(obs.halfW, obs.maxY, oz + obs.halfZ);
-
-          // 與主角進行碰撞偵測
-          if (player.collider.intersectsBox(obs.collider)) {
-            triggerGameOver();
-            break;
+          // 腳步塵土
+          if (player.isGrounded && !player.dead) {
+            dustTimer += dt;
+            if (dustTimer > (LOW_POWER ? 0.1 : 0.065)) { dustTimer = 0; spawnFootDust(); }
           }
 
-          // 超出鏡頭後方則回收移除
-          if (obs.mesh.position.z > 24) {
-            scene.remove(obs.mesh);
-            obstacles.splice(i, 1);
-          }
-        }
-
-        // 5. 更新 Giga Destroyer 導彈與擊毀判定
-        for (let i = missiles.length - 1; i >= 0; i--) {
-          const m = missiles[i];
-          m.mesh.position.z -= m.speed * dt;
-          m.smokeTimer += dt;
-          if (m.smokeTimer > 0.025) {
-            m.smokeTimer = 0;
-            spawnSmokeParticle(m.mesh.position);
-          }
-
-          const mp = m.mesh.position;
-          m.collider.min.set(mp.x - 1.5, 0, mp.z - 2.2);
-          m.collider.max.set(mp.x + 1.5, 6.0, mp.z + 2.2);
-
-          let hit = false;
-          for (let j = obstacles.length - 1; j >= 0; j--) {
-            const obs = obstacles[j];
-            if (m.collider.intersectsBox(obs.collider)) {
-              // 擊爆障礙物！產生爆炸粒子、播放音效並加分
-              spawnExplosion(obs.mesh.position, obs.type === 'CACTUS');
-              sound.sfxExplode();
-              scene.remove(obs.mesh);
-              obstacles.splice(j, 1);
-
-              STATE.bonusScore += 100;
-              showBonusToast();
-              hit = true;
-              break;
+          // 高速時嘅速度線
+          if (STATE.mode === 'PLAYING' && STATE.speed > 48) {
+            speedLineAcc += dt * (STATE.speed - 48) * (LOW_POWER ? 0.7 : 1.2);
+            while (speedLineAcc >= 1) {
+              speedLineAcc -= 1;
+              const side = Math.random() < 0.5 ? -1 : 1;
+              particles.spawn({
+                x: layout.camX + side * (2 + Math.random() * 8), y: 0.4 + Math.random() * 7.5, z: -50 - Math.random() * 20,
+                vz: STATE.speed * 2, size: 1, sx: 0.04, sy: 0.04, sz: 3.2, life: 0.5, color: 0xfffaf0, opacity: 0.3
+              });
             }
           }
+        }
 
-          if (hit || m.mesh.position.z < -180) {
-            scene.remove(m.mesh);
-            missiles.splice(i, 1);
-          }
+        for (let i = 0; i < clouds.length; i++) {
+          const c = clouds[i];
+          c.g.position.x += c.speed * dt * (1 + worldSpeed * 0.01);
+          if (c.g.position.x > 170) c.g.position.x = -170;
         }
       }
 
-      // 6. 待機或遊玩時地面與主角持續更新（營造無縫動態畫面）
-      const activeSpeed = STATE.mode === 'GAMEOVER' ? 0 : STATE.speed;
-      if (activeSpeed > 0) {
-        player.update(dt, activeSpeed);
-
-        // 地面與跑道紋理循環向後捲動
-        groundTex.offset.y += activeSpeed * dt * 0.068;
-        trailTex.offset.y += activeSpeed * dt * 0.043;
-
-        // 地面小石子、橫痕與遠處仙人掌向後循環移動
-        for (let i = 0; i < groundDetails.length; i++) {
-          const item = groundDetails[i];
-          item.position.z += activeSpeed * dt;
-          if (item.position.z > 24) {
-            item.position.z -= 215;
-          }
-        }
-      }
-
-      // 7. 更新煙霧與爆炸粒子
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.life -= dt;
-        if (p.life <= 0) {
-          scene.remove(p.mesh);
-          particles.splice(i, 1);
-          continue;
-        }
-        if (p.gravity) p.vy += p.gravity * dt;
-        p.mesh.position.x += p.vx * dt;
-        p.mesh.position.y += p.vy * dt;
-        p.mesh.position.z += p.vz * dt;
-        p.mesh.scale.addScalar(p.grow * dt);
-        p.mesh.material.opacity = Math.max(0, p.life / p.maxLife);
-      }
-
-      // 8. 更新第三人稱電影感鏡頭與渲染
-      updateCamera(dt);
+      particles.update(dt, worldSpeed);
+      updateEnv(dt);
+      updateCamera(realDt);
+      skyMesh.position.copy(camera.position);
       renderer.render(scene, camera);
     }
 
+    // 初始化畫面
+    updateEnv(0, true);
+    updateHUD(true);
+    showOverlay('menu');
     animate();
   </script>
 </body>
